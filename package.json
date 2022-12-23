@@ -6,6 +6,7 @@
   "scripts": {
     "solve": "advent-of-code-runner solve",
     "autosolve": "advent-of-code-runner autosolve",
+    "autosubmit": "advent-of-code-runner autosubmit",
     "submit": "advent-of-code-runner submit",
     "help": "advent-of-code-runner help"
   },
@@ -13,6 +14,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "advent-of-code-runner": "^1.2.0-alpha"
+    "advent-of-code-runner": "^1.3.0-alpha"
   }
 }
