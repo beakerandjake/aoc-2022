@@ -23,5 +23,11 @@ export const partOne = (input = '') => {
  * @returns {Number|String}
  */
 export const partTwo = (input = '') => {
-  throw new Error('partTwo not implemented');
+  const [first, second, third, ...rest] = input
+    .split('\n\n')
+    .map(elf => elf.split('\n').reduce((acc, calorie) => acc + parseInt(calorie, 10), 0))
+    .sort((a, b) => a - b)
+    .reverse();
+  
+  return first + second + third;
 };
