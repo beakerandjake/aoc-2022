@@ -23,7 +23,7 @@ export const partOne = (input = '') => {
  * @returns {Number|String}
  */
 export const partTwo = (input = '') => {
-  const [first, second, third, ...rest] = input
+  const [first, second, third,] = input
     .split('\n\n')
     .map(elf => elf.split('\n').reduce((acc, calorie) => acc + parseInt(calorie, 10), 0))
     .sort((a, b) => a - b)
