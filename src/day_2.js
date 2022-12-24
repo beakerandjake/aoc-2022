@@ -20,6 +20,14 @@ const convertCodeToNumber = (code) => {
 };
 
 /**
+ * TODO pre-compute score table, there's a tiny number of possible hands
+ * so it's quick and easy to compute. Do this at the module level so it doesn't
+ * count against our functions execution time.
+ *
+ * Then the functions can do one map of string -> score using the lookup.
+ */
+
+/**
  * Returns the solution for part one of this puzzle.
  * @param {String} input - The input for this days puzzle.
  * @returns {Number|String}
