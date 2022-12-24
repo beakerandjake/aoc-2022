@@ -10,7 +10,7 @@ import { EOL } from 'node:os';
 export const partOne = (input = '') => {
   const elves = input
     .split('\n\n')
-    .map(elf => elf.split('\n').reduce((acc, calorie) => acc + parseInt(calorie, 10), 0))
+    .map((elf) => elf.split('\n').reduce((acc, calorie) => acc + parseInt(calorie, 10), 0))
     .sort((a, b) => a - b)
     .reverse();
 
@@ -23,11 +23,11 @@ export const partOne = (input = '') => {
  * @returns {Number|String}
  */
 export const partTwo = (input = '') => {
-  const [first, second, third,] = input
+  const [first, second, third] = input
     .split('\n\n')
-    .map(elf => elf.split('\n').reduce((acc, calorie) => acc + parseInt(calorie, 10), 0))
+    .map((elf) => elf.split('\n').reduce((acc, calorie) => acc + parseInt(calorie, 10), 0))
     .sort((a, b) => a - b)
     .reverse();
-  
+
   return first + second + third;
 };
