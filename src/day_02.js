@@ -38,22 +38,22 @@ const convertCodeToNumber = (code) => {
  * @returns {Number|String}
  */
 export const partOne = ({ input, lines }) => input
-.split('\n')
-.map((roundText) => {
-  const converted = roundText.split(' ').map(convertCodeToNumber);
-  const outcome = converted[0] - converted[1];
-  let outcomeScore = 0;
+  .split('\n')
+  .map((roundText) => {
+    const converted = roundText.split(' ').map(convertCodeToNumber);
+    const outcome = converted[0] - converted[1];
+    let outcomeScore = 0;
 
-  if (outcome === 0) {
-    outcomeScore = 3;
-  }
-  if (outcome === -1 || outcome === 2) {
-    outcomeScore = 6;
-  }
+    if (outcome === 0) {
+      outcomeScore = 3;
+    }
+    if (outcome === -1 || outcome === 2) {
+      outcomeScore = 6;
+    }
 
-  return converted[1] + outcomeScore;
-})
-.reduce((acc, x) => acc + x, 0);
+    return converted[1] + outcomeScore;
+  })
+  .reduce((acc, x) => acc + x, 0);
 
 /**
  * Returns the solution for part two of this puzzle.
