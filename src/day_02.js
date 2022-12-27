@@ -3,32 +3,39 @@
  * Puzzle Description: https://adventofcode.com/2022/day/2
  */
 
-const convertCodeToNumber = (code) => {
-  switch (code) {
-    // ROCK
-    case 'A':
-    case 'X':
-      return 1;
-    // PAPER
-    case 'B':
-    case 'Y':
-      return 2;
-    // SCISSOR
-    case 'C':
-    case 'Z':
-      return 3;
-    default:
-      throw RangeError('Unknown code', code);
-  }
-};
+const elfThrows = [
+  { key: 'A', value: 0 },
+  { key: 'B', value: 1 },
+  { key: 'C', value: 2 },
+];
+
+const myThrowsPartOne = [
+  { key: 'X', value: 0, score: 1 },
+  { key: 'Y', value: 1, score: 2 },
+  { key: 'Z', value: 2, score: 3 },
+];
 
 /**
- * TODO pre-compute score table, there's a tiny number of possible hands
- * so it's quick and easy to compute. Do this at the module level so it doesn't
- * count against our functions execution time.
- *
- * Then the functions can do one map of string -> score using the lookup.
+ * Create a lookup table that maps the input (elf hand and my hand) to the score.
  */
+const partOneScoreTable = elfThrows.reduce((acc, elfThrow) => {
+  myThrowsPartOne.forEach((myThrow) => {
+    const roundOutcome = elfThrow.value - myThrow.value;
+    let score = 0;
+
+    if (roundOutcome === 0) {
+      score = 3;
+    }
+
+    if (roundOutcome === -1 || roundOutcome === 2) {
+      score = 6;
+    }
+
+    acc[`${elfThrow.key} ${myThrow.key}`] = score + myThrow.score;
+  });
+
+  return acc;
+}, {});
 
 /**
  * Returns the solution for part one of this puzzle.
@@ -37,23 +44,9 @@ const convertCodeToNumber = (code) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const partOne = ({ input, lines }) => input
-  .split('\n')
-  .map((roundText) => {
-    const converted = roundText.split(' ').map(convertCodeToNumber);
-    const outcome = converted[0] - converted[1];
-    let outcomeScore = 0;
-
-    if (outcome === 0) {
-      outcomeScore = 3;
-    }
-    if (outcome === -1 || outcome === 2) {
-      outcomeScore = 6;
-    }
-
-    return converted[1] + outcomeScore;
-  })
-  .reduce((acc, x) => acc + x, 0);
+export const partOne = ({ lines }) => (
+  lines.reduce((total, line) => total + partOneScoreTable[line], 0)
+);
 
 /**
  * Returns the solution for part two of this puzzle.
