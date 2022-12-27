@@ -1,6 +1,6 @@
 /**
  * Contains solutions for Day 1
- * Puzzle Description: https://adventofcode.com/2022/day/25
+ * Puzzle Description: https://adventofcode.com/2022/day/6
  */
 
 /**
