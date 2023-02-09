@@ -131,5 +131,7 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+**/.DS_STORE
+
 # advent of code api rate limit file
 .ratelimits.json
