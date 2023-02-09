@@ -1,5 +1,5 @@
 /**
- * Contains solutions for Day 1
+ * Contains solutions for Day 2
  * Puzzle Description: https://adventofcode.com/2022/day/2
  */
 
@@ -38,23 +38,23 @@ const partOneScoreTable = elfThrows.reduce((acc, elfThrow) => {
 }, {});
 
 /**
- * Returns the solution for part one of this puzzle.
+ * Returns the solution for level one of this puzzle.
  * @param {Object} args - Provides both raw and split input.
  * @param {String} args.input - The original, unparsed input string.
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const partOne = ({ lines }) => (
+export const levelOne = ({ lines }) => (
   lines.reduce((total, line) => total + partOneScoreTable[line], 0)
 );
 
 /**
- * Returns the solution for part two of this puzzle.
+ * Returns the solution for level two of this puzzle.
  * @param {Object} args - Provides both raw and split input.
  * @param {String} args.input - The original, unparsed input string.
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const partTwo = ({ input, lines }) => {
+export const levelTwo = ({ input, lines }) => {
   // your code here
 };
