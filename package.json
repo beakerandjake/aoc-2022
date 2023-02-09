@@ -1,24 +1,32 @@
 {
-  "name": "aoc-2022",
-  "version": "1.0.0",
-  "description": "Solutions to Advent of Code for year 2022",
-  "type": "module",
-  "scripts": {
-    "solve": "advent-of-code-runner solve",
-    "autosolve": "advent-of-code-runner autosolve",
-    "autosubmit": "advent-of-code-runner autosubmit",
-    "submit": "advent-of-code-runner submit",
-    "help": "advent-of-code-runner help"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "eslint": "^8.30.0",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.26.0"
-  },
-  "dependencies": {
-    "advent-of-code-runner": "^1.3.1-alpha.1"
-  }
+	"name": "aoc-2022",
+	"version": "1.0.0",
+	"description": "Solutions to Advent of Code 2022",
+	"type": "module",
+	"scripts": {
+		"solve": "advent-of-code-runner solve",
+		"submit": "advent-of-code-runner submit",
+		"stats": "advent-of-code-runner stats",
+		"auth": "advent-of-code-runner auth",
+		"help": "advent-of-code-runner help"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"devDependencies": {
+		"eslint": "^8.30.0",
+		"eslint-config-airbnb-base": "^15.0.0",
+		"eslint-plugin-import": "^2.26.0"
+	},
+	"dependencies": {
+		"advent-of-code-runner": "^1.3.3"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/beakerandjake/aoc-2022.git"
+	},
+	"bugs": {
+		"url": "https://github.com/beakerandjake/aoc-2022/issues"
+	},
+	"homepage": "https://github.com/beakerandjake/aoc-2022#readme"
 }
