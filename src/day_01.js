@@ -36,14 +36,28 @@ export const levelOne = ({ lines }) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelTwo = ({ input }) => {
-  const [first, second, third] = input
-    .split('\n\n')
-    .map((elf) =>
-      elf.split('\n').reduce((acc, calorie) => acc + parseInt(calorie, 10), 0)
-    )
-    .sort((a, b) => a - b)
-    .reverse();
+export const levelTwo = ({ lines }) => {
+  let first = 0;
+  let second = 0;
+  let third = 0;
+  let calories = 0;
+
+  lines.forEach((line) => {
+    if (line === '') {
+      if (calories > first) {
+        first = calories;
+      } else if (calories > second) {
+        second = calories;
+      } else if (calories > third) {
+        third = calories;
+      }
+
+      calories = 0;
+      return;
+    }
+
+    calories += parseInt(line, 10);
+  });
 
   return first + second + third;
 };
