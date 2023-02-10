@@ -33,22 +33,6 @@ const getRoundOutcome = (theirThrow, myThrow) => {
   return shapeVictoryTable[myThrow] === theirThrow ? 6 : 0;
 };
 
-// helps to parse the input file for level one.
-const myThrowsLookupLevelOne = [
-  { key: 'X', shape: shapes.rock, shapeScore: 1 },
-  { key: 'Y', shape: shapes.paper, shapeScore: 2 },
-  { key: 'Z', shape: shapes.scissors, shapeScore: 3 },
-];
-
-// a lookup table for level one which maps every possible combination of hands to their resulting score.
-const levelOneScoreLookupTable = Object.values(shapes).reduce((acc, elfThrow) => {
-  myThrowsLookupLevelOne.forEach((myThrow) => {
-    const roundOutcome = getRoundOutcome(elfThrow, myThrow.shape);
-    acc[`${elfThrow} ${myThrow.key}`] = roundOutcome + myThrow.shapeScore;
-  });
-  return acc;
-}, {});
-
 /**
  * Returns the solution for level one of this puzzle.
  * @param {Object} args - Provides both raw and split input.
@@ -56,8 +40,25 @@ const levelOneScoreLookupTable = Object.values(shapes).reduce((acc, elfThrow) =>
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = ({ lines }) =>
-  lines.reduce((total, line) => total + levelOneScoreLookupTable[line], 0);
+export const levelOne = (() => {
+  // helps to parse the input file for level one.
+  const myThrowsLookup = [
+    { key: 'X', shape: shapes.rock, shapeScore: 1 },
+    { key: 'Y', shape: shapes.paper, shapeScore: 2 },
+    { key: 'Z', shape: shapes.scissors, shapeScore: 3 },
+  ];
+
+  // a lookup table for level one which maps every possible combination of hands to their resulting score.
+  const scoreLookup = Object.values(shapes).reduce((acc, elfThrow) => {
+    myThrowsLookup.forEach((myThrow) => {
+      const roundOutcome = getRoundOutcome(elfThrow, myThrow.shape);
+      acc[`${elfThrow} ${myThrow.key}`] = roundOutcome + myThrow.shapeScore;
+    });
+    return acc;
+  }, {});
+
+  return ({ lines }) => lines.reduce((total, line) => total + scoreLookup[line], 0);
+})();
 
 /**
  * Returns the solution for level two of this puzzle.
@@ -67,3 +68,5 @@ export const levelOne = ({ lines }) =>
  * @returns {Number|String}
  */
 export const levelTwo = ({ input, lines }) => {};
+
+// export const levelOne = solveLevelOne();
