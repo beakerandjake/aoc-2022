@@ -42,7 +42,8 @@ export const levelTwo = ({ lines }) => {
   let third = 0;
   let calories = 0;
 
-  lines.forEach((line) => {
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
     if (line === '') {
       if (calories > first) {
         first = calories;
@@ -53,11 +54,10 @@ export const levelTwo = ({ lines }) => {
       }
 
       calories = 0;
-      return;
+    } else {
+      calories += parseInt(line, 10);
     }
-
-    calories += parseInt(line, 10);
-  });
+  }
 
   return first + second + third;
 };
