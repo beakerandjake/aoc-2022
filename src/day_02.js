@@ -60,7 +60,7 @@ export const levelOne = (() => {
     { key: 'Z', shape: shapes.scissors },
   ];
 
-  // maps every possible combination of hands to their resulting score.
+  // maps every possible combination of hands to the resulting score.
   const scoreLookup = Object.values(shapes).reduce((acc, elfShape) => {
     myInputMap.forEach((myThrow) => {
       const roundOutcome = getRoundOutcome(elfShape, myThrow.shape);
@@ -89,7 +89,8 @@ export const levelTwo = (() => {
     // Win
     { key: 'Z', getMyShape: (theirShape) => rules[theirShape].losesTo },
   ];
-  // maps every possible combination of hands to their resulting score.
+
+  // maps every possible combination of hands to the resulting score.
   const scoreLookup = Object.values(shapes).reduce((acc, elfShape) => {
     myInputMap.forEach((myThrow) => {
       const myShape = myThrow.getMyShape(elfShape);
