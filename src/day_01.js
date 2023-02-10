@@ -14,17 +14,18 @@ export const levelOne = ({ lines }) => {
   let calories = 0;
   let highest = 0;
 
-  lines.forEach((line) => {
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+
     if (line === '') {
       if (calories > highest) {
         highest = calories;
       }
       calories = 0;
-      return;
+    } else {
+      calories += parseInt(line, 10);    
     }
-
-    calories += parseInt(line, 10);
-  });
+  }
 
   return highest;
 };
@@ -52,7 +53,6 @@ export const levelTwo = ({ lines }) => {
       } else if (calories > third) {
         third = calories;
       }
-
       calories = 0;
     } else {
       calories += parseInt(line, 10);
