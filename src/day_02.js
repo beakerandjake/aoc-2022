@@ -102,5 +102,3 @@ export const levelTwo = (() => {
   // total the scores of each round in the input.
   return ({ lines }) => lines.reduce((total, line) => total + scoreLookup[line], 0);
 })();
-
-// export const levelOne = solveLevelOne();
