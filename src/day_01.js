@@ -23,7 +23,7 @@ export const levelOne = ({ lines }) => {
       }
       calories = 0;
     } else {
-      calories += parseInt(line, 10);    
+      calories += parseInt(line, 10);
     }
   }
 
