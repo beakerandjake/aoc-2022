@@ -54,17 +54,17 @@ const getRoundOutcome = (theirThrow, myThrow) => {
  */
 export const levelOne = (() => {
   // maps the key in the input to the shape that I should throw.
-  const myThrowsInputMap = [
+  const myInputMap = [
     { key: 'X', shape: shapes.rock },
     { key: 'Y', shape: shapes.paper },
     { key: 'Z', shape: shapes.scissors },
   ];
 
   // maps every possible combination of hands to their resulting score.
-  const scoreLookup = Object.values(shapes).reduce((acc, elfThrow) => {
-    myThrowsInputMap.forEach((myThrow) => {
-      const roundOutcome = getRoundOutcome(elfThrow, myThrow.shape);
-      acc[`${elfThrow} ${myThrow.key}`] = roundOutcome + rules[myThrow.shape].shapeScore;
+  const scoreLookup = Object.values(shapes).reduce((acc, elfShape) => {
+    myInputMap.forEach((myThrow) => {
+      const roundOutcome = getRoundOutcome(elfShape, myThrow.shape);
+      acc[`${elfShape} ${myThrow.key}`] = roundOutcome + rules[myThrow.shape].shapeScore;
     });
     return acc;
   }, {});
@@ -81,22 +81,26 @@ export const levelOne = (() => {
  * @returns {Number|String}
  */
 export const levelTwo = (() => {
-  // const myOutcomesLookup = [
-  //   // Lose
-  //   { key: 'X', getMyShape: (theirShape) => test[theirShape].beats },
-  //   // Draw
-  //   { key: 'Y', getMyShape: (theirShape) => theirShape },
-  //   // Win
-  //   { key: 'Z', getMyShape: (theirShape) => test[theirShape].losesTo },
-  // ];
-  // const scoreLookup = Object.values(shapeKeys).reduce((acc, elfThrow) => {
-  //   myOutcomesLookup.forEach((myOutcome) => {
-  //     const myShape = myOutcome.getMyShape(elfThrow);
-  //     const roundOutcome = getRoundOutcome(elfThrow, myOutcome.getMyShape(elfThrow));
-  //     acc[`${elfThrow} ${myThrow.key}`] = roundOutcome + myThrow.shapeScore;
-  //   });
-  //   return acc;
-  // }, {});
+  const myInputMap = [
+    // Lose
+    { key: 'X', getMyShape: (theirShape) => rules[theirShape].beats },
+    // Draw
+    { key: 'Y', getMyShape: (theirShape) => theirShape },
+    // Win
+    { key: 'Z', getMyShape: (theirShape) => rules[theirShape].losesTo },
+  ];
+  // maps every possible combination of hands to their resulting score.
+  const scoreLookup = Object.values(shapes).reduce((acc, elfShape) => {
+    myInputMap.forEach((myThrow) => {
+      const myShape = myThrow.getMyShape(elfShape);
+      const roundOutcome = getRoundOutcome(elfShape, myShape);
+      acc[`${elfShape} ${myThrow.key}`] = roundOutcome + rules[myShape].shapeScore;
+    });
+    return acc;
+  }, {});
+
+  // total the scores of each round in the input.
+  return ({ lines }) => lines.reduce((total, line) => total + scoreLookup[line], 0);
 })();
 
 // export const levelOne = solveLevelOne();
