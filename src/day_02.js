@@ -10,15 +10,27 @@ const shapes = {
   scissors: 'C',
 };
 
-// maps a shape to the shape it beats.
-const shapeVictoryTable = {
-  [shapes.rock]: shapes.scissors,
-  [shapes.paper]: shapes.rock,
-  [shapes.scissors]: shapes.paper,
+// maps each shape to the information needed to play rock paper scissors.
+const rules = {
+  [shapes.rock]: {
+    shapeScore: 1,
+    beats: shapes.scissors,
+    losesTo: shapes.paper,
+  },
+  [shapes.paper]: {
+    shapeScore: 2,
+    beats: shapes.rock,
+    losesTo: shapes.scissors,
+  },
+  [shapes.scissors]: {
+    shapeScore: 3,
+    beats: shapes.paper,
+    losesTo: shapes.rock,
+  },
 };
 
 /**
- * Returns the score for the outcome of the round.
+ * Returns the outcome of the round.
  * - 0 points for a loss
  * - 3 points for a draw
  * - 6 points for a win
@@ -30,7 +42,7 @@ const getRoundOutcome = (theirThrow, myThrow) => {
   if (myThrow === theirThrow) {
     return 3;
   }
-  return shapeVictoryTable[myThrow] === theirThrow ? 6 : 0;
+  return rules[myThrow].beats === theirThrow ? 6 : 0;
 };
 
 /**
@@ -41,22 +53,23 @@ const getRoundOutcome = (theirThrow, myThrow) => {
  * @returns {Number|String}
  */
 export const levelOne = (() => {
-  // helps to parse the input file for level one.
-  const myThrowsLookup = [
-    { key: 'X', shape: shapes.rock, shapeScore: 1 },
-    { key: 'Y', shape: shapes.paper, shapeScore: 2 },
-    { key: 'Z', shape: shapes.scissors, shapeScore: 3 },
+  // maps the key in the input to the shape that I should throw.
+  const myThrowsInputMap = [
+    { key: 'X', shape: shapes.rock },
+    { key: 'Y', shape: shapes.paper },
+    { key: 'Z', shape: shapes.scissors },
   ];
 
-  // a lookup table for level one which maps every possible combination of hands to their resulting score.
+  // maps every possible combination of hands to their resulting score.
   const scoreLookup = Object.values(shapes).reduce((acc, elfThrow) => {
-    myThrowsLookup.forEach((myThrow) => {
+    myThrowsInputMap.forEach((myThrow) => {
       const roundOutcome = getRoundOutcome(elfThrow, myThrow.shape);
-      acc[`${elfThrow} ${myThrow.key}`] = roundOutcome + myThrow.shapeScore;
+      acc[`${elfThrow} ${myThrow.key}`] = roundOutcome + rules[myThrow.shape].shapeScore;
     });
     return acc;
   }, {});
 
+  // total the scores of each round in the input.
   return ({ lines }) => lines.reduce((total, line) => total + scoreLookup[line], 0);
 })();
 
@@ -67,6 +80,23 @@ export const levelOne = (() => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelTwo = ({ input, lines }) => {};
+export const levelTwo = (() => {
+  // const myOutcomesLookup = [
+  //   // Lose
+  //   { key: 'X', getMyShape: (theirShape) => test[theirShape].beats },
+  //   // Draw
+  //   { key: 'Y', getMyShape: (theirShape) => theirShape },
+  //   // Win
+  //   { key: 'Z', getMyShape: (theirShape) => test[theirShape].losesTo },
+  // ];
+  // const scoreLookup = Object.values(shapeKeys).reduce((acc, elfThrow) => {
+  //   myOutcomesLookup.forEach((myOutcome) => {
+  //     const myShape = myOutcome.getMyShape(elfThrow);
+  //     const roundOutcome = getRoundOutcome(elfThrow, myOutcome.getMyShape(elfThrow));
+  //     acc[`${elfThrow} ${myThrow.key}`] = roundOutcome + myThrow.shapeScore;
+  //   });
+  //   return acc;
+  // }, {});
+})();
 
 // export const levelOne = solveLevelOne();
