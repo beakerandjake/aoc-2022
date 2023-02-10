@@ -13,7 +13,9 @@
 export const levelOne = ({ input }) => {
   const elves = input
     .split('\n\n')
-    .map((elf) => elf.split('\n').reduce((acc, calorie) => acc + parseInt(calorie, 10), 0))
+    .map((elf) =>
+      elf.split('\n').reduce((acc, calorie) => acc + parseInt(calorie, 10), 0)
+    )
     .sort((a, b) => a - b)
     .reverse();
 
@@ -30,7 +32,9 @@ export const levelOne = ({ input }) => {
 export const levelTwo = ({ input }) => {
   const [first, second, third] = input
     .split('\n\n')
-    .map((elf) => elf.split('\n').reduce((acc, calorie) => acc + parseInt(calorie, 10), 0))
+    .map((elf) =>
+      elf.split('\n').reduce((acc, calorie) => acc + parseInt(calorie, 10), 0)
+    )
     .sort((a, b) => a - b)
     .reverse();
 

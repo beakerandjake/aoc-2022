@@ -44,9 +44,8 @@ const partOneScoreTable = elfThrows.reduce((acc, elfThrow) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = ({ lines }) => (
-  lines.reduce((total, line) => total + partOneScoreTable[line], 0)
-);
+export const levelOne = ({ lines }) =>
+  lines.reduce((total, line) => total + partOneScoreTable[line], 0);
 
 /**
  * Returns the solution for level two of this puzzle.
