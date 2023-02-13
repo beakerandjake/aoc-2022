@@ -3,6 +3,13 @@
  * Puzzle Description: https://adventofcode.com/2022/day/3
  */
 
+const lowercase = [...Array(26).keys()].map((x) => String.fromCharCode(x + 97));
+const uppercase = [...Array(26).keys()].map((x) => String.fromCharCode(x + 65));
+const priority = [...lowercase, ...uppercase].reduce((acc, x, index) => {
+  acc[x] = index + 1;
+  return acc;
+}, {});
+
 /**
  * Returns the solution for level one of this puzzle.
  * @param {Object} args - Provides both raw and split input.
@@ -10,26 +17,17 @@
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = (() => {
-  const lowercase = [...Array(26).keys()].map((x) => String.fromCharCode(x + 97));
-  const uppercase = [...Array(26).keys()].map((x) => String.fromCharCode(x + 65));
-  const priority = [...lowercase, ...uppercase].reduce((acc, x, index) => {
-    acc[x] = index + 1;
-    return acc;
-  }, {});
-
-  return ({ lines }) =>
-    lines.reduce((acc, line) => {
-      const half = line.length / 2;
-      const lhsSet = new Set(line.slice(0, half));
-      for (let index = half; index < line.length; index += 1) {
-        if (lhsSet.has(line[index])) {
-          return acc + priority[line[index]];
-        }
+export const levelOne = ({ lines }) =>
+  lines.reduce((acc, line) => {
+    const half = line.length / 2;
+    const lhsSet = new Set(line.slice(0, half));
+    for (let index = half; index < line.length; index += 1) {
+      if (lhsSet.has(line[index])) {
+        return acc + priority[line[index]];
       }
-      return acc;
-    }, 0);
-})();
+    }
+    return acc;
+  }, 0);
 
 /**
  * Returns the solution for level two of this puzzle.
@@ -38,6 +36,14 @@ export const levelOne = (() => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelTwo = ({ input, lines }) => {
-  // your code here
+export const levelTwo = ({ lines }) => {
+  let total = 0;
+  for (let index = 0; index < lines.length; index += 3) {
+    const two = new Set(lines[index + 1]);
+    const three = new Set(lines[index + 2]);
+    const intersection = [...lines[index]].filter((x) => two.has(x) && three.has(x));
+    total += priority[intersection[0]];
+  }
+
+  return total;
 };
