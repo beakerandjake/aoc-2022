@@ -38,11 +38,18 @@ export const levelOne = ({ lines }) =>
  */
 export const levelTwo = ({ lines }) => {
   let total = 0;
-  for (let index = 0; index < lines.length; index += 3) {
-    const two = new Set(lines[index + 1]);
-    const three = new Set(lines[index + 2]);
-    const intersection = [...lines[index]].filter((x) => two.has(x) && three.has(x));
-    total += priority[intersection[0]];
+  for (let elfIndex = 0; elfIndex < lines.length; elfIndex += 3) {
+    const elfOne = lines[elfIndex];
+    const elfTwo = new Set(lines[elfIndex + 1]);
+    const elfThree = new Set(lines[elfIndex + 2]);
+
+    for (let elfOneIndex = 0; elfOneIndex < elfOne.length; elfOneIndex += 1) {
+      const character = elfOne[elfOneIndex];
+      if (elfTwo.has(character) && elfThree.has(character)) {
+        total += priority[character];
+        break;
+      }
+    }
   }
 
   return total;
