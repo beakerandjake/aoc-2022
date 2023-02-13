@@ -17,8 +17,7 @@ const priority = [...lowercase, ...uppercase].reduce((acc, x, index) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = ({ lines }) => {
-  const result = lines.reduce((acc, line) => {
+export const levelOne = ({ lines }) => lines.reduce((acc, line) => {
     const half = line.length / 2;
     const lhsSet = new Set(line.slice(0, half));
     for (let index = half; index < line.length; index += 1) {
@@ -26,12 +25,8 @@ export const levelOne = ({ lines }) => {
         return acc + priority[line[index]];
       }
     }
-
     return acc;
   }, 0);
-
-  return result;
-};
 
 /**
  * Returns the solution for level two of this puzzle.
