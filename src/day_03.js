@@ -20,9 +20,8 @@ const priority = [...lowercase, ...uppercase].reduce((acc, x, index) => {
 export const levelOne = ({ lines }) => {
   const result = lines.reduce((acc, line) => {
     const half = line.length / 2;
-    const compartmentOne = new Set(line.slice(0, half));
     const compartmentTwo = new Set(line.slice(half));
-    const intersection = [...compartmentOne].filter((x) => compartmentTwo.has(x));
+    const intersection = [...line.slice(0, half)].filter((x) => compartmentTwo.has(x));
     return acc + priority[intersection[0]];
   }, 0);
 
