@@ -3,11 +3,7 @@
  * Puzzle Description: https://adventofcode.com/2022/day/4
  */
 
-const parseRange = (value) => {
-  const split = value.split('-');
-  return [Number.parseInt(split[0], 10), Number.parseInt(split[1], 10)];
-};
-
+// parses each number of the input.
 const parseRegex = /(\d+)-(\d+),(\d+)-(\d+)/;
 
 /**
@@ -40,9 +36,9 @@ export const levelTwo = ({ lines }) => {
   const overlaps = (lhs, rhs) => lhs[1] >= rhs[0] && lhs[1] <= rhs[1];
 
   return lines.reduce((acc, line) => {
-    const pairs = line.split(',');
-    const lhs = parseRange(pairs[0]);
-    const rhs = parseRange(pairs[1]);
+    const matches = line.match(parseRegex);
+    const lhs = [Number.parseInt(matches[1], 10), Number.parseInt(matches[2], 10)];
+    const rhs = [Number.parseInt(matches[3], 10), Number.parseInt(matches[4], 10)];
     return overlaps(lhs, rhs) || overlaps(rhs, lhs) ? acc + 1 : acc;
   }, 0);
 };
