@@ -34,6 +34,13 @@ export const levelOne = (() => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelTwo = ({ input, lines }) => {
-  // your code here
+export const levelTwo = ({ lines }) => {
+  const overlaps = (lhs, rhs) => lhs[1] >= rhs[0] && lhs[1] <= rhs[1];
+
+  return lines.reduce((acc, line) => {
+    const pairs = line.split(',');
+    const lhs = parseRange(pairs[0]);
+    const rhs = parseRange(pairs[1]);
+    return overlaps(lhs, rhs) || overlaps(rhs, lhs) ? acc + 1 : acc;
+  }, 0);
 };
