@@ -8,6 +8,8 @@ const parseRange = (value) => {
   return [Number.parseInt(split[0], 10), Number.parseInt(split[1], 10)];
 };
 
+const parseRegex = /(\d+)-(\d+),(\d+)-(\d+)/;
+
 /**
  * Returns the solution for level one of this puzzle.
  * @param {Object} args - Provides both raw and split input.
@@ -20,9 +22,9 @@ export const levelOne = (() => {
 
   return ({ lines }) =>
     lines.reduce((acc, line) => {
-      const pairs = line.split(',');
-      const lhs = parseRange(pairs[0]);
-      const rhs = parseRange(pairs[1]);
+      const matches = line.match(parseRegex);
+      const lhs = [Number.parseInt(matches[1], 10), Number.parseInt(matches[2], 10)];
+      const rhs = [Number.parseInt(matches[3], 10), Number.parseInt(matches[4], 10)];
       return includes(lhs, rhs) || includes(rhs, lhs) ? acc + 1 : acc;
     }, 0);
 })();
