@@ -5,9 +5,7 @@
 
 const parseRange = (value) => {
   const split = value.split('-');
-  const lhs = Number.parseInt(split[0], 10);
-  const rhs = Number.parseInt(split[1], 10);
-  return [lhs, rhs];
+  return [Number.parseInt(split[0], 10), Number.parseInt(split[1], 10)];
 };
 
 /**
@@ -17,19 +15,17 @@ const parseRange = (value) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = ({ lines }) => {
-  const toReturn = lines.reduce((acc, line) => {
-    const pairs = line.split(',');
-    const lhs = parseRange(pairs[0]);
-    const rhs = parseRange(pairs[1]);
-    return (lhs[0] >= rhs[0] && lhs[1] <= rhs[1]) ||
-      (rhs[0] >= lhs[0] && rhs[1] <= lhs[1])
-      ? acc + 1
-      : acc;
-  }, 0);
+export const levelOne = (() => {
+  const includes = (lhs, rhs) => lhs[0] >= rhs[0] && lhs[1] <= rhs[1];
 
-  return toReturn;
-};
+  return ({ lines }) =>
+    lines.reduce((acc, line) => {
+      const pairs = line.split(',');
+      const lhs = parseRange(pairs[0]);
+      const rhs = parseRange(pairs[1]);
+      return includes(lhs, rhs) || includes(rhs, lhs) ? acc + 1 : acc;
+    }, 0);
+})();
 
 /**
  * Returns the solution for level two of this puzzle.
