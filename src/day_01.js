@@ -43,10 +43,11 @@ export const levelTwo = ({ lines }) => {
   let second = 0;
   let third = 0;
   let calories = 0;
+  const { length } = lines;
 
-  for (let index = 0; index < lines.length; index += 1) {
+  for (let index = 0; index < length; index += 1) {
     const line = lines[index];
-    if (line === '') {
+    if (!line) {
       if (calories > first) {
         first = calories;
       } else if (calories > second) {
@@ -56,7 +57,7 @@ export const levelTwo = ({ lines }) => {
       }
       calories = 0;
     } else {
-      calories += parseInt(line, 10);
+      calories += +line;
     }
   }
 
