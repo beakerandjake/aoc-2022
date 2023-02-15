@@ -17,13 +17,13 @@ export const levelOne = ({ lines }) => {
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
 
-    if (line === '') {
+    if (!line) {
       if (calories > highest) {
         highest = calories;
       }
       calories = 0;
     } else {
-      calories += parseInt(line, 10);
+      calories += +line;
     }
   }
 
