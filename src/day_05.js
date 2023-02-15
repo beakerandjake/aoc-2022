@@ -52,6 +52,7 @@ const stepRegex = /move (\d+) from (\d+) to (\d+)/;
 const parseStep = (input) => {
   const matches = input.match(stepRegex);
   return {
+    // convert source and dest to a zero based index.
     source: +matches[2] - 1,
     dest: +matches[3] - 1,
     count: +matches[1],
