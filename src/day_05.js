@@ -78,9 +78,7 @@ const parseInput = (input) => {
 export const levelOne = ({ input }) => {
   const { stacks, steps } = parseInput(input);
   steps.forEach(({ source, dest, count }) => {
-    for (let index = 0; index < count; index++) {
-      stacks[dest].push(stacks[source].pop());
-    }
+    stacks[dest].push(...stacks[source].splice(-count).reverse());
   });
   return stacks.map((x) => x.pop()[1]).join('');
 };
