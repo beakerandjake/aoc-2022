@@ -3,6 +3,21 @@
  * Puzzle Description: https://adventofcode.com/2022/day/5
  */
 
+const printStacks = (stacks) => {
+  const maxStackLength = Math.max(...stacks.map((x) => x.length));
+  for (let index = maxStackLength; index--; ) {
+    const crates = stacks.map((stack) => stack[index] || '   ');
+    console.log(crates.join(' '));
+  }
+  console.log(stacks.map((_, index) => ` ${index + 1} `).join(' '));
+};
+
+/**
+ * Parses the initial stack configuration from the input
+ * and returns a 2d array representing the stacks.
+ * @param {String} initialStacks
+ * @returns {Array.<String[]>}
+ */
 const parseStacks = (initialStacks) => {
   const lines = initialStacks.split('\n');
   const stacks = new Array((lines[0].length + 1) / 4).fill(0).map(() => []);
@@ -22,6 +37,11 @@ const parseStacks = (initialStacks) => {
 };
 
 /**
+ * Regex which parses the count, source stack index and dest stack index from the input step.
+ */
+const stepRegex = /move (\d+) from (\d+) to (\d+)/;
+
+/**
  * Returns the solution for level one of this puzzle.
  * @param {Object} args - Provides both raw and split input.
  * @param {String} args.input - The original, unparsed input string.
@@ -29,10 +49,22 @@ const parseStacks = (initialStacks) => {
  * @returns {Number|String}
  */
 export const levelOne = ({ input }) => {
-  const [initialStacks, directions] = input.split('\n\n');
-  const stacks = parseStacks(initialStacks);
+  const inputSplit = input.split('\n\n');
+  const stacks = parseStacks(inputSplit[0]);
+  const steps = inputSplit[1].split('\n');
 
-  return 123;
+  steps.forEach((step) => {
+    const matches = step.match(stepRegex);
+    const count = +matches[1];
+    const source = +matches[2] - 1;
+    const dest = +matches[3] - 1;
+
+    for (let index = 0; index < count; index++) {
+      stacks[dest].push(stacks[source].pop());
+    }
+  });
+
+  return stacks.map((x) => x.pop()[1]).join('');
 };
 
 /**
