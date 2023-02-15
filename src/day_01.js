@@ -13,12 +13,10 @@
 export const levelOne = ({ lines }) => {
   let calories = 0;
   let highest = 0;
-  const { length } = lines;
-  let index = 0;
 
-  while(index < length) {
+  for (let index = lines.length; index--; ) {
     const line = lines[index];
-
+    
     if (!line) {
       if (calories > highest) {
         highest = calories;
@@ -27,11 +25,9 @@ export const levelOne = ({ lines }) => {
     } else {
       calories += +line;
     }
-
-    index++;
   }
 
-  return highest;
+  return highest > calories ? highest : calories;
 };
 
 /**
