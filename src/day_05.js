@@ -3,13 +3,17 @@
  * Puzzle Description: https://adventofcode.com/2022/day/5
  */
 
+/**
+ * Prints stacks with the same format as the input
+ * @param {String} stacks
+ */
 const printStacks = (stacks) => {
   const maxStackLength = Math.max(...stacks.map((x) => x.length));
   for (let index = maxStackLength; index--; ) {
-    const crates = stacks.map((stack) => stack[index] || '   ');
+    const crates = stacks.map((stack) => stack[index] || ' ');
     console.log(crates.join(' '));
   }
-  console.log(stacks.map((_, index) => ` ${index + 1} `).join(' '));
+  console.log(stacks.map((_, index) => `${index + 1}`).join(' '));
 };
 
 /**
@@ -26,9 +30,9 @@ const parseStacks = (initialStacks) => {
     const line = lines[lineIndex];
     // a crate is 3 chars and each crate is separated by a blank space.
     for (let charIndex = 0; charIndex < line.length; charIndex += 4) {
-      const crate = line.slice(charIndex, charIndex + 3);
+      const crate = line[charIndex + 1];
       // ignore empty crates.
-      if (crate !== '   ') {
+      if (crate !== ' ') {
         stacks[charIndex / 4].push(crate);
       }
     }
@@ -80,7 +84,7 @@ export const levelOne = ({ input }) => {
   steps.forEach(({ source, dest, count }) => {
     stacks[dest].push(...stacks[source].splice(-count).reverse());
   });
-  return stacks.map((x) => x.pop()[1]).join('');
+  return stacks.map((x) => x[x.length - 1]).join('');
 };
 
 /**
@@ -95,5 +99,5 @@ export const levelTwo = ({ input }) => {
   steps.forEach(({ source, dest, count }) => {
     stacks[dest].push(...stacks[source].splice(-count));
   });
-  return stacks.map((x) => x.pop()[1]).join('');
+  return stacks.map((x) => x[x.length - 1]).join('');
 };
