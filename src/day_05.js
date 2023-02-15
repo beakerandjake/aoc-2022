@@ -42,6 +42,33 @@ const parseStacks = (initialStacks) => {
 const stepRegex = /move (\d+) from (\d+) to (\d+)/;
 
 /**
+ * Parses the step from the input.
+ * @param {String} input
+ */
+const parseStep = (input) => {
+  const matches = input.match(stepRegex);
+  return {
+    source: +matches[2] - 1,
+    dest: +matches[3] - 1,
+    count: +matches[1],
+  };
+};
+
+/**
+ * Parses the puzzle input, gets the initial stack configuration and the steps.
+ * @param {String} input
+ */
+const parseInput = (input) => {
+  const inputSplit = input.split('\n\n');
+  const stacks = parseStacks(inputSplit[0]);
+  const steps = inputSplit[1].split('\n').map(parseStep);
+  return {
+    stacks,
+    steps,
+  };
+};
+
+/**
  * Returns the solution for level one of this puzzle.
  * @param {Object} args - Provides both raw and split input.
  * @param {String} args.input - The original, unparsed input string.
@@ -49,21 +76,12 @@ const stepRegex = /move (\d+) from (\d+) to (\d+)/;
  * @returns {Number|String}
  */
 export const levelOne = ({ input }) => {
-  const inputSplit = input.split('\n\n');
-  const stacks = parseStacks(inputSplit[0]);
-  const steps = inputSplit[1].split('\n');
-
-  steps.forEach((step) => {
-    const matches = step.match(stepRegex);
-    const count = +matches[1];
-    const source = +matches[2] - 1;
-    const dest = +matches[3] - 1;
-
+  const { stacks, steps } = parseInput(input);
+  steps.forEach(({ source, dest, count }) => {
     for (let index = 0; index < count; index++) {
       stacks[dest].push(stacks[source].pop());
     }
   });
-
   return stacks.map((x) => x.pop()[1]).join('');
 };
 
@@ -74,6 +92,10 @@ export const levelOne = ({ input }) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelTwo = ({ input, lines }) => {
-  // your code here
+export const levelTwo = ({ input }) => {
+  const { stacks, steps } = parseInput(input);
+  steps.forEach(({ source, dest, count }) => {
+    stacks[dest].push(...stacks[source].splice(-count));
+  });
+  return stacks.map((x) => x.pop()[1]).join('');
 };
