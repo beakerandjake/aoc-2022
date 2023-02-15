@@ -13,8 +13,9 @@
 export const levelOne = ({ lines }) => {
   let calories = 0;
   let highest = 0;
+  const { length } = lines;
 
-  for (let index = lines.length; --index;) {
+  for (let index = 0; index < length; index++) {
     const line = lines[index];
 
     if (!line) {
@@ -42,14 +43,16 @@ export const levelTwo = ({ lines }) => {
   let second = 0;
   let third = 0;
   let calories = 0;
-  const { length } = lines;
 
-  for (let index = 0; index < length; index += 1) {
+  for (let index = lines.length; index--; ) {
     const line = lines[index];
     if (!line) {
       if (calories > first) {
+        third = second;
+        second = first;
         first = calories;
       } else if (calories > second) {
+        third = second;
         second = calories;
       } else if (calories > third) {
         third = calories;
