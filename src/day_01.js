@@ -28,6 +28,8 @@ export const levelOne = ({ lines }) => {
     }
   }
 
+  // since the input does not end in a new line, the last group is not compared to highest
+  // do this comparison here in case the last group happens to have the highest.
   return highest > calories ? highest : calories;
 };
 
