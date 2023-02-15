@@ -14,8 +14,9 @@ export const levelOne = ({ lines }) => {
   let calories = 0;
   let highest = 0;
   const { length } = lines;
+  let index = 0;
 
-  for (let index = 0; index < length; index++) {
+  while(index < length) {
     const line = lines[index];
 
     if (!line) {
@@ -26,6 +27,8 @@ export const levelOne = ({ lines }) => {
     } else {
       calories += +line;
     }
+
+    index++;
   }
 
   return highest;
