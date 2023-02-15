@@ -63,12 +63,10 @@ const parseStep = (input) => {
  * @param {String} input
  */
 const parseInput = (input) => {
-  const inputSplit = input.split('\n\n');
-  const stacks = parseStacks(inputSplit[0]);
-  const steps = inputSplit[1].split('\n').map(parseStep);
+  const split = input.split('\n\n');
   return {
-    stacks,
-    steps,
+    stacks: parseStacks(split[0]),
+    steps: split[1].split('\n').map(parseStep),
   };
 };
 
