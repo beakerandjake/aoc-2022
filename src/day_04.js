@@ -13,17 +13,16 @@ const parseRegex = /(\d+)-(\d+),(\d+)-(\d+)/;
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = (() => {
-  const includes = (lhs, rhs) => lhs[0] >= rhs[0] && lhs[1] <= rhs[1];
-
-  return ({ lines }) =>
-    lines.reduce((acc, line) => {
-      const matches = line.match(parseRegex);
-      const lhs = [Number.parseInt(matches[1], 10), Number.parseInt(matches[2], 10)];
-      const rhs = [Number.parseInt(matches[3], 10), Number.parseInt(matches[4], 10)];
-      return includes(lhs, rhs) || includes(rhs, lhs) ? acc + 1 : acc;
-    }, 0);
-})();
+export const levelOne = ({ lines }) =>
+  lines.reduce((acc, line) => {
+    const matches = line.match(parseRegex);
+    const lhs = [+matches[1], +matches[2]];
+    const rhs = [+matches[3], +matches[4]];
+    return (lhs[0] >= rhs[0] && lhs[1] <= rhs[1]) ||
+      (rhs[0] >= lhs[0] && rhs[1] <= lhs[1])
+      ? acc + 1
+      : acc;
+  }, 0);
 
 /**
  * Returns the solution for level two of this puzzle.
@@ -32,13 +31,13 @@ export const levelOne = (() => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelTwo = ({ lines }) => {
-  const overlaps = (lhs, rhs) => lhs[1] >= rhs[0] && lhs[1] <= rhs[1];
-
-  return lines.reduce((acc, line) => {
+export const levelTwo = ({ lines }) =>
+  lines.reduce((acc, line) => {
     const matches = line.match(parseRegex);
-    const lhs = [Number.parseInt(matches[1], 10), Number.parseInt(matches[2], 10)];
-    const rhs = [Number.parseInt(matches[3], 10), Number.parseInt(matches[4], 10)];
-    return overlaps(lhs, rhs) || overlaps(rhs, lhs) ? acc + 1 : acc;
+    const lhs = [+matches[1], +matches[2]];
+    const rhs = [+matches[3], +matches[4]];
+    return (lhs[1] >= rhs[0] && lhs[1] <= rhs[1]) ||
+      (rhs[1] >= lhs[0] && rhs[1] <= lhs[1])
+      ? acc + 1
+      : acc;
   }, 0);
-};
