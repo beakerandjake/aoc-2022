@@ -16,6 +16,7 @@ module.exports = {
   rules: {
     'no-console': 'off',
     'no-restricted-syntax': 'off',
-    'no-plusplus': 'off'
+    'no-plusplus': 'off',
+    'no-continue': 'off'
   },
 };
