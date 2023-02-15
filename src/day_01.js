@@ -48,7 +48,7 @@ export const levelTwo = ({ lines }) => {
 
   for (let index = lines.length; index--; ) {
     const line = lines[index];
-    if (!line) {
+    if (!line || !index) {
       if (calories > first) {
         third = second;
         second = first;
