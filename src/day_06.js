@@ -19,11 +19,9 @@ const isUnique = (slice) => {
   let uniqueSet = 0;
   for (let index = 0; index < slice.length; index++) {
     const mask = 1 << (slice[index].charCodeAt() - 97);
-
-    if ((uniqueSet & mask) !== 0) {
+    if (uniqueSet & mask) {
       return false;
     }
-
     uniqueSet |= mask;
   }
   return true;
