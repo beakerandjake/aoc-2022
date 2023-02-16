@@ -12,7 +12,9 @@ const isMarker = (slice) => {
   let uniqueSet = 0;
   let mask = 0;
   for (let index = slice.length; index--; ) {
+    // convert the character to an index 0-26 and create a bitmask.
     mask = 1 << (slice.charCodeAt(index) - 97);
+    // if the bit for this character is already set, then the character is a duplicate.
     if (uniqueSet & mask) {
       return false;
     }
