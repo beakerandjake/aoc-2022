@@ -17,8 +17,9 @@ const findMarkerInSignal = (signal, uniqueCharacterLength) => {
 
 const isUnique = (slice) => {
   let uniqueSet = 0;
+  let mask = 0;
   for (let index = 0; index < slice.length; index++) {
-    const mask = 1 << (slice[index].charCodeAt() - 97);
+    mask = 1 << (slice.charCodeAt(index) - 97);
     if (uniqueSet & mask) {
       return false;
     }
@@ -29,18 +30,9 @@ const isUnique = (slice) => {
 
 const findMarkerInSignalBitwise = (signal, uniqueCharacterLength) => {
   const length = signal.length - uniqueCharacterLength + 1;
-  const slice = [...signal.slice(0, uniqueCharacterLength)];
-
-  if (isUnique(slice)) {
-    return uniqueCharacterLength;
-  }
-
-  for (let index = 1; index < length; index++) {
-    slice.shift();
-    slice.push(signal[index + uniqueCharacterLength]);
-
-    if (isUnique(slice)) {
-      return index + uniqueCharacterLength + 1;
+  for (let index = 0; index < length; index++) {
+    if (isUnique(signal.slice(index, index + uniqueCharacterLength))) {
+      return index + uniqueCharacterLength;
     }
   }
 
