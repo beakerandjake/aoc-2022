@@ -19,6 +19,7 @@ const isMarker = (slice) => {
     if (uniqueSet & mask) {
       return false;
     }
+    // set the bit for this character to find future duplicates.
     uniqueSet |= mask;
   }
   return true;
