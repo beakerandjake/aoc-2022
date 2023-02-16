@@ -31,7 +31,7 @@ const isUnique = (slice) => {
 const findMarkerInSignalBitwise = (signal, uniqueCharacterLength) => {
   const length = signal.length - uniqueCharacterLength + 1;
   for (let index = 0; index < length; index++) {
-    if (isUnique(signal.slice(index, index + uniqueCharacterLength))) {
+    if (isUnique(signal.substring(index, index + uniqueCharacterLength))) {
       return index + uniqueCharacterLength;
     }
   }
