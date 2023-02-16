@@ -3,19 +3,12 @@
  * Puzzle Description: https://adventofcode.com/2022/day/6
  */
 
-const findMarkerInSignal = (signal, uniqueCharacterLength) => {
-  const length = signal.length - uniqueCharacterLength + 1;
-  for (let index = 0; index < length; index++) {
-    const slice = signal.slice(index, index + uniqueCharacterLength);
-    if (new Set(slice).size === uniqueCharacterLength) {
-      return index + uniqueCharacterLength;
-    }
-  }
-
-  throw new Error('could not find marker in signal');
-};
-
-const isUnique = (slice) => {
+/**
+ * Determines whether or not the provided string is a valid marker.
+ * A marker is valid if every character is unique.
+ * @param {String} slice
+ */
+const isMarker = (slice) => {
   let uniqueSet = 0;
   let mask = 0;
   for (let index = 0; index < slice.length; index++) {
@@ -28,11 +21,17 @@ const isUnique = (slice) => {
   return true;
 };
 
-const findMarkerInSignalBitwise = (signal, uniqueCharacterLength) => {
-  const length = signal.length - uniqueCharacterLength + 1;
+/**
+ * Searches the input signal for a marker of specified length.
+ * @param {String} input
+ * @param {Number} markerLength
+ * @returns {Number} The number of characters processed before the signal was found.
+ */
+const findMarker = (input, markerLength) => {
+  const length = input.length - markerLength + 1;
   for (let index = 0; index < length; index++) {
-    if (isUnique(signal.substring(index, index + uniqueCharacterLength))) {
-      return index + uniqueCharacterLength;
+    if (isMarker(input.substring(index, index + markerLength))) {
+      return index + markerLength;
     }
   }
 
@@ -46,7 +45,7 @@ const findMarkerInSignalBitwise = (signal, uniqueCharacterLength) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = ({ input }) => findMarkerInSignalBitwise(input, 4);
+export const levelOne = ({ input }) => findMarker(input, 4);
 
 /**
  * Returns the solution for level two of this puzzle.
@@ -55,4 +54,4 @@ export const levelOne = ({ input }) => findMarkerInSignalBitwise(input, 4);
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelTwo = ({ input }) => findMarkerInSignalBitwise(input, 14);
+export const levelTwo = ({ input }) => findMarker(input, 14);
