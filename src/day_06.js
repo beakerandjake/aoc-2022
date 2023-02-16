@@ -22,7 +22,7 @@ export const levelOne = ({ input }) => {
     }
   }
 
-  throw new Error();
+  throw new Error('could not find start-of-packet-marker');
 };
 
 /**
