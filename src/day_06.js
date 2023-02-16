@@ -56,7 +56,7 @@ const findMarkerInSignalBitwise = (signal, uniqueCharacterLength) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = ({ input }) => findMarkerInSignalBitwise(input, 4);
+export const levelOne = ({ input }) => findMarkerInSignal(input, 4);
 
 /**
  * Returns the solution for level two of this puzzle.
