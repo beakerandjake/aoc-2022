@@ -11,7 +11,7 @@
 const isMarker = (slice) => {
   let uniqueSet = 0;
   let mask = 0;
-  for (let index = 0; index < slice.length; index++) {
+  for (let index = slice.length; index--; ) {
     mask = 1 << (slice.charCodeAt(index) - 97);
     if (uniqueSet & mask) {
       return false;
