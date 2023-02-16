@@ -15,6 +15,40 @@ const findMarkerInSignal = (signal, uniqueCharacterLength) => {
   throw new Error('could not find marker in signal');
 };
 
+const isUnique = (slice) => {
+  let uniqueSet = 0;
+  for (let index = 0; index < slice.length; index++) {
+    const mask = 1 << (slice[index].charCodeAt() - 97);
+
+    if ((uniqueSet & mask) !== 0) {
+      return false;
+    }
+
+    uniqueSet |= mask;
+  }
+  return true;
+};
+
+const findMarkerInSignalBitwise = (signal, uniqueCharacterLength) => {
+  const length = signal.length - uniqueCharacterLength + 1;
+  const slice = [...signal.slice(0, uniqueCharacterLength)];
+
+  if (isUnique(slice)) {
+    return uniqueCharacterLength;
+  }
+
+  for (let index = 1; index < length; index++) {
+    slice.shift();
+    slice.push(signal[index + uniqueCharacterLength]);
+
+    if (isUnique(slice)) {
+      return index + uniqueCharacterLength + 1;
+    }
+  }
+
+  throw new Error('could not find marker in signal');
+};
+
 /**
  * Returns the solution for level one of this puzzle.
  * @param {Object} args - Provides both raw and split input.
@@ -22,7 +56,7 @@ const findMarkerInSignal = (signal, uniqueCharacterLength) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = ({ input }) => findMarkerInSignal(input, 4);
+export const levelOne = ({ input }) => findMarkerInSignalBitwise(input, 4);
 
 /**
  * Returns the solution for level two of this puzzle.
@@ -31,4 +65,4 @@ export const levelOne = ({ input }) => findMarkerInSignal(input, 4);
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelTwo = ({ input }) => findMarkerInSignal(input, 14);
+export const levelTwo = ({ input }) => findMarkerInSignalBitwise(input, 14);
