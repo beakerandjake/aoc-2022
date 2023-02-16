@@ -16,8 +16,7 @@ export const levelOne = ({ input }) => {
   const length = input.length - startOfPacketLength + 1;
   for (let index = 0; index < length; index++) {
     const slice = input.slice(index, index + startOfPacketLength);
-    const uniq = new Set(slice);
-    if (uniq.size === startOfPacketLength) {
+    if (new Set(slice).size === startOfPacketLength) {
       return index + startOfPacketLength;
     }
   }
