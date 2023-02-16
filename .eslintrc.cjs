@@ -19,5 +19,6 @@ module.exports = {
     'no-plusplus': 'off',
     'no-continue': 'off',
     'no-unused-vars': 'off',
+    'no-bitwise': 'off'
   },
 };
