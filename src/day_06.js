@@ -29,9 +29,10 @@ const isMarker = (slice) => {
  */
 const findMarker = (input, markerLength) => {
   const length = input.length - markerLength + 1;
-  for (let index = 0; index < length; index++) {
-    if (isMarker(input.substring(index, index + markerLength))) {
-      return index + markerLength;
+  let end = markerLength;
+  for (let index = 0; index < length; index++, end++) {
+    if (isMarker(input.substring(index, end))) {
+      return end;
     }
   }
 
