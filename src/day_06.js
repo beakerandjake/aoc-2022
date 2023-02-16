@@ -7,6 +7,7 @@
  * Determines whether or not the provided string is a valid marker.
  * A marker is valid if every character is unique.
  * @param {String} slice
+ * @returns {Boolean}
  */
 const isMarker = (slice) => {
   let uniqueSet = 0;
