@@ -3,6 +3,11 @@
  * Puzzle Description: https://adventofcode.com/2022/day/6
  */
 
+const characterMaskMap = [...Array(26)].reduce((acc, _, index) => {
+  acc[String.fromCharCode(index + 97)] = 1 << index;
+  return acc;
+}, {});
+
 /**
  * Determines whether or not the provided string is a valid marker.
  * A marker is valid if every character is unique.
@@ -14,7 +19,7 @@ const isMarker = (slice) => {
   let mask = 0;
   for (let index = slice.length; index--; ) {
     // convert the character to an index 0-26 and create a bitmask.
-    mask = 1 << (slice.charCodeAt(index) - 97);
+    mask = characterMaskMap[slice[index]]; // 1 << (slice.charCodeAt(index) - 97);
     // if the bit for this character is already set, then the character is a duplicate.
     if (uniqueSet & mask) {
       return false;
