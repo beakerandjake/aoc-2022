@@ -19,6 +19,7 @@ module.exports = {
     'no-plusplus': 'off',
     'no-continue': 'off',
     'no-unused-vars': 'off',
-    'no-bitwise': 'off'
+    'no-bitwise': 'off',
+    'lines-between-class-members': 'off'
   },
 };
