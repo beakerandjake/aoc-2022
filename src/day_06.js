@@ -3,7 +3,11 @@
  * Puzzle Description: https://adventofcode.com/2022/day/6
  */
 
-const characterMaskMap = [...Array(26)].reduce((acc, _, index) => {
+/**
+ * Maps each possible character in the signal to a bitmask which
+ * can be used to indicate the presence of the character in a signal.
+ */
+const maskMap = [...Array(26)].reduce((acc, _, index) => {
   acc[String.fromCharCode(index + 97)] = 1 << index;
   return acc;
 }, {});
@@ -16,15 +20,11 @@ const characterMaskMap = [...Array(26)].reduce((acc, _, index) => {
  */
 const isMarker = (slice) => {
   let uniqueSet = 0;
-  let mask = 0;
   for (let index = slice.length; index--; ) {
-    // convert the character to an index 0-26 and create a bitmask.
-    mask = characterMaskMap[slice[index]]; // 1 << (slice.charCodeAt(index) - 97);
-    // if the bit for this character is already set, then the character is a duplicate.
+    const mask = maskMap[slice[index]];
     if (uniqueSet & mask) {
       return false;
     }
-    // set the bit for this character to find future duplicates.
     uniqueSet |= mask;
   }
   return true;
