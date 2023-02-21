@@ -6,14 +6,16 @@
 class Directory {
   #name;
   #parent;
-  #contents = [];
+  #childDirs = [];
+  #sizeOfFiles = 0;
 
   constructor(name, parent) {
     this.#name = name;
     this.#parent = parent;
   }
+
   get size() {
-    return this.#contents.reduce((acc, x) => acc + x.size, 0);
+    return this.#childDirs.reduce((acc, x) => acc + x.size, 0) + this.#sizeOfFiles;
   }
 
   get name() {
@@ -25,43 +27,25 @@ class Directory {
   }
 
   get childDirs() {
-    return this.#contents.filter((x) => x instanceof Directory);
+    return this.#childDirs;
   }
 
   addChild(item) {
-    this.#contents.push(item);
+    if (item instanceof Directory) {
+      this.#childDirs.push(item);
+    } else {
+      this.#sizeOfFiles += item;
+    }
   }
 
   getChildDir(dirName) {
-    return this.#contents.find(({ name }) => name === dirName);
+    return this.#childDirs.find(({ name }) => name === dirName);
   }
 
   toString() {
     return `Directory - name: ${this.#name}, parent: ${
       this.#parent.name
-    }, contents: [${this.#contents.map((x) => x.name).join(',')}]`;
-  }
-}
-
-class File {
-  #size = 0;
-  #name;
-
-  constructor(name, size) {
-    this.#name = name;
-    this.#size = size;
-  }
-
-  get size() {
-    return this.#size;
-  }
-
-  get name() {
-    return this.#name;
-  }
-
-  toString() {
-    return `File - name: ${this.#name}, size: ${this.#size}`;
+    }, contents: [${this.#childDirs.map((x) => x.name).join(',')}]`;
   }
 }
 
@@ -82,16 +66,19 @@ const cd = (currentDir, newDirName) => {
 
 /**
  * Parses a single line of output from the ls command.
+ * If the line represents a directory, then a Directory is returned
+ * Otherwise the line represents a file, and the file size is returned.
  * @param {String} line
  * @param {Directory} parentDir
- * @returns {Directory|File}
+ * @returns {Directory|Number}
  */
 const parseLsResult = (lhs, rhs, parentDir) => {
   if (lhs === 'dir') {
     return new Directory(rhs, parentDir);
   }
 
-  return new File(rhs, +lhs);
+  // only care about file size.
+  return +lhs;
 };
 
 /**
