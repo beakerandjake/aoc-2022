@@ -20,6 +20,7 @@ module.exports = {
     'no-continue': 'off',
     'no-unused-vars': 'off',
     'no-bitwise': 'off',
-    'lines-between-class-members': 'off'
+    'lines-between-class-members': 'off',
+    'max-classes-per-file': 'off'
   },
 };
