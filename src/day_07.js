@@ -95,6 +95,28 @@ const parseLsResult = (lhs, rhs, parentDir) => {
 };
 
 /**
+ * Finds all directories with a size over 100,000 and returns the sum of their size.
+ * @param {Directory} rootDir
+ * @returns {Number}
+ */
+const sumDirectories = (rootDir) => {
+  const queue = [rootDir];
+  let total = 0;
+
+  while (queue.length) {
+    const current = queue.shift();
+
+    if (current.size <= 100000) {
+      total += current.size;
+    }
+
+    queue.push(...current.childDirs);
+  }
+
+  return total;
+};
+
+/**
  * Returns the solution for level one of this puzzle.
  * @param {Object} args - Provides both raw and split input.
  * @param {String} args.input - The original, unparsed input string.
@@ -119,20 +141,7 @@ export const levelOne = ({ input, lines }) => {
     }
   }
 
-  const queue = [root];
-  let total = 0;
-
-  while (queue.length) {
-    const current = queue.shift();
-
-    if (current.size <= 100000) {
-      total += current.size;
-    }
-
-    queue.push(...current.childDirs);
-  }
-
-  return total;
+  return sumDirectories(root);
 };
 
 /**
