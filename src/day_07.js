@@ -74,15 +74,14 @@ export const levelOne = ({ input, lines }) => {
       const parsed = parseLsResult(line);
       if (typeof parsed === 'string') {
         const dirName = `${currentDirectory}_${parsed}`;
-        directories[dirName] = [];
-        parentMap[dirName] = currentDirectory;
-        directories[currentDirectory].push(dirName);
+        directories = addDirectory(directories, dirName);
+        parentMap = updateParentMap(parentMap, dirName, currentDirectory);
+        directories = addToDirectory(directories, currentDirectory, dirName);
       } else {
-        directories[currentDirectory].push(parsed);
+        directories = addToDirectory(directories, currentDirectory, parsed);
       }
     }
   }
-  // console.log(directories);
   return sumDirectories(directories);
 };
 
