@@ -18,6 +18,18 @@ const ROOT = '/';
 const dirName = (parentDirName, currentDirName) => `${parentDirName}_${currentDirName}`;
 
 /**
+ * Parses the cd command and returns the new dir relative to the current dir.
+ * @param {Object} parentMap
+ * @param {String} currentDirName
+ * @param {String} command
+ * @returns {String} - The name of the new current dir.
+ */
+const cd = (parentMap, currentDirName, command) =>
+  command[5] === '.'
+    ? parentMap[currentDirName]
+    : dirName(currentDirName, command.slice(5));
+
+/**
  * Parses a line from the LS command.
  * The line can either represent a directory or file.
  * If the line is a dir, then the dir name is returned.
@@ -58,15 +70,10 @@ const parseInput = (lines) => {
     const line = lines[index];
 
     if (line[0] === '$') {
-      // ignore ls commands
-      if (line.length === 4) {
-        continue;
+      // ignore ls commands which always have length === 4
+      if (line.length > 4) {
+        currentDirectory = cd(parentMap, currentDirectory, line);
       }
-      // cd to the specified directory, either out (cd ..) or in (cd dirname)
-      currentDirectory =
-        line[5] === '.'
-          ? parentMap[currentDirectory]
-          : dirName(currentDirectory, line.slice(5));
     } else {
       let parsed = parseLsResult(line);
       if (isDir(parsed)) {
