@@ -74,11 +74,11 @@ export const levelOne = ({ input, lines }) => {
       const parsed = parseLsResult(line);
       if (typeof parsed === 'string') {
         const dirName = `${currentDirectory}_${parsed}`;
-        directories = addDirectory(directories, dirName);
-        parentMap = updateParentMap(parentMap, dirName, currentDirectory);
-        directories = addToDirectory(directories, currentDirectory, dirName);
+        directories[dirName] = [];
+        parentMap[dirName] = currentDirectory;
+        directories[currentDirectory].push(dirName);
       } else {
-        directories = addToDirectory(directories, currentDirectory, parsed);
+        directories[currentDirectory].push(parsed);
       }
     }
   }
