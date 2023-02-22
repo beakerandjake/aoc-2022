@@ -126,11 +126,11 @@ export const levelTwo = ({ lines }) => {
     return acc;
   }, {});
 
-  const totalDiskSpace = 70000000;
-  const targetUnusedSpace = 30000000;
-  const totalUsedSpace = sizeMap[ROOT];
-  const totalUnusedSpace = totalDiskSpace - totalUsedSpace;
-  const freeSpaceRequired = targetUnusedSpace - totalUnusedSpace;
+  const targetFreeSpace = 30000000 - (70000000 - sizeMap[ROOT]);
+
+  return Object.values(sizeMap)
+    .filter((x) => x >= targetFreeSpace)
+    .sort((a, b) => a - b)[0];
 
   // console.log('size map', sizeMap);
   // console.log('totalUsedSpace', totalUsedSpace);
@@ -145,8 +145,4 @@ export const levelTwo = ({ lines }) => {
   //     sizeToDelete = size;
   //   }
   // });
-
-  return Object.values(sizeMap)
-    .filter((x) => x >= freeSpaceRequired)
-    .sort((a, b) => a - b)[0];
 };
