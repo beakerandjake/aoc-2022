@@ -3,23 +3,56 @@
  * Puzzle Description: https://adventofcode.com/2022/day/7
  */
 
+/**
+ * The root dir name
+ */
+const ROOT = '/';
+
+/**
+ * Returns a unique name to the current dir.
+ * Fixes edge cases where a dir name is non-unique.
+ * @param {String} parentDirName
+ * @param {String} currentDirName
+ * @returns
+ */
+const dirName = (parentDirName, currentDirName) => `${parentDirName}_${currentDirName}`;
+
+/**
+ * Parses a line from the LS command.
+ * The line can either represent a directory or file.
+ * If the line is a dir, then the dir name is returned.
+ * Otherwise the line is a file, and the file size is
+ * @param {String} line
+ * @returns {String|Number}
+ */
 const parseLsResult = (line = '') => {
   const [lhs, rhs] = line.split(' ');
   return lhs === 'dir' ? rhs : +lhs;
 };
 
-const dirName = (parentDir, currentDir) => `${parentDir}_${currentDir}`;
+/**
+ * Returns whether or not the item is a directory.
+ * @param {String|Number} item
+ * @returns {Boolean}
+ */
+const isDir = (item) => typeof item === 'string';
 
-const getDirectories = (lines) => {
+/**
+ * Parses each line of the puzzle input and returns the Directory Map,
+ * maps the name of each directory to the content of that directory.
+ * @param {String[]} lines
+ * @returns {Object}
+ */
+const parseInput = (lines) => {
   const directories = {
-    '/': [],
+    [ROOT]: [],
   };
 
   const parentMap = {
-    '/': null,
+    [ROOT]: null,
   };
 
-  let currentDirectory = '/';
+  let currentDirectory = ROOT;
 
   for (let index = 2; index < lines.length; index++) {
     const line = lines[index];
@@ -36,7 +69,7 @@ const getDirectories = (lines) => {
           : dirName(currentDirectory, line.slice(5));
     } else {
       let parsed = parseLsResult(line);
-      if (typeof parsed === 'string') {
+      if (isDir(parsed)) {
         parsed = dirName(currentDirectory, parsed);
         directories[parsed] = [];
         parentMap[parsed] = currentDirectory;
@@ -48,25 +81,14 @@ const getDirectories = (lines) => {
   return directories;
 };
 
-const size = (directories, contents) =>
-  contents.reduce((acc, x) => {
-    if (typeof x === 'string') {
-      return acc + size(directories, directories[x]);
-    }
-
-    return acc + x;
-  }, 0);
-
-const sumDirectories = (directories) =>
-  Object.values(directories).reduce((acc, directory) => {
-    const dirSize = size(directories, directory);
-
-    if (dirSize <= 100000) {
-      return acc + dirSize;
-    }
-
-    return acc;
-  }, 0);
+/**
+ * Calculates the size of the given directory.
+ * @param {Object} dirMap
+ * @param {Array} dir
+ * @returns {Number}
+ */
+const dirSize = (dirMap, dir) =>
+  dir.reduce((acc, x) => (isDir(x) ? acc + dirSize(dirMap, dirMap[x]) : acc + x), 0);
 
 /**
  * Returns the solution for level one of this puzzle.
@@ -75,7 +97,13 @@ const sumDirectories = (directories) =>
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = ({ lines }) => sumDirectories(getDirectories(lines));
+export const levelOne = ({ lines }) => {
+  const directories = parseInput(lines);
+  return Object.values(directories).reduce((total, directory) => {
+    const size = dirSize(directories, directory);
+    return size <= 100000 ? total + size : total;
+  }, 0);
+};
 
 /**
  * Returns the solution for level two of this puzzle.
