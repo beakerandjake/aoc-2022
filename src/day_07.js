@@ -120,29 +120,19 @@ export const levelOne = ({ lines }) => {
  */
 export const levelTwo = ({ lines }) => {
   const dirMap = parseInput(lines);
-
+  
+  // calculate and store the size of each directory.
   const sizeMap = Object.entries(dirMap).reduce((acc, [name, contents]) => {
     acc[name] = dirSize(dirMap, contents);
     return acc;
   }, {});
 
+  // find the minimum amount of space to delete  in order to reach the target free space.
   const targetFreeSpace = 30000000 - (70000000 - sizeMap[ROOT]);
 
-  return Object.values(sizeMap)
-    .filter((x) => x >= targetFreeSpace)
-    .sort((a, b) => a - b)[0];
-
-  // console.log('size map', sizeMap);
-  // console.log('totalUsedSpace', totalUsedSpace);
-  // console.log('totalUnusedSpace', totalUnusedSpace);
-  // console.log('freeSpaceRequired', freeSpaceRequired);
-
-  // let sizeToDelete = totalDiskSpace;
-
-  // Object.values(sizeMap).forEach((size) => {
-  //   // console.log('checking', size, 'result', totalUsedSpace - size);
-  //   if (totalUsedSpace - size <= targetUnusedSpace && size < sizeToDelete) {
-  //     sizeToDelete = size;
-  //   }
-  // });
+  // find the smallest dir size needed to reach the target.
+  return Object.values(sizeMap).reduce(
+    (smallest, size) => (size >= targetFreeSpace && size < smallest ? size : smallest),
+    Number.MAX_SAFE_INTEGER
+  );
 };
