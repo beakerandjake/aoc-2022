@@ -3,106 +3,43 @@
  * Puzzle Description: https://adventofcode.com/2022/day/7
  */
 
-class Directory {
-  #name;
-  #parent;
-  #childDirs = [];
-  #sizeOfFiles = 0;
-
-  constructor(name, parent) {
-    this.#name = name;
-    this.#parent = parent;
-  }
-
-  get size() {
-    return this.#childDirs.reduce((acc, x) => acc + x.size, 0) + this.#sizeOfFiles;
-  }
-
-  get name() {
-    return this.#name;
-  }
-
-  get parent() {
-    return this.#parent;
-  }
-
-  get childDirs() {
-    return this.#childDirs;
-  }
-
-  addChild(item) {
-    if (item instanceof Directory) {
-      this.#childDirs.push(item);
-    } else {
-      this.#sizeOfFiles += item;
-    }
-  }
-
-  getChildDir(dirName) {
-    return this.#childDirs.find(({ name }) => name === dirName);
-  }
-
-  toString() {
-    return `Directory - name: ${this.#name}, parent: ${
-      this.#parent.name
-    }, contents: [${this.#childDirs.map((x) => x.name).join(',')}]`;
-  }
-}
-
-/**
- * Parses the cd command and returns the new directory.
- * Can move in one level or out one level from the current directory.
- * @param {String} newDirName
- * @param {Directory} currentDir
- * @returns {Directory}
- */
-const cd = (currentDir, newDirName) => {
-  if (newDirName === '..') {
-    return currentDir.parent;
-  }
-
-  return currentDir.getChildDir(newDirName);
-};
-
-/**
- * Parses a single line of output from the ls command.
- * If the line represents a directory, then a Directory is returned
- * Otherwise the line represents a file, and the file size is returned.
- * @param {String} line
- * @param {Directory} parentDir
- * @returns {Directory|Number}
- */
-const parseLsResult = (line, parentDir) => {
+const parseLsResult = (line = '') => {
   const [lhs, rhs] = line.split(' ');
-
-  if (lhs === 'dir') {
-    return new Directory(rhs, parentDir);
-  }
-
-  // only care about file size.
-  return +lhs;
+  return lhs === 'dir' ? rhs : +lhs;
 };
 
-/**
- * Finds all directories with a size over 100,000 and returns the sum of their size.
- * @param {Directory} rootDir
- * @returns {Number}
- */
-const sumDirectories = (rootDir) => {
-  const queue = [rootDir];
-  let total = 0;
+const addDirectory = (directories, newDirName) => ({ ...directories, [newDirName]: [] });
 
-  while (queue.length) {
-    const current = queue.shift();
+const updateParentMap = (parentMap, newDirName, parentDir) => ({
+  ...parentMap,
+  [newDirName]: parentDir,
+});
 
-    if (current.size <= 100000) {
-      total += current.size;
+const addToDirectory = (directories, dirName, item) => ({
+  ...directories,
+  [dirName]: [...directories[dirName], item],
+});
+
+const size = (directories, contents) =>
+  contents.reduce((acc, x) => {
+    if (typeof x === 'string') {
+      return acc + size(directories, directories[x]);
     }
 
-    queue.push(...current.childDirs);
-  }
+    return acc + x;
+  }, 0);
 
-  return total;
+const sumDirectories = (directories) => {
+  console.log(directories);
+  return Object.values(directories).reduce((acc, directory) => {
+    const dirSize = size(directories, directory);
+
+    if (dirSize <= 100000) {
+      return acc + dirSize;
+    }
+
+    return acc;
+  }, 0);
 };
 
 /**
@@ -113,8 +50,15 @@ const sumDirectories = (rootDir) => {
  * @returns {Number|String}
  */
 export const levelOne = ({ input, lines }) => {
-  const root = new Directory('/');
-  let currentDirectory = root;
+  let directories = {
+    '/': [],
+  };
+
+  let parentMap = {
+    '/': null,
+  };
+
+  let currentDirectory = '/';
 
   for (let index = 2; index < lines.length; index++) {
     const line = lines[index];
@@ -127,15 +71,22 @@ export const levelOne = ({ input, lines }) => {
       // cd to the specified directory, either out (cd ..) or in (cd dirname)
       currentDirectory =
         line[5] === '.'
-          ? currentDirectory.parent
-          : currentDirectory.getChildDir(line.slice(5));
+          ? parentMap[currentDirectory]
+          : `${currentDirectory}_${line.slice(5)}`;
     } else {
-      const lsResult = parseLsResult(line, currentDirectory);
-      currentDirectory.addChild(lsResult);
+      const parsed = parseLsResult(line);
+      if (typeof parsed === 'string') {
+        const dirName = `${currentDirectory}_${parsed}`;
+        directories = addDirectory(directories, dirName);
+        parentMap = updateParentMap(parentMap, dirName, currentDirectory);
+        directories = addToDirectory(directories, currentDirectory, dirName);
+      } else {
+        directories = addToDirectory(directories, currentDirectory, parsed);
+      }
     }
   }
-
-  return sumDirectories(root);
+  // console.log(directories);
+  return sumDirectories(directories);
 };
 
 /**
