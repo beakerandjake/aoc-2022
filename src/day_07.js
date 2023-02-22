@@ -124,7 +124,11 @@ export const levelOne = ({ input, lines }) => {
       if (line.length === 4) {
         continue;
       }
-      currentDirectory = cd(currentDirectory, line.slice(5));
+      // cd to the specified directory, either out (cd ..) or in (cd dirname)
+      currentDirectory =
+        line[5] === '.'
+          ? currentDirectory.parent
+          : currentDirectory.getChildDir(line.slice(5));
     } else {
       const lsResult = parseLsResult(line, currentDirectory);
       currentDirectory.addChild(lsResult);
