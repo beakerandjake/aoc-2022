@@ -48,18 +48,6 @@ const getDirectories = (lines) => {
   return directories;
 };
 
-const addDirectory = (directories, newDirName) => ({ ...directories, [newDirName]: [] });
-
-const updateParentMap = (parentMap, newDirName, parentDir) => ({
-  ...parentMap,
-  [newDirName]: parentDir,
-});
-
-const addToDirectory = (directories, dirName, item) => ({
-  ...directories,
-  [dirName]: [...directories[dirName], item],
-});
-
 const size = (directories, contents) =>
   contents.reduce((acc, x) => {
     if (typeof x === 'string') {
