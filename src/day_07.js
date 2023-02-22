@@ -22,7 +22,7 @@ const dirName = (parentDirName, currentDirName) => `${parentDirName}_${currentDi
  * @param {Object} parentMap
  * @param {String} currentDirName
  * @param {String} command
- * @returns {String} - The name of the new current dir.
+ * @returns {String} The name of the new current dir.
  */
 const cd = (parentMap, currentDirName, command) =>
   command[5] === '.'
@@ -33,7 +33,7 @@ const cd = (parentMap, currentDirName, command) =>
  * Parses a line from the LS command.
  * The line can either represent a directory or file.
  * If the line is a dir, then the dir name is returned.
- * Otherwise the line is a file, and the file size is
+ * Otherwise the line is a file, and the file size is returned.
  * @param {String} line
  * @returns {String|Number}
  */
@@ -56,40 +56,39 @@ const isDir = (item) => typeof item === 'string';
  * @returns {Object}
  */
 const parseInput = (lines) => {
-  const directories = {
+  const dirMap = {
     [ROOT]: [],
   };
-
   const parentMap = {
     [ROOT]: null,
   };
-
-  let currentDirectory = ROOT;
+  let currentDirName = ROOT;
 
   for (let index = 2; index < lines.length; index++) {
     const line = lines[index];
 
     if (line[0] === '$') {
-      // ignore ls commands which always have length === 4
+      // only care about cd commands, ignore ls which always has length of 4.
       if (line.length > 4) {
-        currentDirectory = cd(parentMap, currentDirectory, line);
+        currentDirName = cd(parentMap, currentDirName, line);
       }
     } else {
-      let parsed = parseLsResult(line);
-      if (isDir(parsed)) {
-        parsed = dirName(currentDirectory, parsed);
-        directories[parsed] = [];
-        parentMap[parsed] = currentDirectory;
+      // if its not a command its output from the ls command, add to the current dir.
+      let item = parseLsResult(line);
+      if (isDir(item)) {
+        item = dirName(currentDirName, item);
+        dirMap[item] = [];
+        parentMap[item] = currentDirName;
       }
-      directories[currentDirectory].push(parsed);
+      dirMap[currentDirName].push(item);
     }
   }
 
-  return directories;
+  return dirMap;
 };
 
 /**
- * Calculates the size of the given directory.
+ * Calculates the size of the given dir.
  * @param {Object} dirMap
  * @param {Array} dir
  * @returns {Number}
@@ -105,9 +104,9 @@ const dirSize = (dirMap, dir) =>
  * @returns {Number|String}
  */
 export const levelOne = ({ lines }) => {
-  const directories = parseInput(lines);
-  return Object.values(directories).reduce((total, directory) => {
-    const size = dirSize(directories, directory);
+  const dirMap = parseInput(lines);
+  return Object.values(dirMap).reduce((total, dirContents) => {
+    const size = dirSize(dirMap, dirContents);
     return size <= 100000 ? total + size : total;
   }, 0);
 };
