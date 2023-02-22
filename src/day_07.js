@@ -29,9 +29,7 @@ const size = (directories, contents) =>
     return acc + x;
   }, 0);
 
-const sumDirectories = (directories) => {
-  console.log(directories);
-  return Object.values(directories).reduce((acc, directory) => {
+const sumDirectories = (directories) => Object.values(directories).reduce((acc, directory) => {
     const dirSize = size(directories, directory);
 
     if (dirSize <= 100000) {
@@ -40,7 +38,6 @@ const sumDirectories = (directories) => {
 
     return acc;
   }, 0);
-};
 
 /**
  * Returns the solution for level one of this puzzle.
