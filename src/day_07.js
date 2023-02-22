@@ -118,6 +118,35 @@ export const levelOne = ({ lines }) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelTwo = ({ input, lines }) => {
-  // your code here
+export const levelTwo = ({ lines }) => {
+  const dirMap = parseInput(lines);
+
+  const sizeMap = Object.entries(dirMap).reduce((acc, [name, contents]) => {
+    acc[name] = dirSize(dirMap, contents);
+    return acc;
+  }, {});
+
+  const totalDiskSpace = 70000000;
+  const targetUnusedSpace = 30000000;
+  const totalUsedSpace = sizeMap[ROOT];
+  const totalUnusedSpace = totalDiskSpace - totalUsedSpace;
+  const freeSpaceRequired = targetUnusedSpace - totalUnusedSpace;
+
+  // console.log('size map', sizeMap);
+  // console.log('totalUsedSpace', totalUsedSpace);
+  // console.log('totalUnusedSpace', totalUnusedSpace);
+  // console.log('freeSpaceRequired', freeSpaceRequired);
+
+  // let sizeToDelete = totalDiskSpace;
+
+  // Object.values(sizeMap).forEach((size) => {
+  //   // console.log('checking', size, 'result', totalUsedSpace - size);
+  //   if (totalUsedSpace - size <= targetUnusedSpace && size < sizeToDelete) {
+  //     sizeToDelete = size;
+  //   }
+  // });
+
+  return Object.values(sizeMap)
+    .filter((x) => x >= freeSpaceRequired)
+    .sort((a, b) => a - b)[0];
 };
