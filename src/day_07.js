@@ -72,7 +72,9 @@ const cd = (currentDir, newDirName) => {
  * @param {Directory} parentDir
  * @returns {Directory|Number}
  */
-const parseLsResult = (lhs, rhs, parentDir) => {
+const parseLsResult = (line, parentDir) => {
+  const [lhs, rhs] = line.split(' ');
+
   if (lhs === 'dir') {
     return new Directory(rhs, parentDir);
   }
@@ -115,15 +117,16 @@ export const levelOne = ({ input, lines }) => {
   let currentDirectory = root;
 
   for (let index = 2; index < lines.length; index++) {
-    const split = lines[index].split(' ');
+    const line = lines[index];
 
-    if (split[0] === '$') {
-      if (split.length === 2) {
+    if (line[0] === '$') {
+      // ignore ls commands
+      if (line.length === 4) {
         continue;
       }
-      currentDirectory = cd(currentDirectory, split[2]);
+      currentDirectory = cd(currentDirectory, line.slice(5));
     } else {
-      const lsResult = parseLsResult(split[0], split[1], currentDirectory);
+      const lsResult = parseLsResult(line, currentDirectory);
       currentDirectory.addChild(lsResult);
     }
   }
