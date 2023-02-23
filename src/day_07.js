@@ -13,7 +13,6 @@ const ROOT = '/';
  * Fixes edge cases where a dir name is non-unique.
  * @param {String} parentDirName
  * @param {String} currentDirName
- * @returns
  */
 const dirName = (parentDirName, currentDirName) => `${parentDirName}_${currentDirName}`;
 
@@ -22,7 +21,7 @@ const dirName = (parentDirName, currentDirName) => `${parentDirName}_${currentDi
  * @param {Object} parentMap
  * @param {String} currentDirName
  * @param {String} command
- * @returns {String} The name of the new current dir.
+ * @returns {String}
  */
 const cd = (parentMap, currentDirName, command) =>
   command[5] === '.'
@@ -45,7 +44,6 @@ const parseLsResult = (line = '') => {
 /**
  * Returns whether or not the item is a directory.
  * @param {String|Number} item
- * @returns {Boolean}
  */
 const isDir = (item) => typeof item === 'string';
 
@@ -53,10 +51,10 @@ const isDir = (item) => typeof item === 'string';
  * Parses each line of the puzzle input and returns the Directory Map,
  * maps the name of each directory to the content of that directory.
  * @param {String[]} lines
- * @returns {Object}
+ * @returns {Object} Object which maps each dir name to its contents.
  */
 const parseInput = (lines) => {
-  const dirMap = {
+  const dirs = {
     [ROOT]: [],
   };
   const parentMap = {
@@ -77,24 +75,23 @@ const parseInput = (lines) => {
       let item = parseLsResult(line);
       if (isDir(item)) {
         item = dirName(currentDirName, item);
-        dirMap[item] = [];
+        dirs[item] = [];
         parentMap[item] = currentDirName;
       }
-      dirMap[currentDirName].push(item);
+      dirs[currentDirName].push(item);
     }
   }
-
-  return dirMap;
+  return dirs;
 };
 
 /**
  * Calculates the size of the given dir.
- * @param {Object} dirMap
+ * @param {Object} dirs
  * @param {Array} dir
  * @returns {Number}
  */
-const dirSize = (dirMap, dir) =>
-  dir.reduce((acc, x) => (isDir(x) ? acc + dirSize(dirMap, dirMap[x]) : acc + x), 0);
+const dirSize = (dirs, dir) =>
+  dir.reduce((total, x) => (isDir(x) ? total + dirSize(dirs, dirs[x]) : total + x), 0);
 
 /**
  * Returns the solution for level one of this puzzle.
@@ -104,9 +101,9 @@ const dirSize = (dirMap, dir) =>
  * @returns {Number|String}
  */
 export const levelOne = ({ lines }) => {
-  const dirMap = parseInput(lines);
-  return Object.values(dirMap).reduce((total, dirContents) => {
-    const size = dirSize(dirMap, dirContents);
+  const dirs = parseInput(lines);
+  return Object.values(dirs).reduce((total, contents) => {
+    const size = dirSize(dirs, contents);
     return size <= 100000 ? total + size : total;
   }, 0);
 };
@@ -119,20 +116,20 @@ export const levelOne = ({ lines }) => {
  * @returns {Number|String}
  */
 export const levelTwo = ({ lines }) => {
-  const dirMap = parseInput(lines);
-  
+  const dirs = parseInput(lines);
+
   // calculate and store the size of each directory.
-  const sizeMap = Object.entries(dirMap).reduce((acc, [name, contents]) => {
-    acc[name] = dirSize(dirMap, contents);
+  const dirSizes = Object.entries(dirs).reduce((acc, [name, contents]) => {
+    acc[name] = dirSize(dirs, contents);
     return acc;
   }, {});
 
   // find the minimum amount of space to delete  in order to reach the target free space.
-  const targetFreeSpace = 30000000 - (70000000 - sizeMap[ROOT]);
+  const target = 30000000 - (70000000 - dirSizes[ROOT]);
 
   // find the smallest dir size needed to reach the target.
-  return Object.values(sizeMap).reduce(
-    (smallest, size) => (size >= targetFreeSpace && size < smallest ? size : smallest),
+  return Object.values(dirSizes).reduce(
+    (smallest, size) => (size >= target && size < smallest ? size : smallest),
     Number.MAX_SAFE_INTEGER
   );
 };
