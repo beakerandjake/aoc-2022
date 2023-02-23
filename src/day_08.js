@@ -56,21 +56,16 @@ export const levelOne = ({ input, lines }) => {
     };
   };
 
-  // top,bottom,left,right
-  const getEdges = (index) => [
-    getTree(0, index),
-    getTree(treeCount - 1, index),
-    getTree(index, 0),
-    getTree(index, treeCount - 1),
-  ];
-
   const innerWidth = treeCount - 1;
   for (let index = 1; index < innerWidth; index++) {
-    const [topEdge, bottomEdge, leftEdge, rightEdge] = getEdges(index);
-    iterateRow(treeCount, index, findVisibleTrees(leftEdge));
-    iterateRowReverse(treeCount, index, findVisibleTrees(rightEdge));
-    iterateCol(treeCount, index, findVisibleTrees(topEdge));
-    iterateColReverse(treeCount, index, findVisibleTrees(bottomEdge));
+    // look at row from left to right, starting at left most edge.
+    iterateRow(treeCount, index, findVisibleTrees(getTree(index, 0)));
+    // look at row from right to left, starting at right most edge.
+    iterateRowReverse(treeCount, index, findVisibleTrees(getTree(index, treeCount - 1)));
+    // look at column from top to bottom, starting at top most edge.
+    iterateCol(treeCount, index, findVisibleTrees(getTree(0, index)));
+    // look at column from bottom to top, starting at bottom most edge.
+    iterateColReverse(treeCount, index, findVisibleTrees(getTree(treeCount - 1, index)));
   }
 
   return treeCount * 4 - 4 + visibleTrees.size;
