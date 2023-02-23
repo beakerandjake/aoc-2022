@@ -10,48 +10,61 @@ const getTreeHeight = (grid, rowCount, rowIndex, colIndex) =>
 
 const countVisibleEdges = (height) => height * 4 - 4;
 
-const lookUp = (grid, gridShape, treeY, treeX, treeHeight) => {
-  const [gridHeight] = gridShape;
-  for (let y = treeY - 1; y >= 0; y--) {
-    const siblingHeight = getTreeHeight(grid, gridHeight, y, treeX);
-    if (siblingHeight >= treeHeight) {
-      return false;
-    }
-  }
-  return true;
-};
+const treeId = (y, x, height) => `[${y},${x}]=${height}`;
 
-const lookDown = (grid, gridShape, treeY, treeX, treeHeight) => {
-  const [gridHeight] = gridShape;
-  for (let y = treeY + 1; y < gridHeight; y++) {
-    const siblingHeight = getTreeHeight(grid, gridHeight, y, treeX);
-    if (siblingHeight >= treeHeight) {
-      return false;
-    }
-  }
-  return true;
-};
+// const lookToRight = (grid, gridShape, rowIndex) => {
+//   const [gridHeight, gridWidth] = gridShape;
+//   const visibleTrees = [];
+//   let tallest = getTreeHeight(grid, gridHeight, rowIndex, 0);
 
-const lookRight = (grid, gridShape, treeY, treeX, treeHeight) => {
+//   for (let x = 1; x < gridWidth; x++) {
+//     const currentHeight = getTreeHeight(grid, gridHeight, rowIndex, x);
+
+//     if (currentHeight > tallest) {
+//       visibleTrees.push(treeId(rowIndex, x, currentHeight));
+//       tallest = currentHeight;
+//     }
+//   }
+
+//   return visibleTrees;
+// };
+
+const iterateRow = (grid, gridShape, rowIndex, visitFn) => {
+  console.group(`iterateRow: ${rowIndex}`);
   const [gridHeight, gridWidth] = gridShape;
-  for (let x = treeX + 1; x < gridWidth; x++) {
-    const siblingHeight = getTreeHeight(grid, gridHeight, treeY, x);
-    if (siblingHeight >= treeHeight) {
-      return false;
-    }
+  const innerWidth = gridWidth - 1;
+  for (let x = 1; x < innerWidth; x++) {
+    visitFn(rowIndex, x, getTreeHeight(grid, gridHeight, rowIndex, x));
   }
-  return true;
+  console.groupEnd();
 };
 
-const lookLeft = (grid, gridShape, treeY, treeX, treeHeight) => {
-  const [gridHeight] = gridShape;
-  for (let x = treeX - 1; x >= 0; x--) {
-    const siblingHeight = getTreeHeight(grid, gridHeight, treeY, x);
-    if (siblingHeight >= treeHeight) {
-      return false;
-    }
+const iterateRowReverse = (grid, gridShape, rowIndex, visitFn) => {
+  console.group(`iterateRowReverse: ${rowIndex}`);
+  const [gridHeight, gridWidth] = gridShape;
+  for (let x = gridWidth - 2; x > 0; x--) {
+    visitFn(rowIndex, x, getTreeHeight(grid, gridHeight, rowIndex, x));
   }
-  return true;
+  console.groupEnd();
+};
+
+const iterateColReverse = (grid, gridShape, colIndex, visitFn) => {
+  console.group(`iterateColReverse: ${colIndex}`);
+  const [gridHeight] = gridShape;
+  for (let y = gridHeight - 2; y > 0; y--) {
+    visitFn(y, colIndex, getTreeHeight(grid, gridHeight, y, colIndex));
+  }
+  console.groupEnd();
+};
+
+const iterateCol = (grid, gridShape, colIndex, visitFn) => {
+  console.group(`iterateCol: ${colIndex}`);
+  const [gridHeight] = gridShape;
+  const innerHeight = gridHeight - 1;
+  for (let y = 1; y < innerHeight; y++) {
+    visitFn(y, colIndex, getTreeHeight(grid, gridHeight, y, colIndex));
+  }
+  console.groupEnd();
 };
 
 /**
@@ -62,27 +75,51 @@ const lookLeft = (grid, gridShape, treeY, treeX, treeHeight) => {
  * @returns {Number|String}
  */
 export const levelOne = ({ input, lines }) => {
+  console.log();
   const grid = parseInput(input);
   const shape = [lines.length, lines[0].length];
-  let visibleCount = countVisibleEdges(shape[0]);
 
-  const interiorHeight = shape[0] - 1;
-  const interiorWidth = shape[1] - 1;
-  for (let y = 1; y < interiorHeight; y++) {
-    for (let x = 1; x < interiorWidth; x++) {
-      const height = getTreeHeight(grid, shape[0], y, x);
-      if (
-        lookUp(grid, shape, y, x, height) ||
-        lookDown(grid, shape, y, x, height) ||
-        lookRight(grid, shape, y, x, height) ||
-        lookLeft(grid, shape, y, x, height)
-      ) {
-        visibleCount++;
+  // const visit = (y, x, height, edge) => {
+  //   console.log(`visit: ${treeId(y, x, height)}`);
+  // };
+  // const innerWidth = shape[1] - 1;
+  // for (let index = 1; index < innerWidth; index++) {
+  //   iterateRow(grid, shape, index, visit);
+  //   iterateRowReverse(grid, shape, index, visit);
+  //   iterateCol(grid, shape, index, visit);
+  //   iterateColReverse(grid, shape, index, visit);
+  // }
+
+  const index = 1;
+  const visibleTrees = new Set();
+  const visitFn = (edge) => {
+    let tallest = edge;
+    return (y, x, height) => {
+      if (height > tallest) {
+        visibleTrees.add(treeId(y, x, height));
+        tallest = height;
       }
-    }
-  }
+    };
+  };
 
-  return visibleCount;
+  iterateRow(grid, shape, index, visitFn(getTreeHeight(grid, shape[0], index, 0)));
+  iterateRowReverse(
+    grid,
+    shape,
+    index,
+    visitFn(getTreeHeight(grid, shape[0], index, shape[1] - 1))
+  );
+  iterateCol(grid, shape, index, visitFn(getTreeHeight(grid, shape[0], 0, index)));
+  iterateColReverse(
+    grid,
+    shape,
+    index,
+    visitFn(getTreeHeight(grid, shape[0], shape[0] - 1, index))
+  );
+
+  console.log('visible trees:', [...visibleTrees]);
+
+  return visibleTrees.size;
 };
 
 /**
