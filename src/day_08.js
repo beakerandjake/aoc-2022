@@ -12,47 +12,26 @@ const countVisibleEdges = (height) => height * 4 - 4;
 
 const treeId = (y, x) => `${y},${x}`;
 
-// const lookToRight = (grid, gridShape, rowIndex) => {
-//   const [gridHeight, gridWidth] = gridShape;
-//   const visibleTrees = [];
-//   let tallest = getTreeHeight(grid, gridHeight, rowIndex, 0);
-
-//   for (let x = 1; x < gridWidth; x++) {
-//     const currentHeight = getTreeHeight(grid, gridHeight, rowIndex, x);
-
-//     if (currentHeight > tallest) {
-//       visibleTrees.push(treeId(rowIndex, x, currentHeight));
-//       tallest = currentHeight;
-//     }
-//   }
-
-//   return visibleTrees;
-// };
-
-const iterateRow = (grid, gridShape, rowIndex, visitFn) => {
-  const [gridHeight, gridWidth] = gridShape;
+const iterateRow = (grid, [gridHeight, gridWidth], rowIndex, visitFn) => {
   const innerWidth = gridWidth - 1;
   for (let x = 1; x < innerWidth; x++) {
     visitFn(rowIndex, x, getTreeHeight(grid, gridHeight, rowIndex, x));
   }
 };
 
-const iterateRowReverse = (grid, gridShape, rowIndex, visitFn) => {
-  const [gridHeight, gridWidth] = gridShape;
+const iterateRowReverse = (grid, [gridHeight, gridWidth], rowIndex, visitFn) => {
   for (let x = gridWidth - 2; x > 0; x--) {
     visitFn(rowIndex, x, getTreeHeight(grid, gridHeight, rowIndex, x));
   }
 };
 
-const iterateColReverse = (grid, gridShape, colIndex, visitFn) => {
-  const [gridHeight] = gridShape;
+const iterateColReverse = (grid, [gridHeight], colIndex, visitFn) => {
   for (let y = gridHeight - 2; y > 0; y--) {
     visitFn(y, colIndex, getTreeHeight(grid, gridHeight, y, colIndex));
   }
 };
 
-const iterateCol = (grid, gridShape, colIndex, visitFn) => {
-  const [gridHeight] = gridShape;
+const iterateCol = (grid, [gridHeight], colIndex, visitFn) => {
   const innerHeight = gridHeight - 1;
   for (let y = 1; y < innerHeight; y++) {
     visitFn(y, colIndex, getTreeHeight(grid, gridHeight, y, colIndex));
