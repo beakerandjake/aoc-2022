@@ -30,42 +30,41 @@ const treeId = (y, x, height) => `[${y},${x}]=${height}`;
 // };
 
 const iterateRow = (grid, gridShape, rowIndex, visitFn) => {
-  console.group(`iterateRow: ${rowIndex}`);
   const [gridHeight, gridWidth] = gridShape;
   const innerWidth = gridWidth - 1;
   for (let x = 1; x < innerWidth; x++) {
     visitFn(rowIndex, x, getTreeHeight(grid, gridHeight, rowIndex, x));
   }
-  console.groupEnd();
 };
 
 const iterateRowReverse = (grid, gridShape, rowIndex, visitFn) => {
-  console.group(`iterateRowReverse: ${rowIndex}`);
   const [gridHeight, gridWidth] = gridShape;
   for (let x = gridWidth - 2; x > 0; x--) {
     visitFn(rowIndex, x, getTreeHeight(grid, gridHeight, rowIndex, x));
   }
-  console.groupEnd();
 };
 
 const iterateColReverse = (grid, gridShape, colIndex, visitFn) => {
-  console.group(`iterateColReverse: ${colIndex}`);
   const [gridHeight] = gridShape;
   for (let y = gridHeight - 2; y > 0; y--) {
     visitFn(y, colIndex, getTreeHeight(grid, gridHeight, y, colIndex));
   }
-  console.groupEnd();
 };
 
 const iterateCol = (grid, gridShape, colIndex, visitFn) => {
-  console.group(`iterateCol: ${colIndex}`);
   const [gridHeight] = gridShape;
   const innerHeight = gridHeight - 1;
   for (let y = 1; y < innerHeight; y++) {
     visitFn(y, colIndex, getTreeHeight(grid, gridHeight, y, colIndex));
   }
-  console.groupEnd();
 };
+
+const getEdges = (grid, [gridHeight, gridWidth], index) => ({
+  topEdge: getTreeHeight(grid, gridHeight, 0, index),
+  bottomEdge: getTreeHeight(grid, gridHeight, gridHeight - 1, index),
+  leftEdge: getTreeHeight(grid, gridHeight, index, 0),
+  rightEdge: getTreeHeight(grid, gridHeight, index, gridWidth - 1),
+});
 
 /**
  * Returns the solution for level one of this puzzle.
@@ -75,22 +74,9 @@ const iterateCol = (grid, gridShape, colIndex, visitFn) => {
  * @returns {Number|String}
  */
 export const levelOne = ({ input, lines }) => {
-  console.log();
+  // console.log();
   const grid = parseInput(input);
   const shape = [lines.length, lines[0].length];
-
-  // const visit = (y, x, height, edge) => {
-  //   console.log(`visit: ${treeId(y, x, height)}`);
-  // };
-  // const innerWidth = shape[1] - 1;
-  // for (let index = 1; index < innerWidth; index++) {
-  //   iterateRow(grid, shape, index, visit);
-  //   iterateRowReverse(grid, shape, index, visit);
-  //   iterateCol(grid, shape, index, visit);
-  //   iterateColReverse(grid, shape, index, visit);
-  // }
-
-  const index = 1;
   const visibleTrees = new Set();
   const visitFn = (edge) => {
     let tallest = edge;
@@ -102,24 +88,16 @@ export const levelOne = ({ input, lines }) => {
     };
   };
 
-  iterateRow(grid, shape, index, visitFn(getTreeHeight(grid, shape[0], index, 0)));
-  iterateRowReverse(
-    grid,
-    shape,
-    index,
-    visitFn(getTreeHeight(grid, shape[0], index, shape[1] - 1))
-  );
-  iterateCol(grid, shape, index, visitFn(getTreeHeight(grid, shape[0], 0, index)));
-  iterateColReverse(
-    grid,
-    shape,
-    index,
-    visitFn(getTreeHeight(grid, shape[0], shape[0] - 1, index))
-  );
+  const [innerHeight, innerWidth] = [shape[0] - 1, shape[1] - 1];
+  for (let index = 1; index < innerWidth; index++) {
+    const { topEdge, bottomEdge, rightEdge, leftEdge } = getEdges(grid, shape, index);
+    iterateRow(grid, shape, index, visitFn(leftEdge));
+    iterateRowReverse(grid, shape, index, visitFn(rightEdge));
+    iterateCol(grid, shape, index, visitFn(topEdge));
+    iterateColReverse(grid, shape, index, visitFn(bottomEdge));
+  }
 
-  console.log('visible trees:', [...visibleTrees]);
-
-  return visibleTrees.size;
+  return countVisibleEdges(shape[0]) + visibleTrees.size;
 };
 
 /**
