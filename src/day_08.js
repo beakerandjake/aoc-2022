@@ -10,7 +10,7 @@ const getTreeHeight = (grid, rowCount, rowIndex, colIndex) =>
 
 const countVisibleEdges = (height) => height * 4 - 4;
 
-const treeId = (y, x, height) => `[${y},${x}]=${height}`;
+const treeId = (y, x) => `${y},${x}`;
 
 // const lookToRight = (grid, gridShape, rowIndex) => {
 //   const [gridHeight, gridWidth] = gridShape;
@@ -59,12 +59,13 @@ const iterateCol = (grid, gridShape, colIndex, visitFn) => {
   }
 };
 
-const getEdges = (grid, [gridHeight, gridWidth], index) => ({
-  topEdge: getTreeHeight(grid, gridHeight, 0, index),
-  bottomEdge: getTreeHeight(grid, gridHeight, gridHeight - 1, index),
-  leftEdge: getTreeHeight(grid, gridHeight, index, 0),
-  rightEdge: getTreeHeight(grid, gridHeight, index, gridWidth - 1),
-});
+// top,bottom,left,right
+const getEdges = (grid, [gridHeight, gridWidth], index) => [
+  getTreeHeight(grid, gridHeight, 0, index),
+  getTreeHeight(grid, gridHeight, gridHeight - 1, index),
+  getTreeHeight(grid, gridHeight, index, 0),
+  getTreeHeight(grid, gridHeight, index, gridWidth - 1),
+];
 
 /**
  * Returns the solution for level one of this puzzle.
@@ -78,11 +79,12 @@ export const levelOne = ({ input, lines }) => {
   const grid = parseInput(input);
   const shape = [lines.length, lines[0].length];
   const visibleTrees = new Set();
-  const visitFn = (edge) => {
+
+  const checkIfTreeIsVisible = (edge) => {
     let tallest = edge;
     return (y, x, height) => {
       if (height > tallest) {
-        visibleTrees.add(treeId(y, x, height));
+        visibleTrees.add(treeId(y, x));
         tallest = height;
       }
     };
@@ -90,11 +92,11 @@ export const levelOne = ({ input, lines }) => {
 
   const [innerHeight, innerWidth] = [shape[0] - 1, shape[1] - 1];
   for (let index = 1; index < innerWidth; index++) {
-    const { topEdge, bottomEdge, rightEdge, leftEdge } = getEdges(grid, shape, index);
-    iterateRow(grid, shape, index, visitFn(leftEdge));
-    iterateRowReverse(grid, shape, index, visitFn(rightEdge));
-    iterateCol(grid, shape, index, visitFn(topEdge));
-    iterateColReverse(grid, shape, index, visitFn(bottomEdge));
+    const [topEdge, bottomEdge, leftEdge, rightEdge] = getEdges(grid, shape, index);
+    iterateRow(grid, shape, index, checkIfTreeIsVisible(leftEdge));
+    iterateRowReverse(grid, shape, index, checkIfTreeIsVisible(rightEdge));
+    iterateCol(grid, shape, index, checkIfTreeIsVisible(topEdge));
+    iterateColReverse(grid, shape, index, checkIfTreeIsVisible(bottomEdge));
   }
 
   return countVisibleEdges(shape[0]) + visibleTrees.size;
