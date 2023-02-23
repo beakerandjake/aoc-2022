@@ -5,46 +5,31 @@
 
 const parseInput = (input) => [...input].filter((x) => x !== '\n');
 
-const getTreeHeight = (grid, itemsPerRow, rowIndex, colIndex) =>
-  grid[rowIndex * itemsPerRow + colIndex];
-
-const countVisibleEdges = (length) => length * 4 - 4;
-
-const treeId = (y, x) => `${y},${x}`;
-
-const iterateRow = (grid, treeCount, rowIndex, visitFn) => {
+const iterateRow = (treeCount, rowIndex, visitFn) => {
   const innerWidth = treeCount - 1;
   for (let x = 1; x < innerWidth; x++) {
-    visitFn(rowIndex, x, getTreeHeight(grid, treeCount, rowIndex, x));
+    visitFn(rowIndex, x);
   }
 };
 
-const iterateRowReverse = (grid, treeCount, rowIndex, visitFn) => {
+const iterateRowReverse = (treeCount, rowIndex, visitFn) => {
   for (let x = treeCount - 2; x > 0; x--) {
-    visitFn(rowIndex, x, getTreeHeight(grid, treeCount, rowIndex, x));
+    visitFn(rowIndex, x);
   }
 };
 
-const iterateColReverse = (grid, treeCount, colIndex, visitFn) => {
+const iterateColReverse = (treeCount, colIndex, visitFn) => {
   for (let y = treeCount - 2; y > 0; y--) {
-    visitFn(y, colIndex, getTreeHeight(grid, treeCount, y, colIndex));
+    visitFn(y, colIndex);
   }
 };
 
-const iterateCol = (grid, treeCount, colIndex, visitFn) => {
+const iterateCol = (treeCount, colIndex, visitFn) => {
   const innerHeight = treeCount - 1;
   for (let y = 1; y < innerHeight; y++) {
-    visitFn(y, colIndex, getTreeHeight(grid, treeCount, y, colIndex));
+    visitFn(y, colIndex);
   }
 };
-
-// top,bottom,left,right
-const getEdges = (grid, treeCount, index) => [
-  getTreeHeight(grid, treeCount, 0, index),
-  getTreeHeight(grid, treeCount, treeCount - 1, index),
-  getTreeHeight(grid, treeCount, index, 0),
-  getTreeHeight(grid, treeCount, index, treeCount - 1),
-];
 
 /**
  * Returns the solution for level one of this puzzle.
@@ -58,26 +43,37 @@ export const levelOne = ({ input, lines }) => {
   const treeCount = lines.length; // assuming grid is square of NxN trees.
   const visibleTrees = new Set();
 
-  const checkIfTreeIsVisible = (edge) => {
+  const getTree = (rowIndex, colIndex) => grid[rowIndex * treeCount + colIndex];
+
+  const findVisibleTrees = (edge) => {
     let tallest = edge;
-    return (y, x, height) => {
+    return (y, x) => {
+      const height = getTree(y, x);
       if (height > tallest) {
-        visibleTrees.add(treeId(y, x));
+        visibleTrees.add(`${y},${x}`);
         tallest = height;
       }
     };
   };
 
+  // top,bottom,left,right
+  const getEdges = (index) => [
+    getTree(0, index),
+    getTree(treeCount - 1, index),
+    getTree(index, 0),
+    getTree(index, treeCount - 1),
+  ];
+
   const innerWidth = treeCount - 1;
   for (let index = 1; index < innerWidth; index++) {
-    const [topEdge, bottomEdge, leftEdge, rightEdge] = getEdges(grid, treeCount, index);
-    iterateRow(grid, treeCount, index, checkIfTreeIsVisible(leftEdge));
-    iterateRowReverse(grid, treeCount, index, checkIfTreeIsVisible(rightEdge));
-    iterateCol(grid, treeCount, index, checkIfTreeIsVisible(topEdge));
-    iterateColReverse(grid, treeCount, index, checkIfTreeIsVisible(bottomEdge));
+    const [topEdge, bottomEdge, leftEdge, rightEdge] = getEdges(index);
+    iterateRow(treeCount, index, findVisibleTrees(leftEdge));
+    iterateRowReverse(treeCount, index, findVisibleTrees(rightEdge));
+    iterateCol(treeCount, index, findVisibleTrees(topEdge));
+    iterateColReverse(treeCount, index, findVisibleTrees(bottomEdge));
   }
 
-  return countVisibleEdges(treeCount) + visibleTrees.size;
+  return treeCount * 4 - 4 + visibleTrees.size;
 };
 
 /**
