@@ -81,13 +81,14 @@ const parseInput = (lines) => {
       dirs[currentDirName].push(item);
     }
   }
+  
   return dirs;
 };
 
 /**
  * Calculates the size of the given dir.
- * @param {Object} dirs
- * @param {Array} dir
+ * @param {Object} dirs - Map of all dirs
+ * @param {Array} dir - The contents of the dir.
  * @returns {Number}
  */
 const dirSize = (dirs, dir) =>
