@@ -5,127 +5,75 @@
 
 const parseInput = (input) => [...input].filter((x) => x !== '\n');
 
-// const lookLeftStrides = (shape, rowIndex) => ({
-//   rowStart: rowIndex,
-//   rowEnd: rowIndex + 1,
-//   rowStep: 1,
-//   colStart: 0,
-//   colEnd: shape[1],
-//   colReverse: false,
-// });
+const getTreeHeight = (grid, rowCount, rowIndex, colIndex) =>
+  grid[rowIndex * rowCount + colIndex];
 
-// const lookRightStrides = (shape, rowIndex) => ({
-//   rowStart: rowIndex,
-//   rowEnd: rowIndex + 1,
-//   rowStep: 1,
-//   colStart: shape[0],
-//   colEnd: shape[1],
-//   colReverse: true,
-// });
+const printTree = (y, x, height) => `[${y},${x}] = ${height}`;
 
-// const iterate = (grid, shape, strides) => {
-//   const [height, width] = shape;
-//   const { rowStart, rowEnd, rowStep, colStart, colEnd, colReverse } = strides;
+const countVisibleEdges = (height) => height * 4 - 4;
 
-//   const colOffset = console.group('Iteration');
-//   console.log('shapes', shape);
-//   console.log('strides', strides);
-
-//   for (let rowIndex = rowStart; rowIndex < rowEnd; rowIndex++) {
-//     for (let colIndex = colStart; colIndex < colEnd; colIndex++) {
-//       const tree = grid[rowIndex * height + colIndex];
-//       console.log(`grid [${rowIndex},${colIndex}] = ${tree}`);
-//     }
-//   }
-
-//   console.groupEnd();
-// };
-
-const getTree = (grid, shape, rowIndex, colIndex) => grid[rowIndex * shape[0] + colIndex];
-
-const lookLeftStrides = (shape, rowIndex) => ({
-  rowStart: rowIndex,
-  rowEnd: rowIndex + 1,
-  rowReverse: false,
-  colStart: 0,
-  colEnd: shape[1],
-  colReverse: false,
-});
-
-const lookRightStrides = (shape, rowIndex) => ({
-  rowStart: rowIndex,
-  rowEnd: rowIndex + 1,
-  rowReverse: false,
-  colStart: 0,
-  colEnd: shape[1],
-  colReverse: true,
-});
-
-const indexTranslatorFn = (reverse, length) =>
-  reverse ? (index) => length - index - 1 : (index) => index;
-
-const iterate = (shape, strides, visitFn) => {
-  // console.group('Iterate');
-  const [height, width] = shape;
-  const { rowStart, rowEnd, rowReverse, colStart, colEnd, colReverse } = strides;
-
-  const rowIndex = indexTranslatorFn(rowReverse, width);
-  const colIndex = indexTranslatorFn(colReverse, height);
-
-  for (let y = rowStart; y < rowEnd; y++) {
-    for (let x = colStart; x < colEnd; x++) {
-      visitFn(rowIndex(y), colIndex(x));
+const lookUp = (grid, gridShape, treeY, treeX, treeHeight) => {
+  // console.group(`looking up from: ${printTree(treeY, treeX, treeHeight)}`);
+  const [gridHeight] = gridShape;
+  for (let y = treeY - 1; y >= 0; y--) {
+    const siblingHeight = getTreeHeight(grid, gridHeight, y, treeX);
+    if (siblingHeight >= treeHeight) {
+      // console.log(`sibling: ${printTree(y, treeX, siblingHeight)} is taller!`);
+      // console.groupEnd();
+      return false;
     }
+    // console.log(`sibling: ${printTree(y, treeX, siblingHeight)}`);
   }
-  console.groupEnd();
+  // console.groupEnd();
+  return true;
 };
 
-const lookFromLeft = (shape, rowIndex, visitFn) => {
-  const width = shape[1] - 1;
-  for (let colIndex = 1; colIndex < width; colIndex++) {
-    visitFn(rowIndex, colIndex);
-  }
-};
-
-const lookFromRight = (shape, rowIndex, visitFn) => {
-  const width = shape[1] - 2;
-  for (let colIndex = width; colIndex > 0; colIndex--) {
-    visitFn(rowIndex, colIndex);
-  }
-};
-
-const lookFromTop = (shape, colIndex, visitFn) => {
-  const height = shape[0] - 1;
-  for (let rowIndex = 1; rowIndex < height; rowIndex++) {
-    visitFn(rowIndex, colIndex);
-  }
-};
-
-const lookFromBottom = (shape, colIndex, visitFn) => {
-  const height = shape[0] - 2;
-  for (let rowIndex = height; rowIndex > 0; rowIndex--) {
-    visitFn(rowIndex, colIndex);
-  }
-};
-
-const findVisible = (grid, shape, iterateFn, index, edgeTree, name) => {
-  console.group(`Find Visible ${name}, index: ${index}, edge: ${edgeTree}`);
-  const toReturn = [];
-  let tallest = edgeTree;
-
-  iterateFn(shape, index, (rowIndex, colIndex) => {
-    const tree = getTree(grid, shape, rowIndex, colIndex);
-    console.log(
-      `visit [${rowIndex}, ${colIndex}] = ${getTree(grid, shape, rowIndex, colIndex)}`
-    );
-    if (tree > tallest) {
-      toReturn.push(tree);
-      tallest = tree;
+const lookDown = (grid, gridShape, treeY, treeX, treeHeight) => {
+  // console.group(`looking down from: ${printTree(treeY, treeX, treeHeight)}`);
+  const [gridHeight] = gridShape;
+  for (let y = treeY + 1; y < gridHeight; y++) {
+    const siblingHeight = getTreeHeight(grid, gridHeight, y, treeX);
+    if (siblingHeight >= treeHeight) {
+      // console.log(`sibling: ${printTree(y, treeX, siblingHeight)} is taller!`);
+      // console.groupEnd();
+      return false;
     }
-  });
-  console.log('visible: ', toReturn);
-  console.groupEnd();
-  return toReturn;
+    // console.log(`sibling: ${printTree(y, treeX, siblingHeight)}`);
+  }
+  // console.groupEnd();
+  return true;
+};
+
+const lookRight = (grid, gridShape, treeY, treeX, treeHeight) => {
+  // console.group(`looking right from: ${printTree(treeY, treeX, treeHeight)}`);
+  const [gridHeight, gridWidth] = gridShape;
+  for (let x = treeX + 1; x < gridWidth; x++) {
+    const siblingHeight = getTreeHeight(grid, gridHeight, treeY, x);
+    if (siblingHeight >= treeHeight) {
+      // console.log(`sibling: ${printTree(treeY, x, siblingHeight)} is taller!`);
+      // console.groupEnd();
+      return false;
+    }
+    // console.log(`sibling: ${printTree(treeY, x, siblingHeight)}`);
+  }
+  // console.groupEnd();
+  return true;
+};
+
+const lookLeft = (grid, gridShape, treeY, treeX, treeHeight) => {
+  // console.group(`looking right from: ${printTree(treeY, treeX, treeHeight)}`);
+  const [gridHeight, gridWidth] = gridShape;
+  for (let x = treeX - 1; x >= 0; x--) {
+    const siblingHeight = getTreeHeight(grid, gridHeight, treeY, x);
+    if (siblingHeight >= treeHeight) {
+      // console.log(`sibling: ${printTree(treeY, x, siblingHeight)} is taller!`);
+      // console.groupEnd();
+      return false;
+    }
+    // console.log(`sibling: ${printTree(treeY, x, siblingHeight)}`);
+  }
+  // console.groupEnd();
+  return true;
 };
 
 /**
@@ -139,60 +87,32 @@ export const levelOne = ({ input, lines }) => {
   console.log();
   const grid = parseInput(input);
   const shape = [lines.length, lines[0].length];
-  const [height, width] = shape;
-  const allVisible = [];
+  let visibleCount = countVisibleEdges(shape[0]);
 
-  for (let index = 1; index < width - 1; index++) {
-    // left
-    allVisible.push(
-      ...findVisible(
-        grid,
-        shape,
-        lookFromLeft,
-        index,
-        getTree(grid, shape, index, 0),
-        'left'
-      )
-    );
-    // right
-    allVisible.push(
-      ...findVisible(
-        grid,
-        shape,
-        lookFromRight,
-        index,
-        getTree(grid, shape, index, shape[1] - 1),
-        'right'
-      )
-    );
-    // top
-    allVisible.push(
-      ...findVisible(
-        grid,
-        shape,
-        lookFromTop,
-        index,
-        getTree(grid, shape, 0, index),
-        'top'
-      )
-    );
-    // bottom
-    allVisible.push(
-      ...findVisible(
-        grid,
-        shape,
-        lookFromBottom,
-        index,
-        getTree(grid, shape, shape[0] - 1, index),
-        'bottom'
-      )
-    );
+  const interiorHeight = shape[0] - 1;
+  const interiorWidth = shape[1] - 1;
+  for (let y = 1; y < interiorHeight; y++) {
+    for (let x = 1; x < interiorWidth; x++) {
+      const height = getTreeHeight(grid, shape[0], y, x);
+      if (
+        lookUp(grid, shape, y, x, height) ||
+        lookDown(grid, shape, y, x, height) ||
+        lookRight(grid, shape, y, x, height) ||
+        lookLeft(grid, shape, y, x, height)
+      ) {
+        visibleCount++;
+      }
+    }
   }
 
-  console.log('all visible', allVisible);
-  console.log('all visible length', allVisible.length);
+  // const [y, x] = [2, 1];
+  // const tree = getTreeHeight(grid, shape[0], y, x);
+  // lookUp(grid, shape, y, x, tree);
+  // lookDown(grid, shape, y, x, tree);
+  // lookRight(grid, shape, y, x, tree);
+  // lookLeft(grid, shape, y, x, tree);
 
-  return grid[0] + shape[1];
+  return visibleCount;
 };
 
 /**
