@@ -99,7 +99,7 @@ export const levelOne = (() => {
 
   return ({ input, lines }) => {
     const grid = parseInput(input);
-    const { length } = lines; // assuming grid is square of NxN trees.
+    const { length } = lines;
     const visibleTrees = new Set();
 
     const findVisibleTrees = (edge) => {
@@ -135,6 +135,99 @@ export const levelOne = (() => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelTwo = ({ input, lines }) => {
-  // your code here
-};
+export const levelTwo = (() => {
+  const counter = (fn) => {
+    const toReturn = (...args) => {
+      toReturn.count++;
+      return fn(...args);
+    };
+    toReturn.count = 0;
+    return toReturn;
+  };
+
+  const lookUp = (y, x, visitFn) => {
+    for (let index = y - 1; index >= 0; index--) {
+      if (!visitFn(index, x)) {
+        break;
+      }
+    }
+  };
+
+  const lookDown = (y, x, length, visitFn) => {
+    for (let index = y + 1; index < length; index++) {
+      if (!visitFn(index, x)) {
+        break;
+      }
+    }
+  };
+
+  const lookRight = (y, x, length, visitFn) => {
+    for (let index = x + 1; index < length; index++) {
+      if (!visitFn(y, index)) {
+        break;
+      }
+    }
+    return visitFn;
+  };
+
+  const lookLeft = (y, x, visitFn) => {
+    for (let index = x - 1; index >= 0; index--) {
+      if (!visitFn(y, index)) {
+        break;
+      }
+    }
+  };
+
+  const compareHeight = (grid, length, current) => (y, x) =>
+    getTree(grid, length, y, x) < current;
+
+  return ({ input, lines }) => {
+    const grid = parseInput(input);
+    const { length } = lines;
+    let highestScenicScore = 0;
+
+    for (let y = 0; y < length; y++) {
+      for (let x = 0; x < length; x++) {
+        const current = getTree(grid, length, y, x);
+        const visitFn = compareHeight(grid, length, current);
+        const leftCount = counter(visitFn);
+        const rightCount = counter(visitFn);
+        const upCount = counter(visitFn);
+        const downCount = counter(visitFn);
+
+        lookLeft(y, x, leftCount);
+        lookRight(y, x, length, rightCount);
+        lookUp(y, x, upCount);
+        lookDown(y, x, length, downCount);
+
+        const scenicScore =
+          leftCount.count + rightCount.count + upCount.count + downCount.count;
+
+        // const scenicScore = [
+        //   lookLeft(y, x, counter(visitFn)).count,
+        //   lookRight(y, x, length, counter(visitFn)).count,
+        //   lookUp(y, x, counter(visitFn)).count,
+        //   lookDown(y, x, length, counter(visitFn)).count,
+        // ].reduce((total, count) => total + count, 0`);
+
+        if (scenicScore > highestScenicScore) {
+          highestScenicScore = scenicScore;
+        }
+      }
+    }
+
+    // const [y, x] = [3, 4];
+    // const current = getTree(grid, length, y, x);
+    // printTree(y, x);
+    // const visitFn = isShorterThan(current);
+    // const visibleLeft = counter(visitFn);
+    // const result = lookLeft(y, x, visibleLeft);
+    // console.log('visited: ', visibleLeft.count);
+    // console.log('result', result);
+    // // printTree(y, x);
+    // // const result = lookLeft(y, x, () => true);
+    // // console.log('result', result);
+
+    return highestScenicScore;
+  };
+})();
