@@ -187,8 +187,20 @@ export const levelTwo = (() => {
     const downCounter = counter(visitFn);
 
     lookLeft(y, x, leftCounter);
+    if (!leftCounter.count) {
+      return 0;
+    }
+
     lookRight(y, x, length, rightCounter);
+    if (!rightCounter.count) {
+      return 0;
+    }
+
     lookUp(y, x, upCounter);
+    if (!upCounter.count) {
+      return 0;
+    }
+
     lookDown(y, x, length, downCounter);
 
     return leftCounter.count * rightCounter.count * upCounter.count * downCounter.count;
@@ -199,8 +211,9 @@ export const levelTwo = (() => {
     const { length } = lines;
     let highestScenicScore = 0;
 
-    for (let y = 0; y < length; y++) {
-      for (let x = 0; x < length; x++) {
+    const innerLength = length - 1;
+    for (let y = 1; y < innerLength; y++) {
+      for (let x = 1; x < innerLength; x++) {
         const scenicScore = getScenicScore(grid, length, y, x);
         if (scenicScore > highestScenicScore) {
           highestScenicScore = scenicScore;
