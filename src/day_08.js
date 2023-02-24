@@ -68,7 +68,7 @@ export const levelOne = (() => {
    */
   const countVisibleEdges = (length) => length * 4 - 4;
 
-  return ({ input, lines }) => {
+  return ({ input = '', lines = [] }) => {
     const grid = parseInput(input);
     const { length } = lines;
     const visibleTrees = new Set();
@@ -161,7 +161,7 @@ export const levelTwo = (() => {
     );
   };
 
-  return ({ input, lines }) => {
+  return ({ input = '', lines = [] }) => {
     const grid = parseInput(input);
     const { length } = lines;
     let highest = 0;
