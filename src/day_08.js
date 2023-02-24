@@ -182,12 +182,12 @@ export const levelTwo = (() => {
 
   const getScenicScore = (grid, length, y, x) => {
     const current = getTree(grid, length, y, x);
-    const visitFn = (...args) => getTree(grid, length, ...args) < current;
+    const isShorterThanCurrent = (...args) => getTree(grid, length, ...args) < current;
     return (
-      lookLeft(y, x, visitFn) *
-      lookRight(y, x, length, visitFn) *
-      lookUp(y, x, visitFn) *
-      lookDown(y, x, length, visitFn)
+      lookLeft(y, x, isShorterThanCurrent) *
+      lookRight(y, x, length, isShorterThanCurrent) *
+      lookUp(y, x, isShorterThanCurrent) *
+      lookDown(y, x, length, isShorterThanCurrent)
     );
   };
 
