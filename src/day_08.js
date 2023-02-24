@@ -136,74 +136,74 @@ export const levelOne = (() => {
  * @returns {Number|String}
  */
 export const levelTwo = (() => {
-  const counter = (fn) => {
-    const toReturn = (...args) => {
-      toReturn.count++;
-      return fn(...args);
-    };
-    toReturn.count = 0;
-    return toReturn;
-  };
-
   const lookUp = (y, x, visitFn) => {
+    let visitCount = 0;
     for (let index = y - 1; index >= 0; index--) {
+      visitCount++;
       if (!visitFn(index, x)) {
         break;
       }
     }
+    return visitCount;
   };
 
   const lookDown = (y, x, length, visitFn) => {
+    let visitCount = 0;
     for (let index = y + 1; index < length; index++) {
+      visitCount++;
       if (!visitFn(index, x)) {
         break;
       }
     }
+    return visitCount;
   };
 
   const lookRight = (y, x, length, visitFn) => {
+    let visitCount = 0;
     for (let index = x + 1; index < length; index++) {
+      visitCount++;
       if (!visitFn(y, index)) {
         break;
       }
     }
-    return visitFn;
+    return visitCount;
   };
 
   const lookLeft = (y, x, visitFn) => {
+    let visitCount = 0;
     for (let index = x - 1; index >= 0; index--) {
+      visitCount++;
       if (!visitFn(y, index)) {
         break;
       }
     }
+    return visitCount;
   };
 
   const getScenicScore = (grid, length, y, x) => {
     const current = getTree(grid, length, y, x);
     const visitFn = (...args) => getTree(grid, length, ...args) < current;
-    const leftCounter = counter(visitFn);
-    const rightCounter = counter(visitFn);
-    const upCounter = counter(visitFn);
-    const downCounter = counter(visitFn);
+    let score = 1;
 
-    lookLeft(y, x, leftCounter);
-    if (!leftCounter.count) {
+    score *= lookLeft(y, x, visitFn);
+
+    if (!score) {
       return 0;
     }
 
-    lookRight(y, x, length, rightCounter);
-    if (!rightCounter.count) {
+    score *= lookRight(y, x, length, visitFn);
+
+    if (!score) {
       return 0;
     }
 
-    lookUp(y, x, upCounter);
-    if (!upCounter.count) {
+    score *= lookUp(y, x, visitFn);
+
+    if (!score) {
       return 0;
     }
 
-    lookDown(y, x, length, downCounter);
-
-    return leftCounter.count * rightCounter.count * upCounter.count * downCounter.count;
+    return score * lookDown(y, x, length, visitFn);
   };
 
   return ({ input, lines }) => {
