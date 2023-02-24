@@ -183,27 +183,12 @@ export const levelTwo = (() => {
   const getScenicScore = (grid, length, y, x) => {
     const current = getTree(grid, length, y, x);
     const visitFn = (...args) => getTree(grid, length, ...args) < current;
-    let score = 1;
-
-    score *= lookLeft(y, x, visitFn);
-
-    if (!score) {
-      return 0;
-    }
-
-    score *= lookRight(y, x, length, visitFn);
-
-    if (!score) {
-      return 0;
-    }
-
-    score *= lookUp(y, x, visitFn);
-
-    if (!score) {
-      return 0;
-    }
-
-    return score * lookDown(y, x, length, visitFn);
+    return (
+      lookLeft(y, x, visitFn) *
+      lookRight(y, x, length, visitFn) *
+      lookUp(y, x, visitFn) *
+      lookDown(y, x, length, visitFn)
+    );
   };
 
   return ({ input, lines }) => {
