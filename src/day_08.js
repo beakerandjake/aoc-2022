@@ -178,8 +178,21 @@ export const levelTwo = (() => {
     }
   };
 
-  const compareHeight = (grid, length, current) => (y, x) =>
-    getTree(grid, length, y, x) < current;
+  const getScenicScore = (grid, length, y, x) => {
+    const current = getTree(grid, length, y, x);
+    const visitFn = (...args) => getTree(grid, length, ...args) < current;
+    const leftCounter = counter(visitFn);
+    const rightCounter = counter(visitFn);
+    const upCounter = counter(visitFn);
+    const downCounter = counter(visitFn);
+
+    lookLeft(y, x, leftCounter);
+    lookRight(y, x, length, rightCounter);
+    lookUp(y, x, upCounter);
+    lookDown(y, x, length, downCounter);
+
+    return leftCounter.count * rightCounter.count * upCounter.count * downCounter.count;
+  };
 
   return ({ input, lines }) => {
     const grid = parseInput(input);
@@ -188,21 +201,7 @@ export const levelTwo = (() => {
 
     for (let y = 0; y < length; y++) {
       for (let x = 0; x < length; x++) {
-        const current = getTree(grid, length, y, x);
-        const visitFn = compareHeight(grid, length, current);
-        const leftCount = counter(visitFn);
-        const rightCount = counter(visitFn);
-        const upCount = counter(visitFn);
-        const downCount = counter(visitFn);
-
-        lookLeft(y, x, leftCount);
-        lookRight(y, x, length, rightCount);
-        lookUp(y, x, upCount);
-        lookDown(y, x, length, downCount);
-
-        const scenicScore =
-          leftCount.count * rightCount.count * upCount.count * downCount.count;
-
+        const scenicScore = getScenicScore(grid, length, y, x);
         if (scenicScore > highestScenicScore) {
           highestScenicScore = scenicScore;
         }
