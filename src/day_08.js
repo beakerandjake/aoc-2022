@@ -4,27 +4,6 @@
  */
 
 /**
- * Iterates from start to end, invoking the function each iteration.
- * @param {Number} start - The start index
- * @param {Number} end - The end index.
- * @param {Number} increment - The amount to increment the index.
- * @param {Function} visitFn - The function invoked every iteration, can return false to halt the loop.
- * @returns {Number} The number of times the visitFn was called.
- */
-const iterate = (start, end, increment, visitFn) => {
-  let visitCount = 0;
-  let index = start;
-  while (index !== end) {
-    visitCount++;
-    if (!visitFn(index)) {
-      break;
-    }
-    index += increment;
-  }
-  return visitCount;
-};
-
-/**
  * Returns an array of all characters in the input.
  * The array is a C contiguous 2d array.
  * @param {String} input
@@ -50,17 +29,28 @@ const getTree = (grid, length, rowIndex, colIndex) => grid[rowIndex * length + c
  */
 export const levelOne = (() => {
   /**
+   * Iterates from start to end, invoking the function each iteration.
+   * @param {Number} start - The start index
+   * @param {Number} end - The end index.
+   * @param {Number} increment - The amount to increment the index each iteration.
+   * @param {Function} visitFn - The function invoked every iteration.
+   */
+  const iterate = (start, end, increment, visitFn) => {
+    let index = start;
+    while (index !== end) {
+      visitFn(index);
+      index += increment;
+    }
+  };
+
+  /**
    * Iterate the row from left to right, visiting each item.
    * @param {Number} treeCount
    * @param {Number} rowIndex
    * @param {Function} visitFn
    */
-  const iterateRow = (treeCount, rowIndex, visitFn) => {
-    const innerWidth = treeCount - 1;
-    for (let x = 1; x < innerWidth; x++) {
-      visitFn(rowIndex, x);
-    }
-  };
+  const iterateRow = (length, rowIndex, visitFn) =>
+    iterate(1, length - 1, 1, (index) => visitFn(rowIndex, index));
 
   /**
    * Iterate the row from right to left, visiting each item.
@@ -68,11 +58,8 @@ export const levelOne = (() => {
    * @param {Number} rowIndex
    * @param {Function} visitFn
    */
-  const iterateRowReverse = (treeCount, rowIndex, visitFn) => {
-    for (let x = treeCount - 2; x > 0; x--) {
-      visitFn(rowIndex, x);
-    }
-  };
+  const iterateRowReverse = (length, rowIndex, visitFn) =>
+    iterate(length - 2, -1, -1, (index) => visitFn(rowIndex, index));
 
   /**
    * Iterate the column from top to bottom, visiting each item.
@@ -80,12 +67,8 @@ export const levelOne = (() => {
    * @param {Number} rowIndex
    * @param {Function} visitFn
    */
-  const iterateCol = (treeCount, colIndex, visitFn) => {
-    const innerHeight = treeCount - 1;
-    for (let y = 1; y < innerHeight; y++) {
-      visitFn(y, colIndex);
-    }
-  };
+  const iterateCol = (length, colIndex, visitFn) =>
+    iterate(1, length - 1, 1, (index) => visitFn(index, colIndex));
 
   /**
    * Iterate the column from bottom to top, visiting each item.
@@ -93,11 +76,8 @@ export const levelOne = (() => {
    * @param {Number} rowIndex
    * @param {Function} visitFn
    */
-  const iterateColReverse = (treeCount, colIndex, visitFn) => {
-    for (let y = treeCount - 2; y > 0; y--) {
-      visitFn(y, colIndex);
-    }
-  };
+  const iterateColReverse = (length, colIndex, visitFn) =>
+    iterate(length - 2, -1, -1, (index) => visitFn(index, colIndex));
 
   /**
    * Returns all of the edges from a given row/column index in the grid.
@@ -123,6 +103,7 @@ export const levelOne = (() => {
     const { length } = lines;
     const visibleTrees = new Set();
 
+    // define here to capture a reference to the set so it can be updated.
     const findVisibleTrees = (edge) => {
       let tallest = edge;
       return (y, x) => {
@@ -157,6 +138,27 @@ export const levelOne = (() => {
  * @returns {Number|String}
  */
 export const levelTwo = (() => {
+  /**
+   * Iterates from start to end, invoking the function each iteration.
+   * @param {Number} start - The start index
+   * @param {Number} end - The end index.
+   * @param {Number} increment - The amount to increment the index each iteration.
+   * @param {Function} visitFn - The function invoked every iteration, can return false to halt the loop.
+   * @returns {Number} The number of times the visitFn was called.
+   */
+  const iterate = (start, end, increment, visitFn) => {
+    let visitCount = 0;
+    let index = start;
+    while (index !== end) {
+      visitCount++;
+      if (!visitFn(index)) {
+        break;
+      }
+      index += increment;
+    }
+    return visitCount;
+  };
+
   /**
    * Iterate up column x starting from [y,x]
    * @param {Number} y
