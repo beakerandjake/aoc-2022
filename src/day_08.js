@@ -4,6 +4,27 @@
  */
 
 /**
+ * Iterates from start to end, invoking the function each iteration.
+ * @param {Number} start - The start index
+ * @param {Number} end - The end index.
+ * @param {Number} increment - The amount to increment the index.
+ * @param {Function} visitFn - The function invoked every iteration, can return false to halt the loop.
+ * @returns {Number} The number of times the visitFn was called.
+ */
+const iterate = (start, end, increment, visitFn) => {
+  let visitCount = 0;
+  let index = start;
+  while (index !== end) {
+    visitCount++;
+    if (!visitFn(index)) {
+      break;
+    }
+    index += increment;
+  }
+  return visitCount;
+};
+
+/**
  * Returns an array of all characters in the input.
  * The array is a C contiguous 2d array.
  * @param {String} input
@@ -136,76 +157,78 @@ export const levelOne = (() => {
  * @returns {Number|String}
  */
 export const levelTwo = (() => {
-  const lookUp = (y, x, visitFn) => {
-    let visitCount = 0;
-    for (let index = y - 1; index >= 0; index--) {
-      visitCount++;
-      if (!visitFn(index, x)) {
-        break;
-      }
-    }
-    return visitCount;
-  };
+  /**
+   * Iterate up column x starting from [y,x]
+   * @param {Number} y
+   * @param {Number} x
+   * @param {Function} visitFn
+   * @returns {Number} The number of times visitFn was invoked.
+   */
+  const up = (y, x, visitFn) => iterate(y - 1, -1, -1, (index) => visitFn(index, x));
 
-  const lookDown = (y, x, length, visitFn) => {
-    let visitCount = 0;
-    for (let index = y + 1; index < length; index++) {
-      visitCount++;
-      if (!visitFn(index, x)) {
-        break;
-      }
-    }
-    return visitCount;
-  };
+  /**
+   * Iterate down column x starting from [y,x]
+   * @param {Number} y
+   * @param {Number} x
+   * @param {Function} visitFn
+   * @returns {Number} The number of times visitFn was invoked.
+   */
+  const down = (y, x, length, visitFn) =>
+    iterate(y + 1, length, 1, (index) => visitFn(index, x));
 
-  const lookRight = (y, x, length, visitFn) => {
-    let visitCount = 0;
-    for (let index = x + 1; index < length; index++) {
-      visitCount++;
-      if (!visitFn(y, index)) {
-        break;
-      }
-    }
-    return visitCount;
-  };
+  /**
+   * Iterate left across row y starting from [y,x]
+   * @param {Number} y
+   * @param {Number} x
+   * @param {Function} visitFn
+   * @returns {Number} The number of times visitFn was invoked.
+   */
+  const left = (y, x, visitFn) => iterate(x - 1, -1, -1, (index) => visitFn(y, index));
 
-  const lookLeft = (y, x, visitFn) => {
-    let visitCount = 0;
-    for (let index = x - 1; index >= 0; index--) {
-      visitCount++;
-      if (!visitFn(y, index)) {
-        break;
-      }
-    }
-    return visitCount;
-  };
+  /**
+   * Iterate right across row y starting from [y,x]
+   * @param {Number} y
+   * @param {Number} x
+   * @param {Function} visitFn
+   * @returns {Number} The number of times visitFn was invoked.
+   */
+  const right = (y, x, length, visitFn) =>
+    iterate(x + 1, length, 1, (index) => visitFn(y, index));
 
+  /**
+   * Generate the scenic score for tree at [y,x] based on total visible trees in each direction.
+   * @param {String[]} grid
+   * @param {Number} length
+   * @param {Number} y
+   * @param {Number} x
+   * @returns
+   */
   const getScenicScore = (grid, length, y, x) => {
     const current = getTree(grid, length, y, x);
     const isShorterThanCurrent = (...args) => getTree(grid, length, ...args) < current;
     return (
-      lookLeft(y, x, isShorterThanCurrent) *
-      lookRight(y, x, length, isShorterThanCurrent) *
-      lookUp(y, x, isShorterThanCurrent) *
-      lookDown(y, x, length, isShorterThanCurrent)
+      left(y, x, isShorterThanCurrent) *
+      right(y, x, length, isShorterThanCurrent) *
+      up(y, x, isShorterThanCurrent) *
+      down(y, x, length, isShorterThanCurrent)
     );
   };
 
   return ({ input, lines }) => {
     const grid = parseInput(input);
     const { length } = lines;
-    let highestScenicScore = 0;
+    let highest = 0;
 
     const innerLength = length - 1;
     for (let y = 1; y < innerLength; y++) {
       for (let x = 1; x < innerLength; x++) {
-        const scenicScore = getScenicScore(grid, length, y, x);
-        if (scenicScore > highestScenicScore) {
-          highestScenicScore = scenicScore;
+        const score = getScenicScore(grid, length, y, x);
+        if (score > highest) {
+          highest = score;
         }
       }
     }
 
-    return highestScenicScore;
+    return highest;
   };
 })();
