@@ -190,6 +190,7 @@ export const levelTwo = (() => {
       for (let x = 0; x < length; x++) {
         const current = getTree(grid, length, y, x);
         const visitFn = compareHeight(grid, length, current);
+
         const leftCount = counter(visitFn);
         const rightCount = counter(visitFn);
         const upCount = counter(visitFn);
@@ -203,30 +204,12 @@ export const levelTwo = (() => {
         const scenicScore =
           leftCount.count + rightCount.count + upCount.count + downCount.count;
 
-        // const scenicScore = [
-        //   lookLeft(y, x, counter(visitFn)).count,
-        //   lookRight(y, x, length, counter(visitFn)).count,
-        //   lookUp(y, x, counter(visitFn)).count,
-        //   lookDown(y, x, length, counter(visitFn)).count,
-        // ].reduce((total, count) => total + count, 0`);
-
         if (scenicScore > highestScenicScore) {
           highestScenicScore = scenicScore;
         }
       }
     }
 
-    // const [y, x] = [3, 4];
-    // const current = getTree(grid, length, y, x);
-    // printTree(y, x);
-    // const visitFn = isShorterThan(current);
-    // const visibleLeft = counter(visitFn);
-    // const result = lookLeft(y, x, visibleLeft);
-    // console.log('visited: ', visibleLeft.count);
-    // console.log('result', result);
-    // // printTree(y, x);
-    // // const result = lookLeft(y, x, () => true);
-    // // console.log('result', result);
 
     return highestScenicScore;
   };
