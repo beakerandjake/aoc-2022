@@ -6,34 +6,20 @@
 /**
  * Returns an array of all characters in the input.
  * The array is a C contiguous 2d array.
- * @param {String} input
- * @returns {String[]}
  */
-const parseInput = (input) => [...input].filter((x) => x !== '\n');
+const parseInput = (input = '') => [...input].filter((x) => x !== '\n');
 
 /**
  * Returns the value of the tree at the specified coordinate on the grid.
- * @param {Array} grid
- * @param {Number} length
- * @param {Number} rowIndex
- * @param {Number} colIndex
  */
 const getTree = (grid, length, rowIndex, colIndex) => grid[rowIndex * length + colIndex];
 
 /**
  * Returns the solution for level one of this puzzle.
- * @param {Object} args - Provides both raw and split input.
- * @param {String} args.input - The original, unparsed input string.
- * @param {String[]} args.lines - Array containing each line of the input string.
- * @returns {Number|String}
  */
 export const levelOne = (() => {
   /**
    * Iterates from start to end, invoking the function each iteration.
-   * @param {Number} start - The start index
-   * @param {Number} end - The end index.
-   * @param {Number} increment - The amount to increment the index each iteration.
-   * @param {Function} visitFn - The function invoked every iteration.
    */
   const iterate = (start, end, increment, visitFn) => {
     let index = start;
@@ -45,45 +31,30 @@ export const levelOne = (() => {
 
   /**
    * Iterate the row from left to right, visiting each item.
-   * @param {Number} treeCount
-   * @param {Number} rowIndex
-   * @param {Function} visitFn
    */
   const iterateRow = (length, rowIndex, visitFn) =>
     iterate(1, length - 1, 1, (index) => visitFn(rowIndex, index));
 
   /**
    * Iterate the row from right to left, visiting each item.
-   * @param {Number} treeCount
-   * @param {Number} rowIndex
-   * @param {Function} visitFn
    */
   const iterateRowReverse = (length, rowIndex, visitFn) =>
     iterate(length - 2, -1, -1, (index) => visitFn(rowIndex, index));
 
   /**
    * Iterate the column from top to bottom, visiting each item.
-   * @param {Number} treeCount
-   * @param {Number} rowIndex
-   * @param {Function} visitFn
    */
   const iterateCol = (length, colIndex, visitFn) =>
     iterate(1, length - 1, 1, (index) => visitFn(index, colIndex));
 
   /**
    * Iterate the column from bottom to top, visiting each item.
-   * @param {Number} treeCount
-   * @param {Number} rowIndex
-   * @param {Function} visitFn
    */
   const iterateColReverse = (length, colIndex, visitFn) =>
     iterate(length - 2, -1, -1, (index) => visitFn(index, colIndex));
 
   /**
    * Returns all of the edges from a given row/column index in the grid.
-   * @param {Array} grid
-   * @param {Number} length
-   * @param {Number} index
    */
   const getEdges = (grid, length, index) => ({
     top: getTree(grid, length, 0, index),
@@ -94,7 +65,6 @@ export const levelOne = (() => {
 
   /**
    * Given the length of a 2d grid, returns the number of visible edges.
-   * @param {Number} length
    */
   const countVisibleEdges = (length) => length * 4 - 4;
 
@@ -132,10 +102,6 @@ export const levelOne = (() => {
 
 /**
  * Returns the solution for level two of this puzzle.
- * @param {Object} args - Provides both raw and split input.
- * @param {String} args.input - The original, unparsed input string.
- * @param {String[]} args.lines - Array containing each line of the input string.
- * @returns {Number|String}
  */
 export const levelTwo = (() => {
   /**
@@ -161,49 +127,28 @@ export const levelTwo = (() => {
 
   /**
    * Iterate up column x starting from [y,x]
-   * @param {Number} y
-   * @param {Number} x
-   * @param {Function} visitFn
-   * @returns {Number} The number of times visitFn was invoked.
    */
   const up = (y, x, visitFn) => iterate(y - 1, -1, -1, (index) => visitFn(index, x));
 
   /**
    * Iterate down column x starting from [y,x]
-   * @param {Number} y
-   * @param {Number} x
-   * @param {Function} visitFn
-   * @returns {Number} The number of times visitFn was invoked.
    */
   const down = (y, x, length, visitFn) =>
     iterate(y + 1, length, 1, (index) => visitFn(index, x));
 
   /**
    * Iterate left across row y starting from [y,x]
-   * @param {Number} y
-   * @param {Number} x
-   * @param {Function} visitFn
-   * @returns {Number} The number of times visitFn was invoked.
    */
   const left = (y, x, visitFn) => iterate(x - 1, -1, -1, (index) => visitFn(y, index));
 
   /**
    * Iterate right across row y starting from [y,x]
-   * @param {Number} y
-   * @param {Number} x
-   * @param {Function} visitFn
-   * @returns {Number} The number of times visitFn was invoked.
    */
   const right = (y, x, length, visitFn) =>
     iterate(x + 1, length, 1, (index) => visitFn(y, index));
 
   /**
    * Generate the scenic score for tree at [y,x] based on total visible trees in each direction.
-   * @param {String[]} grid
-   * @param {Number} length
-   * @param {Number} y
-   * @param {Number} x
-   * @returns
    */
   const getScenicScore = (grid, length, y, x) => {
     const current = getTree(grid, length, y, x);
