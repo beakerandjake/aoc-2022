@@ -21,27 +21,34 @@ const down = (amount) => new Vector2(0, -amount);
 const left = (amount) => new Vector2(-amount, 0);
 const right = (amount) => new Vector2(amount, 0);
 
-const parseLine = (() => {
-  const directionMap = {
-    D: down,
-    R: right,
-    L: left,
-    U: up,
-  };
+// const parseLine = (() => {
+//   const directionMap = {
+//     D: down,
+//     R: right,
+//     L: left,
+//     U: up,
+//   };
 
-  return (line = '') => {
-    const [direction, steps] = line.split(' ');
-    return directionMap[direction](+steps);
-  };
-})();
+//   return (line = '') => {
+//     const [direction, steps] = line.split(' ');
+//     return directionMap[direction](+steps);
+//   };
+// })();
 
 const distanceSquared = (lhs, rhs) => (lhs.y - rhs.y) ** 2 + (lhs.x - rhs.x) ** 2;
 
+const areTouching = (head, tail) => distanceSquared(head, tail) <= 1;
+
 const directions = {
-  up: new Vector2(0, 1),
-  down: new Vector2(0, -1),
-  left: new Vector2(-1, 0),
-  right: new Vector2(1, 0),
+  U: new Vector2(0, 1),
+  D: new Vector2(0, -1),
+  L: new Vector2(-1, 0),
+  R: new Vector2(1, 0),
+};
+
+const parseLine = (line) => {
+  const [direction, steps] = line.split(' ');
+  return { direction: directions[direction], steps: +steps };
 };
 
 const movementPlan = (start, direction, steps) => {
@@ -53,6 +60,34 @@ const movementPlan = (start, direction, steps) => {
   }
   return positions;
 };
+
+
+
+const moveRight = (position) => new Vector2(position.x + 1, position.y);
+const moveLeft = (position) => new Vector2(position.x - 1, position.y);
+const moveUp = (position) => new Vector2(position.x, position.y + 1);
+const moveDown = (position) => new Vector2(position.x, position.y - 1);
+
+const isLeft = (lhs, rhs) => lhs.x < rhs.x;
+const isRight = (lhs, rhs) => lhs.x > rhs.x;
+const isUp = (lhs, rhs) => lhs.y > rhs.y;
+const isDown = (lhs, rhs) => lhs.y < rhs.y;
+
+const sameRow = (lhs, rhs) => lhs.y === rhs.y;
+const sameColumn = (lhs, rhs) => lhs.x === rhs.x;
+
+// const catchUp = (head, tail) => {
+//   if(sameColumn(head, tail)) {
+//     return isLeft(head, tail)
+//       ? moveLeft(tail)
+//       : moveRight(tail);
+//   } else if (sameRow(head, tail)) {
+//     return isUp(head, tail)
+//       ? moveUp(tail)
+//       : moveDown(tail);
+//   }
+
+// };
 
 /**
  * Returns the solution for level one of this puzzle.
@@ -70,9 +105,9 @@ export const levelOne = ({ input, lines }) => {
   let totalDistance = 0;
 
   lines.forEach((line) => {
-    const movement = parseLine(line);
-    head = add(head, movement);
-    totalDistance += distanceSquared(head, tail);
+    const { direction, steps } = parseLine(line);
+    const plan = movementPlan(head, direction, steps);
+    console.log(`step: ${line}, plan: [${plan}]`);
   });
   // your code here
 
