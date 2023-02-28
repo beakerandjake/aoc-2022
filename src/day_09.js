@@ -16,28 +16,11 @@ class Vector2 {
 
 const add = (lhs, rhs) => new Vector2(lhs.x + rhs.x, lhs.y + rhs.y);
 
-const up = (amount) => new Vector2(0, amount);
-const down = (amount) => new Vector2(0, -amount);
-const left = (amount) => new Vector2(-amount, 0);
-const right = (amount) => new Vector2(amount, 0);
-
-// const parseLine = (() => {
-//   const directionMap = {
-//     D: down,
-//     R: right,
-//     L: left,
-//     U: up,
-//   };
-
-//   return (line = '') => {
-//     const [direction, steps] = line.split(' ');
-//     return directionMap[direction](+steps);
-//   };
-// })();
-
 const distanceSquared = (lhs, rhs) => (lhs.y - rhs.y) ** 2 + (lhs.x - rhs.x) ** 2;
 
-const areTouching = (head, tail) => distanceSquared(head, tail) <= 1;
+const touching = (head, tail) => distanceSquared(head, tail) <= 2;
+
+const copy = (vector) => new Vector2(vector.x, vector.y);
 
 const directions = {
   U: new Vector2(0, 1),
@@ -51,7 +34,7 @@ const parseLine = (line) => {
   return { direction: directions[direction], steps: +steps };
 };
 
-const movementPlan = (start, direction, steps) => {
+const headMovementPlan = (start, direction, steps) => {
   const positions = [];
   let current = start;
   while (positions.length < steps) {
@@ -61,33 +44,8 @@ const movementPlan = (start, direction, steps) => {
   return positions;
 };
 
-
-
-const moveRight = (position) => new Vector2(position.x + 1, position.y);
-const moveLeft = (position) => new Vector2(position.x - 1, position.y);
-const moveUp = (position) => new Vector2(position.x, position.y + 1);
-const moveDown = (position) => new Vector2(position.x, position.y - 1);
-
-const isLeft = (lhs, rhs) => lhs.x < rhs.x;
-const isRight = (lhs, rhs) => lhs.x > rhs.x;
-const isUp = (lhs, rhs) => lhs.y > rhs.y;
-const isDown = (lhs, rhs) => lhs.y < rhs.y;
-
-const sameRow = (lhs, rhs) => lhs.y === rhs.y;
-const sameColumn = (lhs, rhs) => lhs.x === rhs.x;
-
-// const catchUp = (head, tail) => {
-//   if(sameColumn(head, tail)) {
-//     return isLeft(head, tail)
-//       ? moveLeft(tail)
-//       : moveRight(tail);
-//   } else if (sameRow(head, tail)) {
-//     return isUp(head, tail)
-//       ? moveUp(tail)
-//       : moveDown(tail);
-//   }
-
-// };
+const newTailPosition = (tail, currentHead, newHead) =>
+  touching(tail, newHead) ? copy(tail) : copy(currentHead);
 
 /**
  * Returns the solution for level one of this puzzle.
@@ -97,21 +55,22 @@ const sameColumn = (lhs, rhs) => lhs.x === rhs.x;
  * @returns {Number|String}
  */
 export const levelOne = ({ input, lines }) => {
-  // console.log();
-
   let head = new Vector2(0, 0);
-  const tail = new Vector2(0, -5);
-
-  let totalDistance = 0;
+  let tail = new Vector2(0, 0);
+  const visited = new Set([tail.toString()]);
 
   lines.forEach((line) => {
     const { direction, steps } = parseLine(line);
-    const plan = movementPlan(head, direction, steps);
-    console.log(`step: ${line}, plan: [${plan}]`);
-  });
-  // your code here
+    const headPlan = headMovementPlan(head, direction, steps);
+    headPlan.forEach((newHead) => {
+      tail = newTailPosition(tail, head, newHead);
+      head = newHead;
+      visited.add(tail.toString());
+    });
 
-  return totalDistance;
+  });
+
+  return visited.size;
 };
 
 /**
