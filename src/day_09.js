@@ -3,6 +3,9 @@
  * Puzzle Description: https://adventofcode.com/2022/day/9
  */
 
+/**
+ * Representation of 2d vectors and points.
+ */
 class Vector2 {
   constructor(x, y) {
     this.x = x;
@@ -14,17 +17,66 @@ class Vector2 {
   }
 }
 
+/**
+ * Combine the two vectors.
+ * @param {Vector2} lhs
+ * @param {Vector2} rhs
+ */
 const add = (lhs, rhs) => new Vector2(lhs.x + rhs.x, lhs.y + rhs.y);
 
+/**
+ * Returns the *squared* distance between the two vectors.
+ * @param {Vector2} lhs
+ * @param {Vector2} rhs
+ */
 const distanceSquared = (lhs, rhs) => (lhs.y - rhs.y) ** 2 + (lhs.x - rhs.x) ** 2;
 
-const touching = (head, tail) => distanceSquared(head, tail) <= 2;
+/**
+ * Are the two vectors touching (within one unit of each other)?
+ * @param {Vector2} lhs
+ * @param {Vector2} rhs
+ */
+const touching = (lhs, rhs) => distanceSquared(lhs, rhs) <= 2;
 
+/**
+ * Map input direction keys to a vector representing that direction.
+ */
 const directions = {
   U: new Vector2(0, 1),
   D: new Vector2(0, -1),
   L: new Vector2(-1, 0),
   R: new Vector2(1, 0),
+};
+
+/**
+ * Determines each point the head must move to in order to reach the ending position.
+ * @param {Vector2} start
+ * @param {Vector2} direction
+ * @param {Number} steps
+ */
+const headMovementPlan = (start, direction, steps) => {
+  const positions = [];
+  let current = start;
+  while (positions.length < steps) {
+    current = add(current, direction);
+    positions.push(current);
+  }
+  return positions;
+};
+
+/**
+ * Determines each point the tail must move to in order to follow the head.
+ * @param {Vector2} tail
+ * @param {Vector2} head
+ * @param {Vector2[]} headPlan
+ */
+const tailMovementPlan = (tail, head, headPlan) => {
+  let previousHead = head;
+  return headPlan.map((newHead) => {
+    const newTail = touching(tail, newHead) ? tail : previousHead;
+    previousHead = newHead;
+    return newTail;
+  });
 };
 
 /**
@@ -38,25 +90,6 @@ export const levelOne = (() => {
   const parseLine = (line) => {
     const [direction, steps] = line.split(' ');
     return { direction: directions[direction], steps: +steps };
-  };
-
-  const headMovementPlan = (start, direction, steps) => {
-    const positions = [];
-    let current = start;
-    while (positions.length < steps) {
-      current = add(current, direction);
-      positions.push(current);
-    }
-    return positions;
-  };
-
-  const tailMovementPlan = (tail, head, headPlan) => {
-    let previousHead = head;
-    return headPlan.map((newHead) => {
-      const newTail = touching(tail, newHead) ? tail : previousHead;
-      previousHead = newHead;
-      return newTail;
-    });
   };
 
   return ({ lines }) => {
