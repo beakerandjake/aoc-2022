@@ -18,6 +18,24 @@ class Vector2 {
 }
 
 /**
+ * Parses a line of the input and returns the direction and number of steps
+ * @param {String} line
+ */
+const parseLine = (() => {
+  const directions = {
+    U: new Vector2(0, 1),
+    D: new Vector2(0, -1),
+    L: new Vector2(-1, 0),
+    R: new Vector2(1, 0),
+  };
+
+  return (line) => {
+    const [direction, steps] = line.split(' ');
+    return { direction: directions[direction], steps: +steps };
+  };
+})();
+
+/**
  * Combine the two vectors.
  * @param {Vector2} lhs
  * @param {Vector2} rhs
@@ -37,16 +55,6 @@ const distanceSquared = (lhs, rhs) => (lhs.y - rhs.y) ** 2 + (lhs.x - rhs.x) ** 
  * @param {Vector2} rhs
  */
 const touching = (lhs, rhs) => distanceSquared(lhs, rhs) <= 2;
-
-/**
- * Map input direction keys to a vector representing that direction.
- */
-const directions = {
-  U: new Vector2(0, 1),
-  D: new Vector2(0, -1),
-  L: new Vector2(-1, 0),
-  R: new Vector2(1, 0),
-};
 
 /**
  * Determines each point the head must move to in order to reach the ending position.
@@ -86,29 +94,22 @@ const tailMovementPlan = (tail, head, headPlan) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = (() => {
-  const parseLine = (line) => {
-    const [direction, steps] = line.split(' ');
-    return { direction: directions[direction], steps: +steps };
-  };
+export const levelOne = ({ lines }) => {
+  let head = new Vector2(0, 0);
+  let tail = new Vector2(0, 0);
+  const visited = new Set([tail.toString()]);
 
-  return ({ lines }) => {
-    let head = new Vector2(0, 0);
-    let tail = new Vector2(0, 0);
-    const visited = new Set([tail.toString()]);
+  lines.forEach((line) => {
+    const { direction, steps } = parseLine(line);
+    const headPlan = headMovementPlan(head, direction, steps);
+    const tailPlan = tailMovementPlan(tail, head, headPlan);
+    tailPlan.forEach((x) => visited.add(x.toString()));
+    head = headPlan[headPlan.length - 1];
+    tail = tailPlan[tailPlan.length - 1];
+  });
 
-    lines.forEach((line) => {
-      const { direction, steps } = parseLine(line);
-      const headPlan = headMovementPlan(head, direction, steps);
-      const tailPlan = tailMovementPlan(tail, head, headPlan);
-      tailPlan.forEach((x) => visited.add(x.toString()));
-      head = headPlan[headPlan.length - 1];
-      tail = tailPlan[tailPlan.length - 1];
-    });
-
-    return visited.size;
-  };
-})();
+  return visited.size;
+};
 
 /**
  * Returns the solution for level two of this puzzle.
@@ -119,4 +120,24 @@ export const levelOne = (() => {
  */
 export const levelTwo = ({ input, lines }) => {
   // your code here
+  let head = new Vector2(0, 0);
+  let tail = new Vector2(0, 0);
+  let middle = [
+    new Vector2(0, 0),
+    new Vector2(0, 0),
+    new Vector2(0, 0),
+    new Vector2(0, 0),
+    new Vector2(0, 0),
+    new Vector2(0, 0),
+  ];
+
+  lines.forEach((line) => {
+    const { direction, steps } = parseLine(line);
+    const headPlan = headMovementPlan(head, direction, steps);
+
+    head = headPlan[headPlan.length - 1];
+  });
+
+  console.log(`head: ${head}`);
+  return 1234;
 };
