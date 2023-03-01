@@ -122,85 +122,95 @@ const print = (() => {
 
   const array = (size) => [...Array(size)];
 
-  const pad = (value) => ` ${value} `;
+  const getBlankBoard = (rows, cols) => array(rows).map(() => array(cols).map(() => '.'));
 
-  const getBlankBoard = (rows, cols) =>
-    array(rows).map(() => array(cols).map(() => pad('.')));
+  const getPointName = (index) => (index === 0 ? 'H' : `${index}`);
 
-  const getLabels = ({ min, size }) => array(size).map((_, index) => `(${min + index})`);
-
-  const addColumnLabels = (board, labels) => [...board, labels];
-
-  const addRowLabels = (board, labels) =>
-    board.map((row, index) => [labels[labels.length - 1 - index], ...row]);
-
-  const addLabels = (board, xRange, yRange) => {
-    let toReturn = [...board];
-    toReturn = addColumnLabels(toReturn, getLabels(xRange));
-    toReturn = addRowLabels(toReturn, getLabels(yRange));
+  const setPoints = (board, xRange, yRange, points) => {
+    const toReturn = [...board];
+    points.forEach(({ x, y }, index) => {
+      const rowIndex = yRange.max - y;
+      const colIndex = x - xRange.min;
+      toReturn[rowIndex][colIndex] = getPointName(index);
+    });
     return toReturn;
   };
 
-  const setPoint = (board, rowIndex, colIndex, value) => {
-    const copy = [...board];
-    copy[rowIndex][colIndex] = value;
-    return copy;
-  };
+  const rowToString = (row) => row.join('');
 
   const printBoard = (board) => {
-    console.group('Board');
-    board.map((row) => row.join(' ')).forEach((col) => console.log(col));
+    console.group('Board State');
+    const toPrint = board.map(rowToString);
+    toPrint.forEach((row) => console.log(row));
     console.groupEnd();
   };
-
-  const getPointName = (index) => pad(index === 0 ? 'H' : `${index}`);
 
   return (points) => {
     const xRange = range(points.map(({ x }) => x));
     const yRange = range(points.map(({ y }) => y));
     let board = getBlankBoard(yRange.size, xRange.size);
-    points.forEach(({ x, y }, index) => {
-      const rowIndex = yRange.max - y;
-      const colIndex = x - xRange.min;
-      board = setPoint(board, rowIndex, colIndex, getPointName(index));
-    });
-
-    // board = addLabels(board, xRange, yRange);
+    board = setPoints(board, xRange, yRange, points);
     printBoard(board);
-    console.log(board.reverse());
-    // const yRange = range(points.map(({ y }) => y));
-    // const xRange = range(points.map(({ x }) => x));
-    // const ySteps = sizeOfRange(yRange);
-    // const xSteps = sizeOfRange(xRange);
-
-    // for (let yIndex = 0; yIndex < ySteps; yIndex++) {
-    //   for (let xIndex = 0; xIndex < xSteps; xIndex++) {
-    //     const x = xIndex + yRange.min;
-    //     const y = yIndex + yRange.min;
-    //     const point = points.find(p => p.x === x && )
-    //     // map (xIndex, yIndex) => point in
-    //   }
-    // }
   };
 })();
 
 export const levelTwo = ({ lines }) => {
   console.log();
+  // const points = [
+  //   new Vector2(5, 8),
+  //   new Vector2(5, 7),
+  //   new Vector2(5, 6),
+  //   new Vector2(5, 5),
+  //   new Vector2(5, 4),
+  //   new Vector2(4, 4),
+  //   new Vector2(3, 3),
+  //   new Vector2(2, 2),
+  //   new Vector2(1, 1),
+  //   new Vector2(0, 0),
+  // ];
+  let head = new Vector2(0, 0);
   const points = [
-    new Vector2(5, 8),
-    new Vector2(5, 7),
-    new Vector2(5, 6),
-    new Vector2(5, 5),
-    new Vector2(5, 4),
-    new Vector2(4, 4),
-    new Vector2(3, 3),
-    new Vector2(2, 2),
-    new Vector2(1, 1),
+    new Vector2(0, 0),
+    new Vector2(0, 0),
+    new Vector2(0, 0),
+    new Vector2(0, 0),
+    new Vector2(0, 0),
+    new Vector2(0, 0),
+    new Vector2(0, 0),
+    new Vector2(0, 0),
     new Vector2(0, 0),
   ];
+  const visited = new Set([points[points.length - 1]]);
 
-  print(points);
-  return 1234;
+  lines.forEach((line) => {
+    const { direction, steps } = parseLine(line);
+    const headPlan = headMovementPlan(head, direction, steps);
+    const p0 = tailMovementPlan(points[0], head, headPlan);
+    const p1 = tailMovementPlan(points[1], points[0], p0);
+    const p2 = tailMovementPlan(points[2], points[1], p1);
+    const p3 = tailMovementPlan(points[3], points[2], p2);
+    const p4 = tailMovementPlan(points[4], points[3], p3);
+    const p5 = tailMovementPlan(points[5], points[4], p4);
+    const p6 = tailMovementPlan(points[6], points[5], p5);
+    const p7 = tailMovementPlan(points[7], points[6], p6);
+    const p8 = tailMovementPlan(points[8], points[7], p7);
+
+    head = headPlan[headPlan.length - 1];
+    points[0] = p0[p0.length - 1];
+    points[1] = p1[p1.length - 1];
+    points[2] = p2[p2.length - 1];
+    points[3] = p3[p3.length - 1];
+    points[4] = p4[p4.length - 1];
+    points[5] = p5[p5.length - 1];
+    points[6] = p6[p6.length - 1];
+    points[7] = p7[p7.length - 1];
+    points[8] = p8[p8.length - 1];
+    p8.forEach((x) => visited.add(x.toString()));
+
+    print([head, ...points]);
+  });
+
+  return visited.size;
 };
 
 /**
