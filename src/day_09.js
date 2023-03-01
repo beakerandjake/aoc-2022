@@ -159,9 +159,8 @@ const print = (() => {
     const xRange = range(points.map(({ x }) => x));
     const yRange = range(points.map(({ y }) => y));
     let board = getBlankBoard(yRange.size, xRange.size);
-    const [width, height] = [board.length, board[0].length];
     points.forEach(({ x, y }, index) => {
-      const rowIndex = y - yRange.min;
+      const rowIndex = yRange.max - y;
       const colIndex = x - xRange.min;
       board = setPoint(board, rowIndex, colIndex, getPointName(index));
     });
