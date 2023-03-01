@@ -13,9 +13,11 @@ class Vector2 {
   }
 
   toString() {
-    return `${this.x} ${this.y}`;
+    return `<${this.x},${this.y}>`;
   }
 }
+
+const clone = (vector) => new Vector2(vector.x, vector.y);
 
 /**
  * Parses a line of the input and returns the direction and number of steps
@@ -111,6 +113,97 @@ export const levelOne = ({ lines }) => {
   return visited.size;
 };
 
+const print = (() => {
+  const range = (values) => {
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    return { min, max, size: Math.abs(max - min) + 1 };
+  };
+
+  const array = (size) => [...Array(size)];
+
+  const pad = (value) => ` ${value} `;
+
+  const getBlankBoard = (rows, cols) =>
+    array(rows).map(() => array(cols).map(() => pad('.')));
+
+  const getLabels = ({ min, size }) => array(size).map((_, index) => `(${min + index})`);
+
+  const addColumnLabels = (board, labels) => [...board, labels];
+
+  const addRowLabels = (board, labels) =>
+    board.map((row, index) => [labels[labels.length - 1 - index], ...row]);
+
+  const addLabels = (board, xRange, yRange) => {
+    let toReturn = [...board];
+    toReturn = addColumnLabels(toReturn, getLabels(xRange));
+    toReturn = addRowLabels(toReturn, getLabels(yRange));
+    return toReturn;
+  };
+
+  const setPoint = (board, rowIndex, colIndex, value) => {
+    const copy = [...board];
+    copy[rowIndex][colIndex] = value;
+    return copy;
+  };
+
+  const printBoard = (board) => {
+    console.group('Board');
+    board.map((row) => row.join(' ')).forEach((col) => console.log(col));
+    console.groupEnd();
+  };
+
+  const getPointName = (index) => pad(index === 0 ? 'H' : `${index}`);
+
+  return (points) => {
+    const xRange = range(points.map(({ x }) => x));
+    const yRange = range(points.map(({ y }) => y));
+    let board = getBlankBoard(yRange.size, xRange.size);
+    const [width, height] = [board.length, board[0].length];
+    points.forEach(({ x, y }, index) => {
+      const rowIndex = y - yRange.min;
+      const colIndex = x - xRange.min;
+      board = setPoint(board, rowIndex, colIndex, getPointName(index));
+    });
+
+    // board = addLabels(board, xRange, yRange);
+    printBoard(board);
+    console.log(board.reverse());
+    // const yRange = range(points.map(({ y }) => y));
+    // const xRange = range(points.map(({ x }) => x));
+    // const ySteps = sizeOfRange(yRange);
+    // const xSteps = sizeOfRange(xRange);
+
+    // for (let yIndex = 0; yIndex < ySteps; yIndex++) {
+    //   for (let xIndex = 0; xIndex < xSteps; xIndex++) {
+    //     const x = xIndex + yRange.min;
+    //     const y = yIndex + yRange.min;
+    //     const point = points.find(p => p.x === x && )
+    //     // map (xIndex, yIndex) => point in
+    //   }
+    // }
+  };
+})();
+
+export const levelTwo = ({ lines }) => {
+  console.log();
+  const points = [
+    new Vector2(5, 8),
+    new Vector2(5, 7),
+    new Vector2(5, 6),
+    new Vector2(5, 5),
+    new Vector2(5, 4),
+    new Vector2(4, 4),
+    new Vector2(3, 3),
+    new Vector2(2, 2),
+    new Vector2(1, 1),
+    new Vector2(0, 0),
+  ];
+
+  print(points);
+  return 1234;
+};
+
 /**
  * Returns the solution for level two of this puzzle.
  * @param {Object} args - Provides both raw and split input.
@@ -118,11 +211,14 @@ export const levelOne = ({ lines }) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelTwo = ({ input, lines }) => {
+export const levelTwoZ = ({ input, lines }) => {
+  console.log();
   // your code here
   let head = new Vector2(0, 0);
   let tail = new Vector2(0, 0);
-  let middle = [
+  const middle = [
+    new Vector2(0, 0),
+    new Vector2(0, 0),
     new Vector2(0, 0),
     new Vector2(0, 0),
     new Vector2(0, 0),
@@ -130,14 +226,57 @@ export const levelTwo = ({ input, lines }) => {
     new Vector2(0, 0),
     new Vector2(0, 0),
   ];
+  const visited = new Set([tail.toString()]);
+
+  const summary = (start, end, headPlan, tailPlan) => {
+    const hPlanFormatted = headPlan.join(',');
+    const tPlanFormatted = tailPlan.join(',');
+    return `${start} - headPlan: [${hPlanFormatted}], tailPlan: [${tPlanFormatted}] -> ${end}`;
+  };
 
   lines.forEach((line) => {
+    console.group(`line: ${line}`);
     const { direction, steps } = parseLine(line);
     const headPlan = headMovementPlan(head, direction, steps);
 
+    console.log(`head: ${summary(head, headPlan[headPlan.length - 1], headPlan, [])}`);
+
+    let tempHead = head;
+    let tempHeadPlan = headPlan;
+    let tempTail;
+    let tempTailPlan;
+
+    console.group('middle');
+    for (let index = 0; index < middle.length; index++) {
+      tempTail = middle[index];
+      tempTailPlan = tailMovementPlan(tempTail, tempHead, tempHeadPlan);
+      console.log(
+        `${index}: ${summary(
+          tempTail,
+          tempTailPlan[tempTailPlan.length - 1],
+          tempHeadPlan,
+          tempTailPlan
+        )}`
+      );
+
+      middle[index] = tempTailPlan[tempTailPlan.length - 1];
+      tempHead = tempTail;
+      tempHeadPlan = tempTailPlan;
+    }
+    console.groupEnd();
+
+    const tailPlan = tailMovementPlan(tail, tempHead, tempHeadPlan);
+    console.log(
+      `tail: ${summary(tail, tailPlan[tailPlan.length - 1], tempHeadPlan, tailPlan)}`
+    );
+    tailPlan.forEach((x) => visited.add(x.toString()));
+    tail = tailPlan[tailPlan.length - 1];
     head = headPlan[headPlan.length - 1];
+
+    console.groupEnd();
   });
 
-  console.log(`head: ${head}`);
-  return 1234;
+  // console.log([...visited]);
+
+  return visited.size;
 };
