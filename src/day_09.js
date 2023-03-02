@@ -159,25 +159,19 @@ export const levelOne = (() => {
  */
 export const levelTwo = (() => {
   /**
-   * Returns a new Vector2 representing a new tail position which is touching the head.
-   * @param {Vector2} tail
-   * @param {Vector2} head
+   * Moves the source scalar one unit towards the destination.
+   * @param {Number} from
+   * @param {Number} to
    */
-  const moveTailToHead = (tail, head) => {
-    const toReturn = clone(tail);
-
-    if (head.y > tail.y) {
-      toReturn.y += 1;
-    } else if (head.y < tail.y) {
-      toReturn.y -= 1;
+  const moveTowards = (from, to) => {
+    if (to > from) {
+      return from + 1;
+    }
+    if (to < from) {
+      return from - 1;
     }
 
-    if (head.x > tail.x) {
-      toReturn.x += 1;
-    } else if (head.x < tail.x) {
-      toReturn.x -= 1;
-    }
-    return toReturn;
+    return to;
   };
 
   /**
@@ -191,30 +185,35 @@ export const levelTwo = (() => {
     return headPlan.map((head) => {
       currentTail = touching(currentTail, head)
         ? currentTail
-        : moveTailToHead(currentTail, head);
+        : new Vector2(
+            moveTowards(currentTail.x, head.x),
+            moveTowards(currentTail.y, head.y)
+          );
       return currentTail;
     });
   };
 
   return ({ lines = '' }) => {
-    let head = zero;
-    const rope = [zero, zero, zero, zero, zero, zero, zero, zero, zero];
+    const rope = [zero, zero, zero, zero, zero, zero, zero, zero, zero, zero];
     const visited = new Set([zero.toString()]);
+    let headPlan;
+    let tail;
+    let tailPlan;
 
     lines.forEach((line) => {
       const { direction, steps } = parseLine(line);
-      let tail;
-      let tailPlan;
-      let headPlan = headMovementPlan(head, direction, steps);
-      head = headPlan[headPlan.length - 1];
+      headPlan = headMovementPlan(rope[0], direction, steps);
+      rope[0] = headPlan[headPlan.length - 1];
 
-      for (let index = 0; index < rope.length; index++) {
+      // move each knot in the rope towards its predecessor
+      for (let index = 1; index < rope.length; index++) {
         tail = rope[index];
         tailPlan = tailMovementPlan(tail, headPlan);
         rope[index] = tailPlan[tailPlan.length - 1];
         headPlan = tailPlan;
       }
 
+      // store each unique position the tail visited.
       tailPlan.forEach((x) => visited.add(x.toString()));
     });
 
