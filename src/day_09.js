@@ -75,43 +75,45 @@ const headMovementPlan = (start, direction, steps) => {
 };
 
 /**
- * Determines each point the tail must move to in order to follow the head.
- * @param {Vector2} tail
- * @param {Vector2} head
- * @param {Vector2[]} headPlan
- */
-const tailMovementPlan = (tail, head, headPlan) => {
-  let previousHead = head;
-  return headPlan.map((newHead) => {
-    const newTail = touching(tail, newHead) ? tail : previousHead;
-    previousHead = newHead;
-    return newTail;
-  });
-};
-
-/**
  * Returns the solution for level one of this puzzle.
  * @param {Object} args - Provides both raw and split input.
  * @param {String} args.input - The original, unparsed input string.
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = ({ lines }) => {
-  let head = new Vector2(0, 0);
-  let tail = new Vector2(0, 0);
-  const visited = new Set([tail.toString()]);
+export const levelOne = (() => {
+  /**
+   * Determines each point the tail must move to in order to follow the head.
+   * @param {Vector2} tail
+   * @param {Vector2} head
+   * @param {Vector2[]} headPlan
+   */
+  const tailMovementPlan = (tail, head, headPlan) => {
+    let previousHead = head;
+    return headPlan.map((newHead) => {
+      const newTail = touching(tail, newHead) ? tail : previousHead;
+      previousHead = newHead;
+      return newTail;
+    });
+  };
 
-  lines.forEach((line) => {
-    const { direction, steps } = parseLine(line);
-    const headPlan = headMovementPlan(head, direction, steps);
-    const tailPlan = tailMovementPlan(tail, head, headPlan);
-    tailPlan.forEach((x) => visited.add(x.toString()));
-    head = headPlan[headPlan.length - 1];
-    tail = tailPlan[tailPlan.length - 1];
-  });
+  return ({ lines }) => {
+    let head = new Vector2(0, 0);
+    let tail = new Vector2(0, 0);
+    const visited = new Set([tail.toString()]);
 
-  return visited.size;
-};
+    lines.forEach((line) => {
+      const { direction, steps } = parseLine(line);
+      const headPlan = headMovementPlan(head, direction, steps);
+      const tailPlan = tailMovementPlan(tail, head, headPlan);
+      tailPlan.forEach((x) => visited.add(x.toString()));
+      head = headPlan[headPlan.length - 1];
+      tail = tailPlan[tailPlan.length - 1];
+    });
+
+    return visited.size;
+  };
+})();
 
 const print = (() => {
   const range = (values) => {
@@ -154,64 +156,83 @@ const print = (() => {
   };
 })();
 
-export const levelTwo = ({ lines }) => {
-  console.log();
-  // const points = [
-  //   new Vector2(5, 8),
-  //   new Vector2(5, 7),
-  //   new Vector2(5, 6),
-  //   new Vector2(5, 5),
-  //   new Vector2(5, 4),
-  //   new Vector2(4, 4),
-  //   new Vector2(3, 3),
-  //   new Vector2(2, 2),
-  //   new Vector2(1, 1),
-  //   new Vector2(0, 0),
-  // ];
-  let head = new Vector2(0, 0);
-  const points = [
-    new Vector2(0, 0),
-    new Vector2(0, 0),
-    new Vector2(0, 0),
-    new Vector2(0, 0),
-    new Vector2(0, 0),
-    new Vector2(0, 0),
-    new Vector2(0, 0),
-    new Vector2(0, 0),
-    new Vector2(0, 0),
-  ];
-  const visited = new Set([points[points.length - 1]]);
+export const levelTwo = (() => {
+  /**
+   * Determines each point the tail must move to in order to follow the head.
+   * @param {Vector2} tail
+   * @param {Vector2} head
+   * @param {Vector2[]} headPlan
+   */
+  const tailMovementPlan = (tail, headPlan) => {
+    let previousTail = tail;
+    return headPlan.map((head) => {
+      const newTail = clone(previousTail);
 
-  lines.forEach((line) => {
-    const { direction, steps } = parseLine(line);
-    const headPlan = headMovementPlan(head, direction, steps);
-    const p0 = tailMovementPlan(points[0], head, headPlan);
-    const p1 = tailMovementPlan(points[1], points[0], p0);
-    const p2 = tailMovementPlan(points[2], points[1], p1);
-    const p3 = tailMovementPlan(points[3], points[2], p2);
-    const p4 = tailMovementPlan(points[4], points[3], p3);
-    const p5 = tailMovementPlan(points[5], points[4], p4);
-    const p6 = tailMovementPlan(points[6], points[5], p5);
-    const p7 = tailMovementPlan(points[7], points[6], p6);
-    const p8 = tailMovementPlan(points[8], points[7], p7);
+      if (touching(newTail, head)) {
+        return newTail;
+      }
 
-    head = headPlan[headPlan.length - 1];
-    points[0] = p0[p0.length - 1];
-    points[1] = p1[p1.length - 1];
-    points[2] = p2[p2.length - 1];
-    points[3] = p3[p3.length - 1];
-    points[4] = p4[p4.length - 1];
-    points[5] = p5[p5.length - 1];
-    points[6] = p6[p6.length - 1];
-    points[7] = p7[p7.length - 1];
-    points[8] = p8[p8.length - 1];
-    p8.forEach((x) => visited.add(x.toString()));
+      if (head.y > newTail.y) {
+        newTail.y += 1;
+      } else if (head.y < newTail.y) {
+        newTail.y -= 1;
+      }
 
-    print([head, ...points]);
-  });
+      if (head.x > newTail.x) {
+        newTail.x += 1;
+      } else if (head.x < newTail.x) {
+        newTail.x -= 1;
+      }
 
-  return visited.size;
-};
+      previousTail = newTail;
+      return newTail;
+    });
+  };
+
+  return ({ lines }) => {
+    let head = new Vector2(0, 0);
+    const points = [
+      new Vector2(0, 0),
+      new Vector2(0, 0),
+      new Vector2(0, 0),
+      new Vector2(0, 0),
+      new Vector2(0, 0),
+      new Vector2(0, 0),
+      new Vector2(0, 0),
+      new Vector2(0, 0),
+      new Vector2(0, 0),
+    ];
+    const visited = new Set([points[points.length - 1].toString()]);
+
+    lines.forEach((line) => {
+      const { direction, steps } = parseLine(line);
+      const headPlan = headMovementPlan(head, direction, steps);
+      const p0 = tailMovementPlan(points[0], headPlan);
+      const p1 = tailMovementPlan(points[1], p0);
+      const p2 = tailMovementPlan(points[2], p1);
+      const p3 = tailMovementPlan(points[3], p2);
+      const p4 = tailMovementPlan(points[4], p3);
+      const p5 = tailMovementPlan(points[5], p4);
+      const p6 = tailMovementPlan(points[6], p5);
+      const p7 = tailMovementPlan(points[7], p6);
+      const p8 = tailMovementPlan(points[8], p7);
+
+      head = headPlan[headPlan.length - 1];
+      points[0] = p0[p0.length - 1];
+      points[1] = p1[p1.length - 1];
+      points[2] = p2[p2.length - 1];
+      points[3] = p3[p3.length - 1];
+      points[4] = p4[p4.length - 1];
+      points[5] = p5[p5.length - 1];
+      points[6] = p6[p6.length - 1];
+      points[7] = p7[p7.length - 1];
+      points[8] = p8[p8.length - 1];
+      p8.forEach((x) => visited.add(x.toString()));
+    });
+
+    return visited.size;
+  };
+})();
 
 /**
  * Returns the solution for level two of this puzzle.
