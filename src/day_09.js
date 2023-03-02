@@ -17,6 +17,8 @@ class Vector2 {
   }
 }
 
+const zero = new Vector2(0, 0);
+
 const print = (() => {
   const range = (values) => {
     const min = Math.min(...values);
@@ -157,76 +159,63 @@ export const levelOne = (() => {
  */
 export const levelTwo = (() => {
   /**
+   * Returns a new Vector2 representing a new tail position which is touching the head.
+   * @param {Vector2} tail
+   * @param {Vector2} head
+   */
+  const moveTailToHead = (tail, head) => {
+    const toReturn = clone(tail);
+
+    if (head.y > tail.y) {
+      toReturn.y += 1;
+    } else if (head.y < tail.y) {
+      toReturn.y -= 1;
+    }
+
+    if (head.x > tail.x) {
+      toReturn.x += 1;
+    } else if (head.x < tail.x) {
+      toReturn.x -= 1;
+    }
+    return toReturn;
+  };
+
+  /**
    * Determines each point the tail must move to in order to follow the head.
    * @param {Vector2} tail
    * @param {Vector2} head
    * @param {Vector2[]} headPlan
    */
   const tailMovementPlan = (tail, headPlan) => {
-    let previousTail = tail;
+    let currentTail = tail;
     return headPlan.map((head) => {
-      let newTail = previousTail;
-
-      if (touching(newTail, head)) {
-        return newTail;
-      }
-
-      if (head.y > newTail.y) {
-        newTail = new Vector2(newTail.x, newTail.y + 1);
-      } else if (head.y < newTail.y) {
-        newTail = new Vector2(newTail.x, newTail.y - 1);
-      }
-
-      if (head.x > newTail.x) {
-        newTail = new Vector2(newTail.x + 1, newTail.y);
-      } else if (head.x < newTail.x) {
-        newTail = new Vector2(newTail.x - 1, newTail.y);
-      }
-
-      previousTail = newTail;
-      return newTail;
+      currentTail = touching(currentTail, head)
+        ? currentTail
+        : moveTailToHead(currentTail, head);
+      return currentTail;
     });
   };
 
   return ({ lines = '' }) => {
-    let head = new Vector2(0, 0);
-    const points = [
-      new Vector2(0, 0),
-      new Vector2(0, 0),
-      new Vector2(0, 0),
-      new Vector2(0, 0),
-      new Vector2(0, 0),
-      new Vector2(0, 0),
-      new Vector2(0, 0),
-      new Vector2(0, 0),
-      new Vector2(0, 0),
-    ];
-    const visited = new Set([points[points.length - 1].toString()]);
+    let head = zero;
+    const rope = [zero, zero, zero, zero, zero, zero, zero, zero, zero];
+    const visited = new Set([zero.toString()]);
 
     lines.forEach((line) => {
       const { direction, steps } = parseLine(line);
-      const headPlan = headMovementPlan(head, direction, steps);
-      const p0 = tailMovementPlan(points[0], headPlan);
-      const p1 = tailMovementPlan(points[1], p0);
-      const p2 = tailMovementPlan(points[2], p1);
-      const p3 = tailMovementPlan(points[3], p2);
-      const p4 = tailMovementPlan(points[4], p3);
-      const p5 = tailMovementPlan(points[5], p4);
-      const p6 = tailMovementPlan(points[6], p5);
-      const p7 = tailMovementPlan(points[7], p6);
-      const p8 = tailMovementPlan(points[8], p7);
-
+      let tail;
+      let tailPlan;
+      let headPlan = headMovementPlan(head, direction, steps);
       head = headPlan[headPlan.length - 1];
-      points[0] = p0[p0.length - 1];
-      points[1] = p1[p1.length - 1];
-      points[2] = p2[p2.length - 1];
-      points[3] = p3[p3.length - 1];
-      points[4] = p4[p4.length - 1];
-      points[5] = p5[p5.length - 1];
-      points[6] = p6[p6.length - 1];
-      points[7] = p7[p7.length - 1];
-      points[8] = p8[p8.length - 1];
-      p8.forEach((x) => visited.add(x.toString()));
+
+      for (let index = 0; index < rope.length; index++) {
+        tail = rope[index];
+        tailPlan = tailMovementPlan(tail, headPlan);
+        rope[index] = tailPlan[tailPlan.length - 1];
+        headPlan = tailPlan;
+      }
+
+      tailPlan.forEach((x) => visited.add(x.toString()));
     });
 
     return visited.size;
