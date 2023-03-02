@@ -19,6 +19,9 @@ class Vector2 {
 
 const zero = new Vector2(0, 0);
 
+/**
+ * Prints the 2d representation of an array of points.
+ */
 const print = (() => {
   const range = (values) => {
     const min = Math.min(...values);
@@ -59,8 +62,6 @@ const print = (() => {
     printBoard(board);
   };
 })();
-
-const clone = (vector) => new Vector2(vector.x, vector.y);
 
 /**
  * Parses a line of the input and returns the direction and number of steps
