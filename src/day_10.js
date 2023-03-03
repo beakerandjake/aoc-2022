@@ -3,11 +3,6 @@
  * Puzzle Description: https://adventofcode.com/2022/day/10
  */
 
-const parseLine = (line) =>
-  line[0] === 'n'
-    ? { name: 'noop', value: 0, cycleCount: 1 }
-    : { name: 'addx', value: +line.slice(4), cycleCount: 2 };
-
 /**
  * Returns the solution for level one of this puzzle.
  * @param {Object} args - Provides both raw and split input.
@@ -16,16 +11,11 @@ const parseLine = (line) =>
  * @returns {Number|String}
  */
 export const levelOne = (() => {
-  const applyInstructions = (instructions) => {
-    let cycle = 0;
-    let register = 1;
-    return instructions.map(({ value, cycleCount }) => {
-      cycle += cycleCount;
-      register += value;
-      return { cycle, register };
-    });
-  };
-
+  /**
+   * Parse each line of the input.
+   * Returns the cycle number the instruction is executed at
+   * and the value of the register after the instruction is applied.
+   */
   const parseLines = (lines) => {
     let cycle = 0;
     let register = 1;
@@ -40,10 +30,15 @@ export const levelOne = (() => {
     });
   };
 
+  /**
+   * Returns the value of the register at the given cycle.
+   */
   const getRegisterValue = (cycles, cycle) => {
     let found = cycles[0];
     for (let index = 1; index < cycles.length; index++) {
       const current = cycles[index];
+      // if we've hit or gone past the cycle we've gone too far.
+      // since the register doesn't change during a cycle.
       if (current.cycle >= cycle) {
         break;
       }
@@ -52,21 +47,16 @@ export const levelOne = (() => {
     return found.register;
   };
 
-  const signalCycles = [20, 60, 100, 140, 180, 220];
-  const calculateTotalSignalStrength = (cycles) =>
-    signalCycles.reduce(
-      // (total, cycle) =>
-      //   total + cycle * cycles.filter((x) => x.cycle < cycle).reverse()[0].register,
-      (total, cycle) => total + cycle * getRegisterValue(cycles, cycle),
-      0
-    );
+  const calculateTotalSignalStrength = (() => {
+    const signalCycles = [20, 60, 100, 140, 180, 220];
+    return (cycles) =>
+      signalCycles.reduce(
+        (total, cycle) => total + cycle * getRegisterValue(cycles, cycle),
+        0
+      );
+  })();
 
-  return ({ lines }) => {
-    // const instructions = lines.map(parseLine);
-    // const cycles = applyInstructions(instructions);
-    const cycles = parseLines(lines);
-    return calculateTotalSignalStrength(cycles);
-  };
+  return ({ lines }) => calculateTotalSignalStrength(parseLines(lines));
 })();
 
 /**
