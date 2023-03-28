@@ -62,20 +62,32 @@ const parseLines = (() => {
   };
 })();
 
+/**
+ * Returns your new worry level as a result of the monkey inspecting the item.
+ */
 const monkeyInspectItem = ({ fn, rhs }, item) => fn(item, rhs === null ? item : rhs);
 
-const monkeyChooseThrowTarget = (throwBehavior, worryLevel) =>
-  worryLevel % throwBehavior.numerator === 0
-    ? throwBehavior.trueMonkey
-    : throwBehavior.falseMonkey;
+/**
+ * Returns the index of the monkey to throw the item to.
+ */
+const monkeyChooseThrowTarget = ({ numerator, trueMonkey, falseMonkey }, worryLevel) =>
+  worryLevel % numerator === 0 ? trueMonkey : falseMonkey;
 
+/**
+ * Returns a new items array resulting from a monkey throwing one item to another.
+ */
 const throwItemToMonkey = (items, sourceIndex, destIndex, worryLevel) => {
   const newItems = [...items];
+  // remove item from source monkey.
   newItems[sourceIndex] = popHead(newItems[sourceIndex]);
+  // add item to dest monkey.
   newItems[destIndex] = append(newItems[destIndex], worryLevel);
   return newItems;
 };
 
+/**
+ * Returns a new items array resulting from a single monkey inspecting and throwing a single item to another monkey.
+ */
 const monkeyInspectAndThrowItem = (monkeys, items, monkeyIndex, item, reliefFn) => {
   const { inspectBehavior, throwBehavior } = monkeys[monkeyIndex];
   const newWorryLevel = reliefFn(monkeyInspectItem(inspectBehavior, item));
@@ -83,6 +95,9 @@ const monkeyInspectAndThrowItem = (monkeys, items, monkeyIndex, item, reliefFn) 
   return throwItemToMonkey(items, monkeyIndex, targetMonkeyIndex, newWorryLevel);
 };
 
+/**
+ * Returns a new items array resulting from a single monkey inspecting and throwing all of its items to other monkeys.
+ */
 const monkeyTurn = (monkeys, items, monkeyIndex, reliefFn) =>
   items[monkeyIndex].reduce(
     (currentItems, item) =>
