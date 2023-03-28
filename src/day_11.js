@@ -1,3 +1,5 @@
+import { popHead, append } from './util.js';
+
 /**
  * Contains solutions for Day 11
  * Puzzle Description: https://adventofcode.com/2022/day/11
@@ -50,58 +52,72 @@ const parseLines = (() => {
   };
 })();
 
-const monkeyInspect = ({ fn, rhs }, item) => fn(item, rhs === null ? item : rhs);
+const monkeyInspectItem = ({ fn, rhs }, item) => fn(item, rhs === null ? item : rhs);
 
 const applyRelief = (worryLevel) => Math.floor(worryLevel / 3);
 
-const monkeyTest = (throwBehavior, worryLevel) =>
+const monkeyChooseThrowTarget = (throwBehavior, worryLevel) =>
   worryLevel % throwBehavior.numerator === 0
     ? throwBehavior.trueMonkey
     : throwBehavior.falseMonkey;
 
-const monkeyInspectAndThrowItem = (monkey, item) => {
-  const newWorryLevel = applyRelief(monkeyInspect(monkey.inspectBehavior, item));
-  const targetMonkey = monkeyTest(monkey.throwBehavior, newWorryLevel);
-  return { item: newWorryLevel, throwToIndex: targetMonkey };
+const throwItemToMonkey = (items, sourceIndex, destIndex, worryLevel) => {
+  const newItems = [...items];
+  newItems[sourceIndex] = popHead(newItems[sourceIndex]);
+  newItems[destIndex] = append(newItems[destIndex], worryLevel);
+  return newItems;
 };
 
-const monkeyThrow = (items) => {
-  const [, ...toReturn] = items;
+const monkeyInspectAndThrowItem = (monkeys, items, monkeyIndex, item) => {
+  const { inspectBehavior, throwBehavior } = monkeys[monkeyIndex];
+  const newWorryLevel = applyRelief(monkeyInspectItem(inspectBehavior, item));
+  const targetMonkeyIndex = monkeyChooseThrowTarget(throwBehavior, newWorryLevel);
+  return throwItemToMonkey(items, monkeyIndex, targetMonkeyIndex, newWorryLevel);
+};
+
+const monkeyTurn = (monkeys, items, monkeyIndex) =>
+  items[monkeyIndex].reduce(
+    (currentItems, item) =>
+      monkeyInspectAndThrowItem(monkeys, currentItems, monkeyIndex, item),
+    items
+  );
+
+const countItemsInspected = (oldItems, newItems, monkeyIndex) =>
+  oldItems[monkeyIndex].length - newItems[monkeyIndex].length;
+
+const updateInspectCounts = (inspectCounts, previousItems, currentItems, monkeyIndex) => {
+  const toReturn = [...inspectCounts];
+  toReturn[monkeyIndex] += countItemsInspected(previousItems, currentItems, monkeyIndex);
   return toReturn;
 };
 
-const monkeyCatch = (items, item) => [...items, item];
+const round = (monkeys, items, inspectCounts) =>
+  monkeys.reduce(
+    (prevState, _, index) => {
+      const newItems = monkeyTurn(monkeys, prevState.items, index);
+      const newInspectCounts = updateInspectCounts(
+        prevState.inspectCounts,
+        prevState.items,
+        newItems,
+        index
+      );
+      return { items: newItems, inspectCounts: newInspectCounts };
+    },
+    { items, inspectCounts }
+  );
 
-const throwItemToMonkey = (
-  state,
-  sourceMonkeyIndex,
-  destMonkeyIndex,
-  newItemWorryLevel
-) => {
-  const toReturn = [...state];
-  toReturn[sourceMonkeyIndex] = monkeyThrow(toReturn[sourceMonkeyIndex]);
-  toReturn[destMonkeyIndex] = monkeyCatch(toReturn[destMonkeyIndex], newItemWorryLevel);
-  return toReturn;
-};
+const rounds = (times, monkeys, items, inspectCounts) =>
+  [...Array(times)].reduce(
+    (prevState) => round(monkeys, prevState.items, prevState.inspectCounts),
+    {
+      items,
+      inspectCounts,
+    }
+  );
 
-const monkeyTurn = (monkeys, state, monkeyIndex) =>
-  state[monkeyIndex].reduce((prevState, item) => {
-    const result = monkeyInspectAndThrowItem(monkeys[monkeyIndex], item);
-    const toReturn = throwItemToMonkey(
-      prevState,
-      monkeyIndex,
-      result.throwToIndex,
-      result.item
-    );
-    console.log('step', toReturn);
-    return toReturn;
-  }, state);
-
-const round = (monkeys, state) =>
-  monkeys.reduce((prevState, _, index) => monkeyTurn(monkeys, prevState, index), state);
-
-const rounds = (times, monkeys, state) => {
-  [...Array(times)].reduce((prevState) => round(monkeys, prevState), state);
+const calculateMonkeyBusiness = (inspectCounts) => {
+  const sorted = [...inspectCounts].sort((a, b) => b - a);
+  return sorted[0] * sorted[1];
 };
 
 /**
@@ -113,11 +129,10 @@ const rounds = (times, monkeys, state) => {
  */
 export const levelOne = ({ input, lines }) => {
   const monkeys = parseLines(lines);
-  const state = monkeys.map(({ startingItems: items }) => items);
-  // monkeyTurn(monkeys, state, 0);
-  const result = rounds(20, monkeys, state);
-  
-  return 1234;
+  const items = monkeys.map((x) => x.startingItems);
+  const inspectCounts = monkeys.map(() => 0);
+  const result = rounds(20, monkeys, items, inspectCounts);
+  return calculateMonkeyBusiness(result.inspectCounts);
 };
 
 /**
