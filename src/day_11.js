@@ -105,23 +105,23 @@ const monkeyTurn = (monkeys, items, monkeyIndex, reliefFn) =>
     items
   );
 
-const countItemsInspected = (oldItems, newItems, monkeyIndex) =>
-  oldItems[monkeyIndex].length - newItems[monkeyIndex].length;
-
-const updateInspectCounts = (inspectCounts, previousItems, currentItems, monkeyIndex) => {
+/**
+ * Returns a new inspect counts array resulting from a single monkey inspecting and throwing all of its items to other monkeys.
+ */
+const updateInspectCounts = (inspectCounts, previousItems, monkeyIndex) => {
   const toReturn = [...inspectCounts];
-  toReturn[monkeyIndex] += countItemsInspected(previousItems, currentItems, monkeyIndex);
+  // this monkey inspected exactly as many items as it held in its hand before throwing.
+  toReturn[monkeyIndex] += previousItems[monkeyIndex].length;
   return toReturn;
 };
 
 const round = (monkeys, items, inspectCounts, reliefFn) =>
   monkeys.reduce(
-    (prevState, _, index) => {
-      const newItems = monkeyTurn(monkeys, prevState.items, index, reliefFn);
+    (currentState, _, index) => {
+      const newItems = monkeyTurn(monkeys, currentState.items, index, reliefFn);
       const newInspectCounts = updateInspectCounts(
-        prevState.inspectCounts,
-        prevState.items,
-        newItems,
+        currentState.inspectCounts,
+        currentState.items,
         index
       );
       return { items: newItems, inspectCounts: newInspectCounts };
