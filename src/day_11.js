@@ -115,6 +115,9 @@ const updateInspectCounts = (inspectCounts, previousItems, monkeyIndex) => {
   return toReturn;
 };
 
+/**
+ * Returns the new state resulting from a single round, that is all monkeys inspecting and throwing all of their items to other monkeys.
+ */
 const round = (monkeys, items, inspectCounts, reliefFn) =>
   monkeys.reduce(
     (currentState, _, index) => {
@@ -129,6 +132,9 @@ const round = (monkeys, items, inspectCounts, reliefFn) =>
     { items, inspectCounts }
   );
 
+/**
+ * Returns the new state resulting from x number of rounds.
+ */
 const rounds = (times, monkeys, items, inspectCounts, reliefFn) =>
   [...Array(times)].reduce(
     (prevState) => round(monkeys, prevState.items, prevState.inspectCounts, reliefFn),
@@ -138,6 +144,9 @@ const rounds = (times, monkeys, items, inspectCounts, reliefFn) =>
     }
   );
 
+/**
+ * Returns the level of monkey business resulting from the two most active monkeys.
+ */
 const calculateMonkeyBusiness = (inspectCounts) => {
   const sorted = [...inspectCounts].sort((a, b) => b - a);
   return sorted[0] * sorted[1];
