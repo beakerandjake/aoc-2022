@@ -1,4 +1,4 @@
-import { popHead, append } from './util.js';
+import { popHead, append, number, add, multiply, firstCapture } from './util.js';
 
 /**
  * Contains solutions for Day 11
@@ -9,39 +9,29 @@ import { popHead, append } from './util.js';
  * Parses the input and returns an array of monkeys.
  */
 const parseLines = (() => {
-  const parseStartingItems = (line) =>
-    line
-      .slice(18)
-      .split(', ')
-      .map((x) => +x);
 
-  const parseInspectBehavior = (() => {
-    const regex = /Operation: new = old ([+*]) (\d+|old)/;
-    const add = (lhs, rhs) => lhs + rhs;
-    const multiply = (lhs, rhs) => lhs * rhs;
-    return (line) => {
-      const [, op, rhsRaw] = line.match(regex);
-      const fn = op === '+' ? add : multiply;
-      const rhs = rhsRaw === 'old' ? null : +rhsRaw;
-      return { fn, rhs };
-    };
-  })();
+  const parseStartingItems = (line) => line.slice(18).split(', ').map(number);
 
-  const parseNumberFromFirstMatch = (line, regex) => +line.match(regex)[1];
+  const parseInspectBehavior = (line) => {
+    const [, op, rhsRaw] = line.match(/Operation: new = old ([+*]) (\d+|old)/);
+    const fn = op === '+' ? add : multiply;
+    const rhs = rhsRaw === 'old' ? null : number(rhsRaw);
+    return { fn, rhs };
+  };
 
-  const parseThrowTestNumerator = (line) =>
-    parseNumberFromFirstMatch(line, / {2}Test: divisible by (\d+)/);
+  const parseThrowNumerator = (line) =>
+    number(firstCapture(line, / {2}Test: divisible by (\d+)/));
 
-  const parseThrowDestination = (line) =>
-    parseNumberFromFirstMatch(line, / {4}If (?:true|false): throw to monkey (\d+)/);
+  const parseThrowTarget = (line) =>
+    number(firstCapture(line, / {4}If (?:true|false): throw to monkey (\d+)/));
 
   const parseMonkey = (lines) => ({
     startingItems: parseStartingItems(lines[0]),
     inspectBehavior: parseInspectBehavior(lines[1]),
     throwBehavior: {
-      numerator: parseThrowTestNumerator(lines[2]),
-      trueMonkey: parseThrowDestination(lines[3]),
-      falseMonkey: parseThrowDestination(lines[4]),
+      numerator: parseThrowNumerator(lines[2]),
+      trueMonkey: parseThrowTarget(lines[3]),
+      falseMonkey: parseThrowTarget(lines[4]),
     },
   });
 
