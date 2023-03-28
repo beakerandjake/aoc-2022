@@ -127,7 +127,7 @@ const calculateMonkeyBusiness = (inspectCounts) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = ({ input, lines }) => {
+export const levelOne = ({ lines }) => {
   const monkeys = parseLines(lines);
   const items = monkeys.map((x) => x.startingItems);
   const inspectCounts = monkeys.map(() => 0);
