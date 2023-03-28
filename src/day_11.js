@@ -179,8 +179,15 @@ export const levelOne = (() => {
  * @returns {Number|String}
  */
 export const levelTwo = (() => {
+  /**
+   * Calculates a common multiple of the given range of numbers.
+   */
   const lcm = (numbers) => numbers.reduce((acc, x) => acc * x, 1);
 
+  /**
+   * To keep the worry level from overflowing the bounds of integers, apply a relief fn
+   * that gives the same test results as the 'relief-free' version but stays within range.
+   */
   const getReliefFn = (monkeys) => {
     const reliefLcm = lcm(monkeys.map((x) => x.throwBehavior.numerator));
     return (worryLevel) => worryLevel % reliefLcm;
