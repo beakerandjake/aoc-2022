@@ -21,6 +21,7 @@ module.exports = {
     'no-unused-vars': 'off',
     'no-bitwise': 'off',
     'lines-between-class-members': 'off',
-    'max-classes-per-file': 'off'
+    'max-classes-per-file': 'off',
+    'import/extensions': 'off'
   },
 };
