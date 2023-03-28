@@ -5,6 +5,9 @@ import { popHead, append } from './util.js';
  * Puzzle Description: https://adventofcode.com/2022/day/11
  */
 
+/**
+ * Parses the input and returns an array of monkeys.
+ */
 const parseLines = (() => {
   const parseStartingItems = (line) =>
     line
