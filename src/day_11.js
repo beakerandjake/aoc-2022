@@ -54,8 +54,6 @@ const parseLines = (() => {
 
 const monkeyInspectItem = ({ fn, rhs }, item) => fn(item, rhs === null ? item : rhs);
 
-const applyRelief = (worryLevel) => Math.floor(worryLevel / 3);
-
 const monkeyChooseThrowTarget = (throwBehavior, worryLevel) =>
   worryLevel % throwBehavior.numerator === 0
     ? throwBehavior.trueMonkey
@@ -68,17 +66,17 @@ const throwItemToMonkey = (items, sourceIndex, destIndex, worryLevel) => {
   return newItems;
 };
 
-const monkeyInspectAndThrowItem = (monkeys, items, monkeyIndex, item) => {
+const monkeyInspectAndThrowItem = (monkeys, items, monkeyIndex, item, reliefFn) => {
   const { inspectBehavior, throwBehavior } = monkeys[monkeyIndex];
-  const newWorryLevel = applyRelief(monkeyInspectItem(inspectBehavior, item));
+  const newWorryLevel = reliefFn(monkeyInspectItem(inspectBehavior, item));
   const targetMonkeyIndex = monkeyChooseThrowTarget(throwBehavior, newWorryLevel);
   return throwItemToMonkey(items, monkeyIndex, targetMonkeyIndex, newWorryLevel);
 };
 
-const monkeyTurn = (monkeys, items, monkeyIndex) =>
+const monkeyTurn = (monkeys, items, monkeyIndex, reliefFn) =>
   items[monkeyIndex].reduce(
     (currentItems, item) =>
-      monkeyInspectAndThrowItem(monkeys, currentItems, monkeyIndex, item),
+      monkeyInspectAndThrowItem(monkeys, currentItems, monkeyIndex, item, reliefFn),
     items
   );
 
@@ -91,10 +89,10 @@ const updateInspectCounts = (inspectCounts, previousItems, currentItems, monkeyI
   return toReturn;
 };
 
-const round = (monkeys, items, inspectCounts) =>
+const round = (monkeys, items, inspectCounts, reliefFn) =>
   monkeys.reduce(
     (prevState, _, index) => {
-      const newItems = monkeyTurn(monkeys, prevState.items, index);
+      const newItems = monkeyTurn(monkeys, prevState.items, index, reliefFn);
       const newInspectCounts = updateInspectCounts(
         prevState.inspectCounts,
         prevState.items,
@@ -106,9 +104,9 @@ const round = (monkeys, items, inspectCounts) =>
     { items, inspectCounts }
   );
 
-const rounds = (times, monkeys, items, inspectCounts) =>
+const rounds = (times, monkeys, items, inspectCounts, reliefFn) =>
   [...Array(times)].reduce(
-    (prevState) => round(monkeys, prevState.items, prevState.inspectCounts),
+    (prevState) => round(monkeys, prevState.items, prevState.inspectCounts, reliefFn),
     {
       items,
       inspectCounts,
@@ -127,13 +125,17 @@ const calculateMonkeyBusiness = (inspectCounts) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = ({ lines }) => {
-  const monkeys = parseLines(lines);
-  const items = monkeys.map((x) => x.startingItems);
-  const inspectCounts = monkeys.map(() => 0);
-  const result = rounds(20, monkeys, items, inspectCounts);
-  return calculateMonkeyBusiness(result.inspectCounts);
-};
+export const levelOne = (() => {
+  const applyRelief = (worryLevel) => Math.floor(worryLevel / 3);
+
+  return ({ lines }) => {
+    const monkeys = parseLines(lines);
+    const items = monkeys.map((x) => x.startingItems);
+    const inspectCounts = monkeys.map(() => 0);
+    const result = rounds(20, monkeys, items, inspectCounts, applyRelief);
+    return calculateMonkeyBusiness(result.inspectCounts);
+  };
+})();
 
 /**
  * Returns the solution for level two of this puzzle.
@@ -142,6 +144,19 @@ export const levelOne = ({ lines }) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelTwo = ({ input, lines }) => {
-  // your code here
-};
+export const levelTwo = (() => {
+  const lcm = (numbers) => numbers.reduce((acc, x) => acc * x, 1);
+
+  const getReliefFn = (monkeys) => {
+    const reliefLcm = lcm(monkeys.map((x) => x.throwBehavior.numerator));
+    return (worryLevel) => worryLevel % reliefLcm;
+  };
+
+  return ({ lines }) => {
+    const monkeys = parseLines(lines);
+    const items = monkeys.map((x) => x.startingItems);
+    const inspectCounts = monkeys.map(() => 0);
+    const result = rounds(10000, monkeys, items, inspectCounts, getReliefFn(monkeys));
+    return calculateMonkeyBusiness(result.inspectCounts);
+  };
+})();
