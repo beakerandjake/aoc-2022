@@ -9,9 +9,14 @@ import { popHead, append, number, add, multiply, firstCapture } from './util.js'
  * Parses the input and returns an array of monkeys.
  */
 const parseLines = (() => {
-
+  /**
+   * Returns an array of the monkeys starting items
+   */
   const parseStartingItems = (line) => line.slice(18).split(', ').map(number);
 
+  /**
+   * Returns a function which the monkey will use to inspect the item.
+   */
   const parseInspectBehavior = (line) => {
     const [, op, rhsRaw] = line.match(/Operation: new = old ([+*]) (\d+|old)/);
     const fn = op === '+' ? add : multiply;
@@ -19,12 +24,21 @@ const parseLines = (() => {
     return { fn, rhs };
   };
 
+  /**
+   * Returns the numerator the monkey will use when deciding who to throw the item to.
+   */
   const parseThrowNumerator = (line) =>
     number(firstCapture(line, / {2}Test: divisible by (\d+)/));
 
+  /**
+   * Returns the index of the monkey to throw the item to.
+   */
   const parseThrowTarget = (line) =>
     number(firstCapture(line, / {4}If (?:true|false): throw to monkey (\d+)/));
 
+  /**
+   * Creates a monkey from parsing the input lines.
+   */
   const parseMonkey = (lines) => ({
     startingItems: parseStartingItems(lines[0]),
     inspectBehavior: parseInspectBehavior(lines[1]),
@@ -35,6 +49,9 @@ const parseLines = (() => {
     },
   });
 
+  /**
+   * Parse the input and create the monkeys.
+   */
   return (lines) => {
     const toReturn = [];
     const monkeyLineCount = 5;
