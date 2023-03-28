@@ -63,6 +63,14 @@ const parseLines = (() => {
 })();
 
 /**
+ * Returns a default state object.
+ */
+const getDefaultState = (monkeys) => ({
+  items: monkeys.map((x) => x.startingItems),
+  inspectCounts: monkeys.map(() => 0),
+});
+
+/**
  * Returns your new worry level as a result of the monkey inspecting the item.
  */
 const monkeyInspectItem = ({ fn, rhs }, item) => fn(item, rhs === null ? item : rhs);
@@ -118,31 +126,20 @@ const updateInspectCounts = (inspectCounts, previousItems, monkeyIndex) => {
 /**
  * Returns the new state resulting from a single round, that is all monkeys inspecting and throwing all of their items to other monkeys.
  */
-const round = (monkeys, items, inspectCounts, reliefFn) =>
+const round = (monkeys, state, reliefFn) =>
   monkeys.reduce(
-    (currentState, _, index) => {
-      const newItems = monkeyTurn(monkeys, currentState.items, index, reliefFn);
-      const newInspectCounts = updateInspectCounts(
-        currentState.inspectCounts,
-        currentState.items,
-        index
-      );
-      return { items: newItems, inspectCounts: newInspectCounts };
-    },
-    { items, inspectCounts }
+    ({ items, inspectCounts }, _, index) => ({
+      items: monkeyTurn(monkeys, items, index, reliefFn),
+      inspectCounts: updateInspectCounts(inspectCounts, items, index),
+    }),
+    state
   );
 
 /**
  * Returns the new state resulting from x number of rounds.
  */
-const rounds = (times, monkeys, items, inspectCounts, reliefFn) =>
-  [...Array(times)].reduce(
-    (prevState) => round(monkeys, prevState.items, prevState.inspectCounts, reliefFn),
-    {
-      items,
-      inspectCounts,
-    }
-  );
+const rounds = (times, monkeys, state, reliefFn) =>
+  [...Array(times)].reduce((prevState) => round(monkeys, prevState, reliefFn), state);
 
 /**
  * Returns the level of monkey business resulting from the two most active monkeys.
@@ -164,9 +161,8 @@ export const levelOne = (() => {
 
   return ({ lines }) => {
     const monkeys = parseLines(lines);
-    const items = monkeys.map((x) => x.startingItems);
-    const inspectCounts = monkeys.map(() => 0);
-    const result = rounds(20, monkeys, items, inspectCounts, applyRelief);
+    const state = getDefaultState(monkeys);
+    const result = rounds(20, monkeys, state, applyRelief);
     return calculateMonkeyBusiness(result.inspectCounts);
   };
 })();
@@ -195,9 +191,8 @@ export const levelTwo = (() => {
 
   return ({ lines }) => {
     const monkeys = parseLines(lines);
-    const items = monkeys.map((x) => x.startingItems);
-    const inspectCounts = monkeys.map(() => 0);
-    const result = rounds(10000, monkeys, items, inspectCounts, getReliefFn(monkeys));
-    return calculateMonkeyBusiness(result.inspectCounts);
+    const state = getDefaultState(monkeys);
+    const newState = rounds(10000, monkeys, state, getReliefFn(monkeys));
+    return calculateMonkeyBusiness(newState.inspectCounts);
   };
 })();
