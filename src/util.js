@@ -34,22 +34,27 @@ export const set = (array, index, value) => {
  * @param {String} rowSeparator - The character in the input which separates rows.
  * @param {Function} characterMapFn - Optional map function applied to each character.
  */
-export const parse2dArray = (input, rowSeparator = '\n', characterMapFn = null) => {
+export const parse2dArray = (input, characterMapFn = null, rowSeparator = '\n') => {
   const toReturn = [];
   const { length } = input;
   let rowCount = 0;
+  let colIndex = 0;
 
   for (let index = 0; index < length; index++) {
     const character = input[index];
     if (character !== rowSeparator) {
-      toReturn.push(characterMapFn ? characterMapFn(character) : character);
+      toReturn.push(
+        characterMapFn ? characterMapFn(character, rowCount, colIndex) : character
+      );
+      colIndex++;
     } else {
       rowCount++;
+      colIndex = 0;
     }
   }
 
   return {
-    array: toReturn,
+    items: toReturn,
     shape: { width: Math.floor((length - rowCount) / rowCount), height: rowCount },
   };
 };
@@ -106,3 +111,11 @@ export const multiply = (a, b) => a * b;
  * @param {RegExp} regex
  */
 export const firstCapture = (str, regex) => str.match(regex)[1];
+
+/**
+ * Checks if value is between start and up to, but not including end.
+ * @param {Number} value
+ * @param {Number} start
+ * @param {Number} end
+ */
+export const inRange = (value, start, end) => value >= start && value < end;
