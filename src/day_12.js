@@ -105,15 +105,29 @@ const dijkstras = (graph, startNode, targetNode) => {
       break;
     }
 
-    current.edges
-      .filter((edge) => unvisited.some((x) => x === edge.toId))
-      .forEach((edge) => {
-        const newDistance = distances[edge.fromId] + edge.weight;
-        if (newDistance < distances[edge.toId]) {
-          distances[edge.toId] = newDistance;
-          history[edge.toId] = current.id;
-        }
-      });
+    const edgesLength = current.edges.length;
+
+    for (let index = 0; index < edgesLength; index++) {
+      const edge = current.edges[index];
+      if (!unvisited.includes(edge.toId)) {
+        continue;
+      }
+      const newDistance = distances[edge.fromId] + edge.weight;
+      if (newDistance < distances[edge.toId]) {
+        distances[edge.toId] = newDistance;
+        history[edge.toId] = current.id;
+      }
+    }
+
+    // current.edges
+    //   .filter((edge) => unvisited.some((x) => x === edge.toId))
+    //   .forEach((edge) => {
+    //     const newDistance = distances[edge.fromId] + edge.weight;
+    //     if (newDistance < distances[edge.toId]) {
+    //       distances[edge.toId] = newDistance;
+    //       history[edge.toId] = current.id;
+    //     }
+    //   });
   }
 
   return tracePath(graph, history, targetNode, startNode);
