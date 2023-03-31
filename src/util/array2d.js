@@ -1,40 +1,4 @@
 /**
- * Checks if value is between start and up to, but not including end.
- * @param {Number} value
- * @param {Number} start
- * @param {Number} end
- */
-export const inRange = (value, start, end) => value >= start && value < end;
-
-/**
- * Removes the first element of the array.
- * Does not mutate the original array but instead returns a new copy.
- * @param {Array} arr
- */
-export const popHead = (arr) => arr.slice(1);
-
-/**
- * Adds the element to the end of the array.
- * Does not mutate the original array but instead returns a new copy.
- * @param {Array} arr
- * @param {Any} item
- */
-export const append = (arr, item) => [...arr, item];
-
-/**
- * Sets the value of the element at the index.
- * Does not mutate the original array but instead returns a new copy.
- * @param {Array} array
- * @param {Number} index
- * @param {Any} value
- */
-export const set = (array, index, value) => {
-  const copy = [...array];
-  copy[index] = value;
-  return copy;
-};
-
-/**
  * Returns a *flat* 2d array created from the input string.
  * Expects rows are separated by new line characters.
  * Expects the 2d array to be square that is length = width.
@@ -93,13 +57,6 @@ export const indexToCoordinate2d = (width, index) => ({
 export const elementAt2d = (array, { width }, y, x) => array[index2d(width, y, x)];
 
 /**
- * Given an input string in the shape
- * @param {*} input
- * @returns
- */
-export const getShape = (input) => ({ height: input.length, width: input[0].length });
-
-/**
  * Returns all of the neighbors
  */
 const neighbors2d = (grid, { width, height }, y, x, neighborDeltas) =>
@@ -125,6 +82,14 @@ export const cardinalNeighbors2d = (() => {
   return (grid, shape, y, x) => neighbors2d(grid, shape, y, x, deltas);
 })();
 
+/**
+ * Functional iteration over a *flat* 2d array.
+ * @param {Array} array
+ * @param {Object} shape - The shape of the 2d array (width and height)
+ * @param {Number} shape.width - The number of elements in each row of the 2d array.
+ * @param {Number} shape.height - The number of elements in each column of the 2d array.
+ * @param {Function} callbackFn - Function invoked for every element of the array.
+ */
 export const forEach2d = (array, { height, width }, callbackFn) => {
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -135,62 +100,3 @@ export const forEach2d = (array, { height, width }, callbackFn) => {
     }
   }
 };
-
-/**
- * Converts the string to a number.
- * For speed not for sanity, this can easily fail if the string is not valid.
- * @param {String} x
- */
-export const number = (x) => +x;
-
-/**
- * Returns the result of the lhs added to the rhs.
- * @param {Number} a
- * @param {Number} b
- */
-export const add = (a, b) => a + b;
-
-/**
- * Returns the result of the lhs multiplied by the rhs.
- * @param {Number} a
- * @param {Number} b
- */
-export const multiply = (a, b) => a * b;
-
-/**
- * Match the string to the regex and return the first capture result.
- * @param {String} str
- * @param {RegExp} regex
- */
-export const firstCapture = (str, regex) => str.match(regex)[1];
-
-/**
- * Returns the item in the array with the minimum value.
- * The valueFn is invoked for each element in the array to generate the criterion by which the value is ranked.
- * @param {Array} items
- * @param {Function} valueFn
- */
-export const minBy = (items, valueFn) => {
-  if (items.length === 0) {
-    return null;
-  }
-
-  let min = valueFn(items[0]);
-  let minIndex = 0;
-
-  items.forEach((item, index) => {
-    const currentValue = valueFn(item);
-    if (currentValue < min) {
-      min = currentValue;
-      minIndex = index;
-    }
-  });
-
-  return { item: items[minIndex], index: minIndex };
-};
-
-/**
- * Returns an array of all lowercase alphabet characters in order from a-z.
- */
-export const lowercaseAlphabet = () =>
-  [...Array(26)].map((_, index) => String.fromCharCode(index + 97));
