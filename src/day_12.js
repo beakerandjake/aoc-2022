@@ -1,9 +1,15 @@
+// import {
+//   parse2dArray,
+//   cardinalNeighbors2d,
+//   indexToCoordinate2d,
+//   lowercaseAlphabet,
+// } from './util.js';
 import {
   parse2dArray,
   cardinalNeighbors2d,
   indexToCoordinate2d,
   lowercaseAlphabet,
-} from './util.js';
+} from './util/index.js';
 
 /**
  * Contains solutions for Day 12
