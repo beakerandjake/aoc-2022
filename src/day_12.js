@@ -1,5 +1,4 @@
 import {
-  index2d,
   parse2dArray,
   cardinalNeighbors2d,
   indexToCoordinate2d,
@@ -112,52 +111,60 @@ const findClosestUnvisitedNode = (unvisited, distances) => {
   return smallestIndex;
 };
 
-const tracePath = (graph, history, endNode, startNode) => {
-  const toReturn = [];
-  let currentIndex = endNode.id;
+/**
+ * Returns the shortest path from the start node to the target node.
+ */
+const dijkstras = (() => {
+  /**
+   * Returns a path (array of nodes) by walking backwards through the history from the end node to the start node.
+   */
+  const traceHistory = (graph, history, endNode, startNode) => {
+    const toReturn = [];
+    let currentIndex = endNode.id;
 
-  while (currentIndex !== -1 && currentIndex !== startNode.id) {
-    const currentNode = graph[currentIndex];
-    toReturn.unshift(currentNode);
-    currentIndex = history[currentIndex];
-  }
-
-  return toReturn;
-};
-
-const dijkstras = (graph, startNode, targetNode) => {
-  const distances = graph.map(() => Number.MAX_SAFE_INTEGER);
-  const history = graph.map(() => -1);
-  const unvisited = graph.map((x) => x.id);
-
-  distances[startNode.id] = 0;
-
-  while (unvisited.length > 0) {
-    const closestUnvisitedIndex = findClosestUnvisitedNode(unvisited, distances);
-    const current = graph[unvisited[closestUnvisitedIndex]];
-    unvisited.splice(closestUnvisitedIndex, 1);
-
-    if (current.id === targetNode.id) {
-      break;
+    while (currentIndex !== -1 && currentIndex !== startNode.id) {
+      const currentNode = graph[currentIndex];
+      toReturn.unshift(currentNode);
+      currentIndex = history[currentIndex];
     }
 
-    const edgesLength = current.edges.length;
+    return toReturn;
+  };
 
-    for (let edgeIndex = 0; edgeIndex < edgesLength; edgeIndex++) {
-      const edge = current.edges[edgeIndex];
-      if (!unvisited.includes(edge.toId)) {
-        continue;
+  return (graph, startNode, targetNode) => {
+    const distances = graph.map(() => Number.MAX_SAFE_INTEGER);
+    const history = graph.map(() => -1);
+    const unvisited = graph.map((x) => x.id);
+
+    distances[startNode.id] = 0;
+
+    while (unvisited.length > 0) {
+      const closestUnvisitedIndex = findClosestUnvisitedNode(unvisited, distances);
+      const current = graph[unvisited[closestUnvisitedIndex]];
+      unvisited.splice(closestUnvisitedIndex, 1);
+
+      if (current.id === targetNode.id) {
+        break;
       }
-      const newDistance = distances[edge.fromId] + edge.weight;
-      if (newDistance < distances[edge.toId]) {
-        distances[edge.toId] = newDistance;
-        history[edge.toId] = current.id;
+
+      const edgesLength = current.edges.length;
+
+      for (let edgeIndex = 0; edgeIndex < edgesLength; edgeIndex++) {
+        const edge = current.edges[edgeIndex];
+        if (!unvisited.includes(edge.toId)) {
+          continue;
+        }
+        const newDistance = distances[edge.fromId] + edge.weight;
+        if (newDistance < distances[edge.toId]) {
+          distances[edge.toId] = newDistance;
+          history[edge.toId] = current.id;
+        }
       }
     }
-  }
 
-  return tracePath(graph, history, targetNode, startNode);
-};
+    return traceHistory(graph, history, targetNode, startNode);
+  };
+})();
 
 /**
  * Returns the solution for level one of this puzzle.
