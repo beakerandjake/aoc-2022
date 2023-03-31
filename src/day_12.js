@@ -7,6 +7,7 @@ import {
   forEach2d,
   indexToCoordinate2d,
   minBy,
+  alphabet,
 } from './util.js';
 
 /**
@@ -18,18 +19,72 @@ const isStartNode = (value) => value === 'S';
 
 const isEndNode = (value) => value === 'E';
 
+const elevationMap = alphabet().reduce((acc, character, index) => {
+  acc[character] = index + 1;
+  return acc;
+}, {});
+
+class Node {
+  constructor(value, id) {
+    this.value = value;
+    this.id = id;
+    this.neighbors = [];
+  }
+
+  toString() {
+    return `<${this.id}> = ${this.value}`;
+  }
+}
+
+const parseInput = (input) => {
+  const { items: nodes, shape } = parse2dArray(
+    input,
+    (value, index) => new Node(value, index)
+  );
+
+  for (let index = 0; index < nodes.length; index++) {
+    const { y, x } = indexToCoordinate2d(shape.width, index);
+    nodes[index].neighbors = cardinalNeighbors2d(nodes, shape, y, x);
+  }
+
+  return nodes;
+};
+
+const printGraph = (graph) => {
+  graph.forEach((x) => {
+    console.log(`${x}, neighbors: [${x.neighbors.join(',')}]`);
+  });
+};
+
 const findClosestUnvisitedNode = (nodes) => minBy(nodes, (x) => x.tentativeDistance);
 
 const distance = (from, to) => {
-  if (isEndNode(to)) {
-    return 0;
-  }
-
-  if (to < from) {
+  if (isStartNode(from) || isEndNode(to)) {
     return 1;
   }
 
-  return to - from;
+  const fromElevation = elevationMap[from];
+  const toElevation = elevationMap[to];
+
+  if (toElevation < fromElevation) {
+    return 1;
+  }
+
+  return toElevation - fromElevation;
+};
+
+const isUnvisited = (node, visitedSet) => visitedSet.includes(node);
+
+const tracePath = (end, start, history) => {
+  const toReturn = [];
+  let current = end.id;
+
+  while (current !== start.id) {
+    toReturn.unshift(current);
+    current = history[current];
+  }
+
+  return toReturn;
 };
 
 /**
@@ -40,27 +95,42 @@ const distance = (from, to) => {
  * @returns {Number|String}
  */
 export const levelOne = ({ input }) => {
-  const { items, shape } = parse2dArray(input);
-  const unvisited = items.map((item, index) => ({
-    position: indexToCoordinate2d(shape.width, index),
-    value: item,
-    charCode: item.charCodeAt(),
-    tentativeDistance: isStartNode(item) ? 0 : Number.MAX_SAFE_INTEGER,
-  }));
+  const nodes = parseInput(input);
+  const distances = nodes.map((x) =>
+    isStartNode(x.value) ? 0 : Number.MAX_SAFE_INTEGER
+  );
+  const previous = nodes.map(() => -1);
+  const unvisited = [...nodes];
+  let current;
 
-  let current = findClosestUnvisitedNode(unvisited);
-  const neighbors = cardinalNeighbors2d(items, shape)
-  // console.log(unvisited);
-  // const unvisited = items.map((x, index) => {
-  //   console.log(x);
+  while (unvisited.length > 0) {
+    current = findClosestUnvisitedNode(unvisited);
 
-  //   return x;
-  // });
-  // const { start, end } = findStartAndEnd(items);
+    if (isEndNode(current.value)) {
+      break;
+    }
 
-  // console.log('start', start, 'end', end);
+    current.neighbors
+      .filter((neighbor) => unvisited.some((x) => x.id === neighbor.id))
+      // eslint-disable-next-line no-loop-func
+      .forEach((neighbor) => {
+        const distanceFromCurrent =
+          distances[current.id] + distance(current.value, neighbor.value);
+        if (distanceFromCurrent < distances[neighbor.id]) {
+          distances[neighbor.id] = distanceFromCurrent;
+          previous[neighbor.id] = current.id;
+        }
+      });
 
-  // console.log(items);
+    unvisited.splice(unvisited.indexOf(current), 1);
+  }
+
+  const path = [];
+
+  console.log(tracePath(current, ));
+
+  console.log(previous);
+  console.log(current);
 
   return 1234;
 };
