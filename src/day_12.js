@@ -1,4 +1,5 @@
 import {
+  index2d,
   parse2dArray,
   cardinalNeighbors2d,
   indexToCoordinate2d,
@@ -10,34 +11,18 @@ import {
  * Puzzle Description: https://adventofcode.com/2022/day/12
  */
 
-const edgeToString = ({ fromId, toId, weight }) =>
-  `${fromId} to ${toId}, weight: ${weight}`;
-
-const nodeToString = ({ id, character, height }) => `${id}=${character}(${height})`;
-
-const printGraph = (graph) => {
-  console.group('Graph');
-  graph.forEach((node) => {
-    console.log(`node: ${nodeToString(node)}`);
-    console.group('neighbors:');
-    node.edges.forEach((x) => {
-      console.log(edgeToString(x));
-    });
-    console.groupEnd();
-    console.log();
-  });
-  console.groupEnd();
-};
-
 const startCharacter = 'S';
 const endCharacter = 'E';
 
-const characterHeightMap = lowercaseAlphabet().reduce((acc, character, index) => {
-  acc[character] = index + 1;
-  return acc;
-}, {});
-characterHeightMap[startCharacter] = characterHeightMap.a;
-characterHeightMap[endCharacter] = characterHeightMap.z;
+const characterHeightMap = (() => {
+  const toReturn = lowercaseAlphabet().reduce((acc, character, index) => {
+    acc[character] = index + 1;
+    return acc;
+  }, {});
+  toReturn[startCharacter] = toReturn.a;
+  toReturn[endCharacter] = toReturn.z;
+  return toReturn;
+})();
 
 const createNode = (id, character, height) => ({
   id,
@@ -47,41 +32,30 @@ const createNode = (id, character, height) => ({
 });
 
 const edgeWeight = (from, to) => {
-  ///(from >= to ? 1 : to - from); {
-
-  const diff = to - from;
-
-  if (diff <= 0) {
-    return 1;
-  }
-
-  if (diff > 1) {
-    return Number.MAX_SAFE_INTEGER;
-  }
-
-  return diff;
+  const diff = Math.max(1, to - from);
+  return diff === 1 ? diff : Number.MAX_SAFE_INTEGER;
 };
 
-const createEdge = (from, to) => ({
-  fromId: from.id,
-  toId: to.id,
-  weight: edgeWeight(from.height, to.height),
+const createEdge = (fromId, toId, weight) => ({
+  fromId,
+  toId,
+  weight,
 });
 
 const parseInput = (input) => {
-  const { items: nodes, shape } = parse2dArray(input, (character, index) =>
+  const { items: graph, shape } = parse2dArray(input, (character, index) =>
     createNode(index, character, characterHeightMap[character])
   );
 
-  for (let index = 0; index < nodes.length; index++) {
-    const current = nodes[index];
+  for (let index = 0; index < graph.length; index++) {
+    const current = graph[index];
     const { y, x } = indexToCoordinate2d(shape.width, index);
-    current.edges = cardinalNeighbors2d(nodes, shape, y, x).map((neighbor) =>
-      createEdge(current, neighbor)
+    current.edges = cardinalNeighbors2d(graph, shape, y, x).map((neighbor) =>
+      createEdge(current.id, neighbor.id, edgeWeight(current.height, neighbor.height))
     );
   }
 
-  return nodes;
+  return graph;
 };
 
 const findStartNode = (graph) => graph.find((x) => x.character === startCharacter);
@@ -106,7 +80,7 @@ const tracePath = (graph, history, endNode, startNode) => {
   const toReturn = [];
   let currentIndex = endNode.id;
 
-  while (currentIndex !== -1) {
+  while (currentIndex !== -1 && currentIndex !== startNode.id) {
     const currentNode = graph[currentIndex];
     toReturn.unshift(currentNode);
     currentIndex = history[currentIndex];
@@ -117,7 +91,7 @@ const tracePath = (graph, history, endNode, startNode) => {
 
 const dijkstras = (graph, startNode, targetNode) => {
   const distances = graph.map(() => Number.MAX_SAFE_INTEGER);
-  const previous = graph.map(() => -1);
+  const history = graph.map(() => -1);
   const unvisited = graph.map((x) => x.id);
 
   distances[startNode.id] = 0;
@@ -137,12 +111,12 @@ const dijkstras = (graph, startNode, targetNode) => {
         const newDistance = distances[edge.fromId] + edge.weight;
         if (newDistance < distances[edge.toId]) {
           distances[edge.toId] = newDistance;
-          previous[edge.toId] = current.id;
+          history[edge.toId] = current.id;
         }
       });
   }
 
-  return tracePath(graph, previous, targetNode, startNode);
+  return tracePath(graph, history, targetNode, startNode);
 };
 
 /**
@@ -155,7 +129,7 @@ const dijkstras = (graph, startNode, targetNode) => {
 export const levelOne = ({ input }) => {
   const graph = parseInput(input);
   const path = dijkstras(graph, findStartNode(graph), findEndNode(graph));
-  return path.length - 1;
+  return path.length;
 };
 
 /**
