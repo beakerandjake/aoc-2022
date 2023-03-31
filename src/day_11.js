@@ -1,4 +1,4 @@
-import { popHead, append, number, add, multiply, firstCapture } from './util.js';
+import { popHead, append, number, add, multiply, firstCapture } from './util/index.js';
 
 /**
  * Contains solutions for Day 11
