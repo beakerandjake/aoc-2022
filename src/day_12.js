@@ -118,16 +118,6 @@ const dijkstras = (graph, startNode, targetNode) => {
         history[edge.toId] = current.id;
       }
     }
-
-    // current.edges
-    //   .filter((edge) => unvisited.some((x) => x === edge.toId))
-    //   .forEach((edge) => {
-    //     const newDistance = distances[edge.fromId] + edge.weight;
-    //     if (newDistance < distances[edge.toId]) {
-    //       distances[edge.toId] = newDistance;
-    //       history[edge.toId] = current.id;
-    //     }
-    //   });
   }
 
   return tracePath(graph, history, targetNode, startNode);
