@@ -189,5 +189,8 @@ export const minBy = (items, valueFn) => {
   return items[minIndex];
 };
 
-export const alphabet = () =>
+/**
+ * Returns an array of all lowercase alphabet characters in order from a-z.
+ */
+export const lowercaseAlphabet = () =>
   [...Array(26)].map((_, index) => String.fromCharCode(index + 97));
