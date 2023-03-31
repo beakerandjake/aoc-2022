@@ -186,7 +186,7 @@ export const minBy = (items, valueFn) => {
     }
   });
 
-  return items[minIndex];
+  return { item: items[minIndex], index: minIndex };
 };
 
 /**
