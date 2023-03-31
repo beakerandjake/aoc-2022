@@ -1,4 +1,4 @@
-import { popHead, append, number, add, multiply, firstCapture } from './util/index.js';
+import { popHead, append, toNumber, add, multiply, firstCapture } from './util/index.js';
 
 /**
  * Contains solutions for Day 11
@@ -12,7 +12,7 @@ const parseLines = (() => {
   /**
    * Returns an array of the monkeys starting items
    */
-  const parseStartingItems = (line) => line.slice(18).split(', ').map(number);
+  const parseStartingItems = (line) => line.slice(18).split(', ').map(toNumber);
 
   /**
    * Returns a function which the monkey will use to inspect the item.
@@ -20,7 +20,7 @@ const parseLines = (() => {
   const parseInspectBehavior = (line) => {
     const [, op, rhsRaw] = line.match(/Operation: new = old ([+*]) (\d+|old)/);
     const fn = op === '+' ? add : multiply;
-    const rhs = rhsRaw === 'old' ? null : number(rhsRaw);
+    const rhs = rhsRaw === 'old' ? null : toNumber(rhsRaw);
     return { fn, rhs };
   };
 
@@ -28,13 +28,13 @@ const parseLines = (() => {
    * Returns the numerator the monkey will use when deciding who to throw the item to.
    */
   const parseThrowNumerator = (line) =>
-    number(firstCapture(line, / {2}Test: divisible by (\d+)/));
+    toNumber(firstCapture(line, / {2}Test: divisible by (\d+)/));
 
   /**
    * Returns the index of the monkey to throw the item to.
    */
   const parseThrowTarget = (line) =>
-    number(firstCapture(line, / {4}If (?:true|false): throw to monkey (\d+)/));
+    toNumber(firstCapture(line, / {4}If (?:true|false): throw to monkey (\d+)/));
 
   /**
    * Creates a monkey from parsing the input lines.

@@ -3,7 +3,7 @@
  * For speed not for sanity, this can easily fail if the string is not valid.
  * @param {String} x
  */
-export const number = (x) => +x;
+export const toNumber = (x) => +x;
 
 /**
  * Returns an array of all lowercase alphabet characters in order from a-z.
