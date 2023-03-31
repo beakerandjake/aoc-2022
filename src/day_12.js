@@ -7,7 +7,7 @@ import {
   forEach2d,
   indexToCoordinate2d,
   minBy,
-  alphabet,
+  lowercaseAlphabet,
 } from './util.js';
 
 /**
@@ -15,52 +15,76 @@ import {
  * Puzzle Description: https://adventofcode.com/2022/day/12
  */
 
-const isStartNode = (value) => value === 'S';
+// graph has nodes, nodes have edges
 
-const isEndNode = (value) => value === 'E';
+const startCharacter = 'S';
+const isStartNode = (value) => value === startCharacter;
 
-const elevationMap = alphabet().reduce((acc, character, index) => {
+const endCharacter = 'E';
+const isEndNode = (value) => value === endCharacter;
+
+const elevationMap = lowercaseAlphabet().reduce((acc, character, index) => {
   acc[character] = index + 1;
   return acc;
 }, {});
+elevationMap[startCharacter] = elevationMap.a;
+elevationMap[endCharacter] = elevationMap.z;
 
-class Node {
-  constructor(value, id) {
-    this.value = value;
-    this.id = id;
-    this.neighbors = [];
-  }
+const createNode = (id, value, character) => ({
+  id,
+  value,
+  character,
+  neighbors: [],
+});
 
-  toString() {
-    return `<${this.id}> = ${this.value}`;
-  }
-}
+const edgeWeight = (from, to) => (from >= to ? 1 : to - from);
+
+const createEdge = (from, to) => ({
+  fromId: from.id,
+  toId: to.id,
+  weight: edgeWeight(from.value, to.value),
+});
 
 const parseInput = (input) => {
-  const { items: nodes, shape } = parse2dArray(
-    input,
-    (value, index) => new Node(value, index)
+  const { items: nodes, shape } = parse2dArray(input, (character, index) =>
+    createNode(index, elevationMap[character], character)
   );
 
   for (let index = 0; index < nodes.length; index++) {
+    const current = nodes[index];
     const { y, x } = indexToCoordinate2d(shape.width, index);
-    nodes[index].neighbors = cardinalNeighbors2d(nodes, shape, y, x);
+    current.neighbors = cardinalNeighbors2d(nodes, shape, y, x).map((neighbor) =>
+      createEdge(current, neighbor)
+    );
   }
 
   return nodes;
 };
 
+const edgeToString = ({ fromId, toId, weight }) =>
+  `${fromId} to ${toId}, weight: ${weight}`;
+
+const nodeToString = ({ id, value, character }) => `${id} = ${value} (${character})`;
+
 const printGraph = (graph) => {
-  graph.forEach((x) => {
-    console.log(`${x}, neighbors: [${x.neighbors.join(',')}]`);
+  console.group('Graph');
+  graph.forEach((node) => {
+    console.log(`node: ${nodeToString(node)}`);
+    console.group('neighbors:');
+    node.neighbors.forEach((x) => {
+      console.log(edgeToString(x));
+    });
+    console.groupEnd();
+    console.log();
   });
+  console.groupEnd();
 };
 
 const findClosestUnvisitedNode = (nodes) => minBy(nodes, (x) => x.tentativeDistance);
 
 const distance = (from, to) => {
   if (isStartNode(from) || isEndNode(to)) {
-    return 1;
+    return 0;
   }
 
   const fromElevation = elevationMap[from];
@@ -95,42 +119,45 @@ const tracePath = (end, start, history) => {
  * @returns {Number|String}
  */
 export const levelOne = ({ input }) => {
+  console.log();
   const nodes = parseInput(input);
-  const distances = nodes.map((x) =>
-    isStartNode(x.value) ? 0 : Number.MAX_SAFE_INTEGER
-  );
-  const previous = nodes.map(() => -1);
-  const unvisited = [...nodes];
-  let current;
 
-  while (unvisited.length > 0) {
-    current = findClosestUnvisitedNode(unvisited);
+  printGraph(nodes);
+  // const distances = nodes.map((x) =>
+  //   isStartNode(x.value) ? 0 : Number.MAX_SAFE_INTEGER
+  // );
+  // const previous = nodes.map(() => -1);
+  // const unvisited = [...nodes];
+  // let current;
 
-    if (isEndNode(current.value)) {
-      break;
-    }
+  // while (unvisited.length > 0) {
+  //   current = findClosestUnvisitedNode(unvisited);
 
-    current.neighbors
-      .filter((neighbor) => unvisited.some((x) => x.id === neighbor.id))
-      // eslint-disable-next-line no-loop-func
-      .forEach((neighbor) => {
-        const distanceFromCurrent =
-          distances[current.id] + distance(current.value, neighbor.value);
-        if (distanceFromCurrent < distances[neighbor.id]) {
-          distances[neighbor.id] = distanceFromCurrent;
-          previous[neighbor.id] = current.id;
-        }
-      });
+  //   if (isEndNode(current.value)) {
+  //     break;
+  //   }
 
-    unvisited.splice(unvisited.indexOf(current), 1);
-  }
+  //   current.neighbors
+  //     .filter((neighbor) => unvisited.some((x) => x.id === neighbor.id))
+  //     // eslint-disable-next-line no-loop-func
+  //     .forEach((neighbor) => {
+  //       const distanceFromCurrent =
+  //         distances[current.id] + distance(current.value, neighbor.value);
+  //       if (distanceFromCurrent < distances[neighbor.id]) {
+  //         distances[neighbor.id] = distanceFromCurrent;
+  //         previous[neighbor.id] = current.id;
+  //       }
+  //     });
 
-  const path = [];
+  //   unvisited.splice(unvisited.indexOf(current), 1);
+  // }
 
-  console.log(tracePath(current, ));
+  // const path = [];
 
-  console.log(previous);
-  console.log(current);
+  // console.log(tracePath(current, ));
+
+  // console.log(previous);
+  // console.log(current);
 
   return 1234;
 };
