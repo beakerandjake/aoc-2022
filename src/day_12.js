@@ -107,8 +107,8 @@ const dijkstras = (graph, startNode, targetNode) => {
 
     const edgesLength = current.edges.length;
 
-    for (let index = 0; index < edgesLength; index++) {
-      const edge = current.edges[index];
+    for (let edgeIndex = 0; edgeIndex < edgesLength; edgeIndex++) {
+      const edge = current.edges[edgeIndex];
       if (!unvisited.includes(edge.toId)) {
         continue;
       }
