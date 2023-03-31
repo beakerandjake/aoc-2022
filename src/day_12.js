@@ -11,19 +11,34 @@ import {
  * Puzzle Description: https://adventofcode.com/2022/day/12
  */
 
-const startCharacter = 'S';
-const endCharacter = 'E';
+/**
+ * Map of special characters in the input file.
+ */
+const specialCharacters = {
+  start: 'S',
+  target: 'E',
+};
 
+/**
+ * Maps a input character to that characters topographical height.
+ */
 const characterHeightMap = (() => {
   const toReturn = lowercaseAlphabet().reduce((acc, character, index) => {
     acc[character] = index + 1;
     return acc;
   }, {});
-  toReturn[startCharacter] = toReturn.a;
-  toReturn[endCharacter] = toReturn.z;
+  // start and end characters are at lowest and highest altitudes, respectively.
+  toReturn[specialCharacters.start] = toReturn.a;
+  toReturn[specialCharacters.end] = toReturn.z;
   return toReturn;
 })();
 
+/**
+ * Creates a new graph node.
+ * @param {Number} id - The id of this node, which must correspond to the index in the parent graph.
+ * @param {String} character - The input character of this node.
+ * @param {Number} height - The height of this node.
+ */
 const createNode = (id, character, height) => ({
   id,
   character,
@@ -31,17 +46,34 @@ const createNode = (id, character, height) => ({
   edges: [],
 });
 
-const edgeWeight = (from, to) => {
-  const diff = Math.max(1, to - from);
+/**
+ * Calculates the weight of traversing from one height to the other.
+ * @param {Number} fromHeight
+ * @param {Number} toHeight
+ */
+const edgeWeight = (fromHeight, toHeight) => {
+  // treat diffs that are negative, equal to zero or equal to one equally, with a weight of 1.
+  // all other diffs (which must be greater than 1) are not traversable (we don't want to get our climbing equipment out)
+  const diff = Math.max(1, toHeight - fromHeight);
   return diff === 1 ? diff : Number.MAX_SAFE_INTEGER;
 };
 
+/**
+ * Create a new graph edge, linking one node to another node
+ * @param {Number} fromId - The id of the source node.
+ * @param {Number} toId - The id of the dest node.
+ * @param {Number} weight - The height difference between the source and dest nodes.
+ */
 const createEdge = (fromId, toId, weight) => ({
   fromId,
   toId,
   weight,
 });
 
+/**
+ * Parse the input file and return a graph representing a topographical map.
+ * @param {String} input
+ */
 const parseInput = (input) => {
   const { items: graph, shape } = parse2dArray(input, (character, index) =>
     createNode(index, character, characterHeightMap[character])
@@ -58,8 +90,10 @@ const parseInput = (input) => {
   return graph;
 };
 
-const findStartNode = (graph) => graph.find((x) => x.character === startCharacter);
-const findEndNode = (graph) => graph.find((x) => x.character === endCharacter);
+
+const findStartNode = (graph) =>
+  graph.find((x) => x.character === specialCharacters.start);
+const findEndNode = (graph) => graph.find((x) => x.character === specialCharacters.end);
 
 const findClosestUnvisitedNode = (unvisited, distances) => {
   let smallestDistance = distances[unvisited[0]];
