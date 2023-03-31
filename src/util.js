@@ -50,7 +50,9 @@ export const parse2dArray = (input, characterMapFn = null, rowSeparator = '\n') 
   for (let index = 0; index < length; index++) {
     const character = input[index];
     if (character !== rowSeparator) {
-      toReturn.push(characterMapFn ? characterMapFn(character) : character);
+      toReturn.push(
+        characterMapFn ? characterMapFn(character, toReturn.length) : character
+      );
     } else {
       rowCount++;
     }
@@ -186,3 +188,6 @@ export const minBy = (items, valueFn) => {
 
   return items[minIndex];
 };
+
+export const alphabet = () =>
+  [...Array(26)].map((_, index) => String.fromCharCode(index + 97));
