@@ -20,6 +20,13 @@ const specialCharacters = {
 };
 
 /**
+ * Search the graph for the target node.
+ * @param {Array} graph
+ */
+const findTargetNode = (graph) =>
+  graph.find((x) => x.character === specialCharacters.target);
+
+/**
  * Maps a input character to that characters topographical height.
  */
 const characterHeightMap = (() => {
@@ -29,7 +36,7 @@ const characterHeightMap = (() => {
   }, {});
   // start and end characters are at lowest and highest altitudes, respectively.
   toReturn[specialCharacters.start] = toReturn.a;
-  toReturn[specialCharacters.end] = toReturn.z;
+  toReturn[specialCharacters.target] = toReturn.z;
   return toReturn;
 })();
 
@@ -89,11 +96,6 @@ const parseInput = (input) => {
 
   return graph;
 };
-
-
-const findStartNode = (graph) =>
-  graph.find((x) => x.character === specialCharacters.start);
-const findEndNode = (graph) => graph.find((x) => x.character === specialCharacters.end);
 
 const findClosestUnvisitedNode = (unvisited, distances) => {
   let smallestDistance = distances[unvisited[0]];
@@ -164,11 +166,16 @@ const dijkstras = (graph, startNode, targetNode) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = ({ input }) => {
-  const graph = parseInput(input);
-  const path = dijkstras(graph, findStartNode(graph), findEndNode(graph));
-  return path.length;
-};
+export const levelOne = (() => {
+  const findStartNode = (graph) =>
+    graph.find((x) => x.character === specialCharacters.start);
+
+  return ({ input }) => {
+    const graph = parseInput(input);
+    const path = dijkstras(graph, findStartNode(graph), findTargetNode(graph));
+    return path.length;
+  };
+})();
 
 /**
  * Returns the solution for level two of this puzzle.
