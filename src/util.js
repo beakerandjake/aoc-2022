@@ -161,3 +161,28 @@ export const multiply = (a, b) => a * b;
  * @param {RegExp} regex
  */
 export const firstCapture = (str, regex) => str.match(regex)[1];
+
+/**
+ * Returns the item in the array with the minimum value.
+ * The valueFn is invoked for each element in the array to generate the criterion by which the value is ranked.
+ * @param {Array} items
+ * @param {Function} valueFn
+ */
+export const minBy = (items, valueFn) => {
+  if (items.length === 0) {
+    return null;
+  }
+
+  let min = valueFn(items[0]);
+  let minIndex = 0;
+
+  items.forEach((item, index) => {
+    const currentValue = valueFn(item);
+    if (currentValue < min) {
+      min = currentValue;
+      minIndex = index;
+    }
+  });
+
+  return items[minIndex];
+};

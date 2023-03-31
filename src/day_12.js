@@ -6,6 +6,7 @@ import {
   cardinalNeighbors2d,
   forEach2d,
   indexToCoordinate2d,
+  minBy,
 } from './util.js';
 
 /**
@@ -14,16 +15,21 @@ import {
  */
 
 const isStartNode = (value) => value === 'S';
+
 const isEndNode = (value) => value === 'E';
 
-const findStartAndEnd = (items) => {
-  const startAndEnd = items.filter((x) => isStartNode(x) || isEndNode(x));
-  const startIndex = isStartNode(items[0]) ? 0 : 1;
-  const endIndex = startIndex === 0 ? 1 : 0;
-  return {
-    start: startAndEnd[startIndex],
-    end: startAndEnd[endIndex],
-  };
+const findClosestUnvisitedNode = (nodes) => minBy(nodes, (x) => x.tentativeDistance);
+
+const distance = (from, to) => {
+  if (isEndNode(to)) {
+    return 0;
+  }
+
+  if (to < from) {
+    return 1;
+  }
+
+  return to - from;
 };
 
 /**
@@ -35,11 +41,15 @@ const findStartAndEnd = (items) => {
  */
 export const levelOne = ({ input }) => {
   const { items, shape } = parse2dArray(input);
-  const { start, end } = findStartAndEnd(items);
   const unvisited = items.map((item, index) => ({
     position: indexToCoordinate2d(shape.width, index),
     value: item,
+    charCode: item.charCodeAt(),
+    tentativeDistance: isStartNode(item) ? 0 : Number.MAX_SAFE_INTEGER,
   }));
+
+  let current = findClosestUnvisitedNode(unvisited);
+  const neighbors = cardinalNeighbors2d(items, shape)
   // console.log(unvisited);
   // const unvisited = items.map((x, index) => {
   //   console.log(x);
