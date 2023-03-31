@@ -1,9 +1,3 @@
-// import {
-//   parse2dArray,
-//   cardinalNeighbors2d,
-//   indexToCoordinate2d,
-//   lowercaseAlphabet,
-// } from './util.js';
 import {
   parse2dArray,
   cardinalNeighbors2d,
@@ -136,6 +130,8 @@ const dijkstras = (() => {
 
     return toReturn;
   };
+
+  // standard implementation of dijkstras algorithm.
 
   return (graph, startNode, targetNode) => {
     const distances = graph.map(() => Number.MAX_SAFE_INTEGER);
