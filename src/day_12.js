@@ -122,7 +122,7 @@ const dijkstras = (() => {
     const toReturn = [];
     let currentIndex = endNode.id;
 
-    while (currentIndex !== -1 && currentIndex !== startNode.id) {
+    while (history[currentIndex] !== -1 && currentIndex !== startNode.id) {
       const currentNode = graph[currentIndex];
       toReturn.unshift(currentNode);
       currentIndex = history[currentIndex];
@@ -193,6 +193,19 @@ export const levelOne = (() => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelTwo = ({ input, lines }) => {
-  // your code here
-};
+export const levelTwo = (() => {
+  const getPotentialStarts = (graph) =>
+    graph.filter(
+      (node) => node.character === 'a' || node.character === specialCharacters.start
+    );
+
+  return ({ input }) => {
+    const graph = parseInput(input);
+    const endNode = findTargetNode(graph);
+    const potentialStarts = getPotentialStarts(graph);
+    return potentialStarts
+      .map((start) => dijkstras(graph, start, endNode).length)
+      .filter((x) => x > 0)
+      .sort((a, b) => a - b)[0];
+  };
+})();
