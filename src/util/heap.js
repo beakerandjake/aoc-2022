@@ -136,6 +136,11 @@ export class Heap {
 
     return true;
   };
+
+  /**
+   * Does this heap have any elements?
+   */
+  isEmpty = () => this._maxIndex > 0;
 }
 
 /**
