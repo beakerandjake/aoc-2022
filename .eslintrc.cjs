@@ -22,6 +22,7 @@ module.exports = {
     'no-bitwise': 'off',
     'lines-between-class-members': 'off',
     'max-classes-per-file': 'off',
-    'import/extensions': 'off'
+    'import/extensions': 'off',
+    'no-underscore-dangle': 'off'
   },
 };
