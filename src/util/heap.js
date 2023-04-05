@@ -107,13 +107,15 @@ export class Heap {
     if (this._maxIndex === 0) {
       return undefined;
     }
-    const popped = this._items[1];
 
+    const previousHead = this._items[1];
+
+    const newHead = this._items.pop();
     this._maxIndex -= 1;
-    this._items[1] = popped;
+    this._items[1] = newHead;
     this._bubbleDown(1);
 
-    return popped;
+    return previousHead.element;
   }
 
   update = (item, newPriority) => {
