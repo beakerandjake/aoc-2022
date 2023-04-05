@@ -137,6 +137,7 @@ const dijkstras = (() => {
     const distances = graph.map(() => Number.MAX_SAFE_INTEGER);
     const history = graph.map(() => -1);
     const unvisited = graph.map((x) => x.id);
+    const visited = {};
 
     distances[startNode.id] = 0;
 
@@ -153,7 +154,7 @@ const dijkstras = (() => {
 
       for (let edgeIndex = 0; edgeIndex < edgesLength; edgeIndex++) {
         const edge = current.edges[edgeIndex];
-        if (!unvisited.includes(edge.toId)) {
+        if (visited[edge.toId]) {
           continue;
         }
         const newDistance = distances[edge.fromId] + edge.weight;
@@ -162,6 +163,8 @@ const dijkstras = (() => {
           history[edge.toId] = current.id;
         }
       }
+
+      visited[current.id] = true;
     }
 
     return traceHistory(graph, history, targetNode, startNode);
