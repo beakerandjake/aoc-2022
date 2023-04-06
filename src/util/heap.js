@@ -4,10 +4,10 @@
 export class Heap {
   _items = [];
   _maxIndex = 0;
+  _indexMap = {};
 
-  constructor(items, compareFn) {
+  constructor(compareFn) {
     this._compareFn = compareFn;
-    items.forEach((item) => this.push(item));
   }
 
   /**
@@ -36,9 +36,14 @@ export class Heap {
    * This method modifies the heap.
    */
   _swap = (lhsIndex, rhsIndex) => {
-    const temp = this._items[lhsIndex];
-    this._items[lhsIndex] = this._items[rhsIndex];
-    this._items[rhsIndex] = temp;
+    const lhsOrig = this._items[lhsIndex];
+    const rhsOrig = this._items[rhsIndex];
+
+    this._items[lhsIndex] = rhsOrig;
+    this._items[rhsIndex] = lhsOrig;
+
+    this._indexMap[lhsOrig.element] = rhsIndex;
+    this._indexMap[rhsOrig.element] = lhsOrig;
   };
 
   /**
@@ -94,9 +99,10 @@ export class Heap {
   /**
    * Adds a new element to the heap.
    */
-  push(item) {
+  push(element, priority) {
     this._maxIndex += 1;
-    this._items[this._maxIndex] = item;
+    this._items[this._maxIndex] = { element, priority };
+    this._indexMap[element] = this._maxIndex;
     this._bubbleUp(this._maxIndex);
   }
 
@@ -107,19 +113,20 @@ export class Heap {
     if (this._maxIndex === 0) {
       return undefined;
     }
-
     const previousHead = this._items[1];
+    delete this._indexMap[previousHead.element];
 
     const newHead = this._items.pop();
     this._maxIndex -= 1;
     this._items[1] = newHead;
+    this._indexMap[newHead.element] = 1;
     this._bubbleDown(1);
 
     return previousHead;
   }
 
-  update = (item, newPriority) => {
-    const index = this._items.indexOf(item);
+  update = (element, newPriority) => {
+    const index = this._items.findIndex((x) => x?.element === element);
 
     if (index === -1) {
       return false;
@@ -167,7 +174,7 @@ const maxHeapCompare = (a, b) => {
 /**
  * Returns a new max heap, which keeps the max element at the top of the heap.
  */
-export const maxHeap = (items = []) => new Heap(items, maxHeapCompare);
+export const maxHeap = () => new Heap(maxHeapCompare);
 
 /**
  * Comparison function which satisfies the min heap property.
@@ -186,4 +193,4 @@ const minHeapCompare = (a, b) => {
 /**
  * Returns a new min heap, which keeps the min element at the top of the heap.
  */
-export const minHeap = (items = []) => new Heap(items, minHeapCompare);
+export const minHeap = () => new Heap(minHeapCompare);
