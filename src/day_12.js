@@ -144,6 +144,7 @@ const dijkstras = (() => {
         if (newDistance < distances[edge.toId]) {
           history[edge.toId] = currentId;
           distances[edge.toId] = newDistance;
+          
           if (unvisited.contains(edge.toId)) {
             unvisited.update(edge.toId, newDistance);
           } else {
