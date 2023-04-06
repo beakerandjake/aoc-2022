@@ -3,6 +3,7 @@ import {
   cardinalNeighbors2d,
   indexToCoordinate2d,
   lowercaseAlphabet,
+  minHeap,
 } from './util/index.js';
 
 /**
@@ -96,21 +97,6 @@ const parseInput = (input) => {
   return graph;
 };
 
-const findClosestUnvisitedNode = (unvisited, distances) => {
-  let smallestDistance = distances[unvisited[0]];
-  let smallestIndex = 0;
-
-  unvisited.forEach((nodeId, index) => {
-    const current = distances[nodeId];
-    if (current < smallestDistance) {
-      smallestDistance = current;
-      smallestIndex = index;
-    }
-  });
-
-  return smallestIndex;
-};
-
 /**
  * Returns the shortest path from the start node to the target node.
  */
@@ -134,37 +120,34 @@ const dijkstras = (() => {
   // standard implementation of dijkstras algorithm.
 
   return (graph, startNode, targetNode) => {
-    const distances = graph.map(() => Number.MAX_SAFE_INTEGER);
     const history = graph.map(() => -1);
-    const unvisited = graph.map((x) => x.id);
-    const visited = {};
+    const unvisited = minHeap();
 
-    distances[startNode.id] = 0;
+    graph.forEach((x) => {
+      unvisited.push(x.id, x.id === startNode.id ? 0 : Number.MAX_SAFE_INTEGER);
+    });
 
-    while (unvisited.length > 0) {
-      const closestUnvisitedIndex = findClosestUnvisitedNode(unvisited, distances);
-      const current = graph[unvisited[closestUnvisitedIndex]];
-      unvisited.splice(closestUnvisitedIndex, 1);
+    while (!unvisited.isEmpty()) {
+      const { element: currentId, priority: currentDistance } = unvisited.pop();
 
-      if (current.id === targetNode.id) {
+      if (currentId === targetNode.id) {
         break;
       }
 
-      const edgesLength = current.edges.length;
+      const currentEdges = graph[currentId].edges;
+      const { length } = currentEdges;
 
-      for (let edgeIndex = 0; edgeIndex < edgesLength; edgeIndex++) {
-        const edge = current.edges[edgeIndex];
-        if (visited[edge.toId]) {
+      for (let edgeIndex = 0; edgeIndex < length; edgeIndex++) {
+        const edge = currentEdges[edgeIndex];
+        if (!unvisited.contains(edge.toId)) {
           continue;
         }
-        const newDistance = distances[edge.fromId] + edge.weight;
-        if (newDistance < distances[edge.toId]) {
-          distances[edge.toId] = newDistance;
-          history[edge.toId] = current.id;
+        const newDistance = currentDistance + edge.weight;
+        if (newDistance < unvisited.getPriority(edge.toId)) {
+          unvisited.update(edge.toId, newDistance);
+          history[edge.toId] = currentId;
         }
       }
-
-      visited[current.id] = true;
     }
 
     return traceHistory(graph, history, targetNode, startNode);
