@@ -102,15 +102,14 @@ const parseInput = (input) => {
  */
 const dijkstras = (() => {
   /**
-   * Returns a path (array of nodes) by walking backwards through the history from the end node to the start node.
+   * Returns a the number of steps taken by walking backwards through the history from the end node to the start node.
    */
-  const traceHistory = (graph, history, endNode, startNode) => {
-    const toReturn = [];
+  const countSteps = (history, endNode, startNode) => {
+    let toReturn = 0;
     let currentIndex = endNode.id;
 
     while (history[currentIndex] !== -1 && currentIndex !== startNode.id) {
-      const currentNode = graph[currentIndex];
-      toReturn.unshift(currentNode);
+      toReturn++;
       currentIndex = history[currentIndex];
     }
 
@@ -144,7 +143,7 @@ const dijkstras = (() => {
         if (newDistance < distances[edge.toId]) {
           history[edge.toId] = currentId;
           distances[edge.toId] = newDistance;
-          
+
           if (unvisited.contains(edge.toId)) {
             unvisited.update(edge.toId, newDistance);
           } else {
@@ -153,7 +152,7 @@ const dijkstras = (() => {
         }
       }
     }
-    return traceHistory(graph, history, targetNode, startNode);
+    return countSteps(history, targetNode, startNode);
   };
 })();
 
@@ -170,8 +169,7 @@ export const levelOne = (() => {
 
   return ({ input }) => {
     const graph = parseInput(input);
-    const path = dijkstras(graph, findStartNode(graph), findTargetNode(graph));
-    return path.length;
+    return dijkstras(graph, findStartNode(graph), findTargetNode(graph));
   };
 })();
 
@@ -193,7 +191,7 @@ export const levelTwo = (() => {
     const endNode = findTargetNode(graph);
     const potentialStarts = getPotentialStarts(graph);
     return potentialStarts
-      .map((start) => dijkstras(graph, start, endNode).length)
+      .map((start) => dijkstras(graph, start, endNode))
       .filter((x) => x > 0)
       .sort((a, b) => a - b)[0];
   };
