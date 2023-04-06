@@ -143,6 +143,11 @@ export class Heap {
    * Does this heap have any elements?
    */
   isEmpty = () => this._maxIndex > 0;
+
+  /**
+   * Does this heap contain the specified element?
+   */
+  contains = (element) => !!this._indexMap[element];
 }
 
 /**
