@@ -43,7 +43,7 @@ export class Heap {
     this._items[rhsIndex] = lhsOrig;
 
     this._indexMap[lhsOrig.element] = rhsIndex;
-    this._indexMap[rhsOrig.element] = lhsOrig;
+    this._indexMap[rhsOrig.element] = lhsIndex;
   };
 
   /**
@@ -126,9 +126,9 @@ export class Heap {
   }
 
   update = (element, newPriority) => {
-    const index = this._items.findIndex((x) => x?.element === element);
+    const index = this._indexMap[element];
 
-    if (index === -1) {
+    if (index === undefined) {
       return false;
     }
 
@@ -149,12 +149,23 @@ export class Heap {
   /**
    * Does this heap have any elements?
    */
-  isEmpty = () => this._maxIndex > 0;
+  isEmpty = () => this._maxIndex === 0;
 
   /**
    * Does this heap contain the specified element?
    */
-  contains = (element) => !!this._indexMap[element];
+  contains = (element) => this._indexMap[element] !== undefined;
+
+  /**
+   * Returns the priority of the element.
+   */
+  getPriority = (element) => {
+    const index = this._indexMap[element];
+    if (index === undefined) {
+      return undefined;
+    }
+    return this._items[index].priority;
+  };
 }
 
 /**
