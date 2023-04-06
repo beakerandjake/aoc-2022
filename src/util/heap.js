@@ -115,7 +115,7 @@ export class Heap {
     this._items[1] = newHead;
     this._bubbleDown(1);
 
-    return previousHead.element;
+    return previousHead;
   }
 
   update = (item, newPriority) => {
