@@ -120,12 +120,12 @@ const dijkstras = (() => {
   // standard implementation of dijkstras algorithm.
 
   return (graph, startNode, targetNode) => {
+    const distances = graph.map(() => Number.MAX_SAFE_INTEGER);
     const history = graph.map(() => -1);
     const unvisited = minHeap();
 
-    graph.forEach((x) => {
-      unvisited.push(x.id, x.id === startNode.id ? 0 : Number.MAX_SAFE_INTEGER);
-    });
+    distances[startNode.id] = 0;
+    unvisited.push(startNode.id, 0);
 
     while (!unvisited.isEmpty()) {
       const { element: currentId, priority: currentDistance } = unvisited.pop();
@@ -139,17 +139,19 @@ const dijkstras = (() => {
 
       for (let edgeIndex = 0; edgeIndex < length; edgeIndex++) {
         const edge = currentEdges[edgeIndex];
-        if (!unvisited.contains(edge.toId)) {
-          continue;
-        }
         const newDistance = currentDistance + edge.weight;
-        if (newDistance < unvisited.getPriority(edge.toId)) {
-          unvisited.update(edge.toId, newDistance);
+
+        if (newDistance < distances[edge.toId]) {
           history[edge.toId] = currentId;
+          distances[edge.toId] = newDistance;
+          if (unvisited.contains(edge.toId)) {
+            unvisited.update(edge.toId, newDistance);
+          } else {
+            unvisited.push(edge.toId, newDistance);
+          }
         }
       }
     }
-
     return traceHistory(graph, history, targetNode, startNode);
   };
 })();
