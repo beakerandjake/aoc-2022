@@ -51,6 +51,11 @@ const consumeArray = (str, index) => {
 };
 
 /**
+ * Parse a single line of the input which represents a packet.
+ */
+const parsePacket = (line) => consumeArray(line, 0).parsed;
+
+/**
  * Returns the solution for level one of this puzzle.
  * @param {Object} args - Provides both raw and split input.
  * @param {String} args.input - The original, unparsed input string.
@@ -58,12 +63,10 @@ const consumeArray = (str, index) => {
  * @returns {Number|String}
  */
 export const levelOne = ({ lines }) => {
-  // const result = consumeArray(lines[0], 0);
-  // console.log(arrayToString(result.parsed));
-  // console.log(arrayToString(JSON.parse(lines[0])));
-
-  const result = consumeArray(lines[0], 0);
-  // const result = arrayToString(JSON.parse(lines[0]));
+  for (let index = 0; index < lines.length; index += 3) {
+    const first = parsePacket(lines[index]);
+    const second = parsePacket(lines[index + 1]);
+  }
 
   return 123;
 };
