@@ -71,43 +71,42 @@ const compareIntegers = (left, right) => {
 };
 
 const compareArrays = (left, right, compareFn) => {
-  /**
-   * If both values are lists, compare the first value of each list, then the second value, and so on.
-   * If the left list runs out of items first, the inputs are in the right order.
-   * If the right list runs out of items first, the inputs are not in the right order.
-   * If the lists are the same length and no comparison makes a decision about the order, continue checking the next part of the input.
-   */
-  let index = 0;
-  const lhsMaxIndex = Math.max(0, left.length - 1);
-  const rhsMaxIndex = Math.max(0, right.length - 1);
+  const leftMaxIndex = left.length - 1;
+  const rightMaxIndex = right.length - 1;
+  const maxIndex = Math.max(leftMaxIndex, rightMaxIndex);
 
-  while (true) {
-    if (index > lhsMaxIndex && index <= rhsMaxIndex) {
+  for (let index = 0; index <= maxIndex; index++) {
+    // If the left list runs out of items first, the inputs are in the right order.
+    if (index > leftMaxIndex && index <= rightMaxIndex) {
       return true;
     }
 
-    if (index > rhsMaxIndex && index <= lhsMaxIndex) {
+    // If the right list runs out of items first, the inputs are not in the right order.
+    if (index <= leftMaxIndex && index > rightMaxIndex) {
       return false;
     }
 
-    const result = compareFn(left, right);
+    const result = compareFn(left[index], right[index]);
 
-    if (result === false) {
+    if (result !== undefined) {
       return result;
     }
-
-    if (index === rhsMaxIndex && index === rhsMaxIndex) {
-      return undefined;
-    }
-
-    index++;
   }
+
+  // If the lists are the same length and no comparison makes a decision about the order, continue checking the next part of the input.
+  return undefined;
 };
 
+/**
+ * Compares two values in a packet.
+ * Returns true if the values mean the packet is in the right order
+ * Returns false if the values mean the packet is in the wrong order
+ * Returns undefined if the values are indeterminate.``
+ */
 const compareValues = (left, right) => {
   const isArrayLeft = Array.isArray(left);
   const isArrayRight = Array.isArray(right);
-  
+
   if (isArrayLeft && isArrayRight) {
     return compareArrays(left, right, compareValues);
   }
@@ -142,17 +141,17 @@ const packetsInCorrectOrder = (left, right) => {
  * @returns {Number|String}
  */
 export const levelOne = ({ lines }) => {
-  let numberInCorrectOrder = 0;
+  const correctIndices = [];
+  let pairCount = 0;
 
   for (let index = 0; index < lines.length; index += 3) {
-    const first = parsePacket(lines[index]);
-    const second = parsePacket(lines[index + 1]);
-    if (packetsInCorrectOrder(first, second)) {
-      numberInCorrectOrder++;
+    pairCount += 1;
+    if (packetsInCorrectOrder(parsePacket(lines[index]), parsePacket(lines[index + 1]))) {
+      correctIndices.push(pairCount);
     }
   }
 
-  return numberInCorrectOrder;
+  return correctIndices.reduce((sum, x) => sum + x, 0);
 };
 
 /**
