@@ -55,6 +55,85 @@ const consumeArray = (str, index) => {
  */
 const parsePacket = (line) => consumeArray(line, 0).parsed;
 
+const compareIntegers = (left, right) => {
+  // If the left integer is lower than the right integer, the inputs are in the right order.
+  if (left < right) {
+    return true;
+  }
+
+  // If the left integer is higher than the right integer, the inputs are not in the right order.
+  if (left > right) {
+    return false;
+  }
+
+  // Otherwise, the inputs are the same integer; continue checking the next part of the input.
+  return undefined;
+};
+
+const compareArrays = (left, right, compareFn) => {
+  /**
+   * If both values are lists, compare the first value of each list, then the second value, and so on.
+   * If the left list runs out of items first, the inputs are in the right order.
+   * If the right list runs out of items first, the inputs are not in the right order.
+   * If the lists are the same length and no comparison makes a decision about the order, continue checking the next part of the input.
+   */
+  let index = 0;
+  const lhsMaxIndex = Math.max(0, left.length - 1);
+  const rhsMaxIndex = Math.max(0, right.length - 1);
+
+  while (true) {
+    if (index > lhsMaxIndex && index <= rhsMaxIndex) {
+      return true;
+    }
+
+    if (index > rhsMaxIndex && index <= lhsMaxIndex) {
+      return false;
+    }
+
+    const result = compareFn(left, right);
+
+    if (result === false) {
+      return result;
+    }
+
+    if (index === rhsMaxIndex && index === rhsMaxIndex) {
+      return undefined;
+    }
+
+    index++;
+  }
+};
+
+const compareValues = (left, right) => {
+  const isArrayLeft = Array.isArray(left);
+  const isArrayRight = Array.isArray(right);
+  
+  if (isArrayLeft && isArrayRight) {
+    return compareArrays(left, right, compareValues);
+  }
+
+  if (isArrayLeft && !isArrayRight) {
+    return compareArrays(left, [right], compareValues);
+  }
+
+  if (!isArrayLeft && isArrayRight) {
+    return compareArrays([left], right, compareValues);
+  }
+
+  return compareIntegers(left, right);
+};
+
+/**
+ * Compare the packets and returns true if they are in the right order.
+ */
+const packetsInCorrectOrder = (left, right) => {
+  const result = compareArrays(left, right, compareValues);
+  if (result === undefined) {
+    throw new Error('Could not determine packet order');
+  }
+  return result;
+};
+
 /**
  * Returns the solution for level one of this puzzle.
  * @param {Object} args - Provides both raw and split input.
@@ -63,12 +142,17 @@ const parsePacket = (line) => consumeArray(line, 0).parsed;
  * @returns {Number|String}
  */
 export const levelOne = ({ lines }) => {
+  let numberInCorrectOrder = 0;
+
   for (let index = 0; index < lines.length; index += 3) {
     const first = parsePacket(lines[index]);
     const second = parsePacket(lines[index + 1]);
+    if (packetsInCorrectOrder(first, second)) {
+      numberInCorrectOrder++;
+    }
   }
 
-  return 123;
+  return numberInCorrectOrder;
 };
 
 /**
