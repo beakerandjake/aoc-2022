@@ -50,3 +50,10 @@ export const minBy = (items, valueFn) => {
 
   return { item: items[minIndex], index: minIndex };
 };
+
+/**
+ * Returns the sum of the numbers in the array.
+ * @param {Array} start
+ * @param {Number} end
+ */
+export const sum = (array) => array.reduce((acc, x) => acc + x, 0);
