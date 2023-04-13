@@ -53,7 +53,8 @@ const consumeArray = (str, index) => {
 /**
  * Parse a single line of the input which represents a packet.
  */
-const parsePacket = (line) => consumeArray(line, 0).parsed;
+// const parsePacket = (line) => consumeArray(line, 0).parsed;
+const parsePacket = (line) => JSON.parse(line);
 
 const compareIntegers = (left, right) => {
   // If the left integer is lower than the right integer, the inputs are in the right order.
@@ -137,12 +138,10 @@ const packetsInCorrectOrder = (left, right) => compareArrays(left, right, compar
 export const levelOne = ({ lines }) => {
   const results = lines.reduce((acc, _, index) => {
     if ((index + 1) % 3 === 0) {
-      acc.push(
-        packetsInCorrectOrder(
-          parsePacket(lines[index - 2]),
-          parsePacket(lines[index - 1])
-        )
-      );
+      const left = parsePacket(lines[index - 2]);
+      const right = parsePacket(lines[index - 1]);
+      const correct = packetsInCorrectOrder(left, right);
+      acc.push(packetsInCorrectOrder(left, right));
     }
     return acc;
   }, []);
