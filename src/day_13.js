@@ -1,4 +1,4 @@
-import { toNumber, inRange } from './util/index.js';
+import { toNumber } from './util/index.js';
 
 /**
  * Contains solutions for Day 13
@@ -125,13 +125,7 @@ const compareValues = (left, right) => {
 /**
  * Compare the packets and returns true if they are in the right order.
  */
-const packetsInCorrectOrder = (left, right) => {
-  const result = compareArrays(left, right, compareValues);
-  if (result === undefined) {
-    throw new Error('Could not determine packet order');
-  }
-  return result;
-};
+const packetsInCorrectOrder = (left, right) => compareArrays(left, right, compareValues);
 
 /**
  * Returns the solution for level one of this puzzle.
@@ -141,17 +135,19 @@ const packetsInCorrectOrder = (left, right) => {
  * @returns {Number|String}
  */
 export const levelOne = ({ lines }) => {
-  const correctIndices = [];
-  let pairCount = 0;
-
-  for (let index = 0; index < lines.length; index += 3) {
-    pairCount += 1;
-    if (packetsInCorrectOrder(parsePacket(lines[index]), parsePacket(lines[index + 1]))) {
-      correctIndices.push(pairCount);
+  const results = lines.reduce((acc, _, index) => {
+    if ((index + 1) % 3 === 0) {
+      acc.push(
+        packetsInCorrectOrder(
+          parsePacket(lines[index - 2]),
+          parsePacket(lines[index - 1])
+        )
+      );
     }
-  }
+    return acc;
+  }, []);
 
-  return correctIndices.reduce((sum, x) => sum + x, 0);
+  return results.reduce((sum, correct, index) => (correct ? sum + index + 1 : sum), 0);
 };
 
 /**
