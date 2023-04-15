@@ -130,17 +130,12 @@ const packetsInCorrectOrder = (left, right) => compareArrays(left, right, compar
 
 /**
  * Returns the solution for level one of this puzzle.
- * @param {Object} args - Provides both raw and split input.
- * @param {String} args.input - The original, unparsed input string.
- * @param {String[]} args.lines - Array containing each line of the input string.
- * @returns {Number|String}
  */
 export const levelOne = ({ lines }) => {
   const results = lines.reduce((acc, _, index) => {
     if ((index + 1) % 3 === 0) {
       const left = parsePacket(lines[index - 2]);
       const right = parsePacket(lines[index - 1]);
-      const correct = packetsInCorrectOrder(left, right);
       acc.push(packetsInCorrectOrder(left, right));
     }
     return acc;
@@ -151,11 +146,57 @@ export const levelOne = ({ lines }) => {
 
 /**
  * Returns the solution for level two of this puzzle.
- * @param {Object} args - Provides both raw and split input.
- * @param {String} args.input - The original, unparsed input string.
- * @param {String[]} args.lines - Array containing each line of the input string.
- * @returns {Number|String}
  */
-export const levelTwo = ({ input, lines }) => {
-  // your code here
-};
+export const levelTwo = (() => {
+  const dividerStartPacket = [[2]];
+  const dividerEndPacket = [[6]];
+
+  /**
+   * Returns a new array containing the packets with the divider packets added.
+   */
+  const addDividerPackets = (packets) => [
+    ...packets,
+    dividerStartPacket,
+    dividerEndPacket,
+  ];
+
+  /**
+   * Sort function which defines the order of two packets.
+   */
+  const sortPackets = (a, b) => {
+    const sortResult = packetsInCorrectOrder(a, b);
+
+    if (sortResult === undefined) {
+      return 0;
+    }
+
+    return sortResult ? -1 : 1;
+  };
+
+  /**
+   * Returns an array containing the 1 based indices of the divider packets.
+   */
+  const findIndicesOfDividerPackets = (packets) => {
+    const toReturn = [];
+    let index = 0;
+
+    while (index < packets.length || toReturn.length !== 2) {
+      const packet = packets[index];
+      if (packet === dividerStartPacket) {
+        toReturn.push(index + 1);
+      } else if (packet === dividerEndPacket) {
+        toReturn.push(index + 1);
+      }
+      index++;
+    }
+
+    return toReturn;
+  };
+
+  return ({ lines }) => {
+    const packets = addDividerPackets(lines.filter((x) => x.length).map(parsePacket));
+    packets.sort(sortPackets);
+    const dividerIndices = findIndicesOfDividerPackets(packets);
+    return dividerIndices.reduce((product, x) => product * x, 1);
+  };
+})();
