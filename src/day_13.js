@@ -1,4 +1,4 @@
-import { toNumber } from './util/index.js';
+import { toNumber, product } from './util/index.js';
 
 /**
  * Contains solutions for Day 13
@@ -196,7 +196,6 @@ export const levelTwo = (() => {
   return ({ lines }) => {
     const packets = addDividerPackets(lines.filter((x) => x.length).map(parsePacket));
     packets.sort(sortPackets);
-    const dividerIndices = findIndicesOfDividerPackets(packets);
-    return dividerIndices.reduce((product, x) => product * x, 1);
+    return product(findIndicesOfDividerPackets(packets));
   };
 })();
