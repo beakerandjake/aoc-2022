@@ -1,21 +1,9 @@
+import { Vector2, add, distanceSquared } from './util/vector2.js';
+
 /**
  * Contains solutions for Day 9
  * Puzzle Description: https://adventofcode.com/2022/day/9
  */
-
-/**
- * Representation of 2d vectors and points.
- */
-class Vector2 {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-  }
-
-  toString() {
-    return `${this.x} ${this.y}`;
-  }
-}
 
 const zero = new Vector2(0, 0);
 
@@ -80,20 +68,6 @@ const parseLine = (() => {
     return { direction: directions[direction], steps: +steps };
   };
 })();
-
-/**
- * Combine the two vectors.
- * @param {Vector2} lhs
- * @param {Vector2} rhs
- */
-const add = (lhs, rhs) => new Vector2(lhs.x + rhs.x, lhs.y + rhs.y);
-
-/**
- * Returns the *squared* distance between the two vectors.
- * @param {Vector2} lhs
- * @param {Vector2} rhs
- */
-const distanceSquared = (lhs, rhs) => (lhs.y - rhs.y) ** 2 + (lhs.x - rhs.x) ** 2;
 
 /**
  * Are the two vectors touching (within one unit of each other)?
