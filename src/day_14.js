@@ -22,9 +22,8 @@ const parseLine = (() => {
  */
 const numbersInBetween = (a, b) => {
   const max = Math.max(a, b);
-  const min = Math.min(a, b);
   const toReturn = [];
-  let current = min;
+  let current = Math.min(a, b);
   while (++current < max) {
     toReturn.push(current);
   }
@@ -51,19 +50,48 @@ const getAllRocksInPath = (() => {
   return (path) => trace(path, path.length - 1);
 })();
 
-const print = (rocks) =>
-  (() => {
-    const q = 10;
-  })();
+const print = (sandSource, rocks, rocksLookup) => {
+  const bounds = (values) => [Math.min(...values), Math.max(...values)];
+  const render = (position) => {
+    if (rocksLookup.has(position.toString())) {
+      return '#';
+    }
+
+    if (position.toString() === sandSource.toString()) {
+      return '+';
+    }
+
+    return '.';
+  };
+  const allPoints = [sandSource, ...rocks];
+  const [minX, maxX] = bounds(allPoints.map(({ x }) => x));
+  const [minY, maxY] = bounds(allPoints.map(({ y }) => y));
+
+  console.log('minX', minX, 'maxY', maxY);
+  console.log('minY', minY, 'maxY', maxY);
+
+  for (let y = minY; y <= maxY; y++) {
+    const line = [];
+    for (let x = minX; x <= maxX; x++) {
+      line.push(render(new Vector2(x, y)));
+    }
+    console.log(line.join(''));
+  }
+};
 
 /**
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
-  const rocks = new Set(
-    lines.reduce((acc, line) => [...acc, ...getAllRocksInPath(parseLine(line))], [])
+  console.log();
+  const sandSource = new Vector2(500, 0);
+  const rocks = lines.reduce(
+    (acc, line) => [...acc, ...getAllRocksInPath(parseLine(line))],
+    []
   );
-  console.log(rocks);
+  const rocksLookup = new Set(rocks.map((rock) => rock.toString()));
+  print(sandSource, rocks, rocksLookup);
+  // console.log(rocks);
 
   return 1234;
 };
