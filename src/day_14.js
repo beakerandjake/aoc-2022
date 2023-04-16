@@ -32,39 +32,39 @@ const numbersInBetween = (a, b) => {
 };
 
 /**
- * Returns an array containing all points between the start and the end (excluding start and end).
+ * Returns an array containing all rocks between the start and the end (excluding start and end).
  */
 const expandPath = (start, end) =>
   start.x === end.x
     ? numbersInBetween(start.y, end.y).map((y) => new Vector2(start.x, y))
     : numbersInBetween(start.x, end.x).map((x) => new Vector2(x, start.y));
 
-const getAllRocksInPath = (path, index) => {
-  if (index === 0) {
-    return [path[index]];
-  }
-  return [
-    path[index],
-    ...expandPath(path[index], path[index - 1]),
-    ...getAllRocksInPath(path, index - 1),
-  ];
-};
+/**
+ * Returns an array containing all rocks in the given path.
+ */
+const getAllRocksInPath = (() => {
+  const trace = (path, idx) =>
+    idx === 0
+      ? [path[idx]]
+      : [path[idx], ...expandPath(path[idx], path[idx - 1]), ...trace(path, idx - 1)];
+
+  return (path) => trace(path, path.length - 1);
+})();
+
+const print = (rocks) =>
+  (() => {
+    const q = 10;
+  })();
 
 /**
  * Returns the solution for level one of this puzzle.
  */
-export const levelOne = ({ input, lines }) => {
+export const levelOne = ({ lines }) => {
   const rocks = new Set(
-    lines.reduce((acc, line) => {
-      const path = parseLine(line);
-      acc.push(...getAllRocksInPath(path, path.length - 1));
-      return acc;
-    }, [])
+    lines.reduce((acc, line) => [...acc, ...getAllRocksInPath(parseLine(line))], [])
   );
   console.log(rocks);
-  // console.log(z);
-  // const result = getAllRocksInPath(z, z.length - 1);
-  // console.log(result);
+
   return 1234;
 };
 
