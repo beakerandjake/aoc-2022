@@ -1,5 +1,5 @@
 import { toNumber } from './util/string.js';
-import { Vector2 } from './util/vector2.js';
+import { Vector2, equals, add, down, downLeft, downRight } from './util/vector2.js';
 
 /**
  * Contains solutions for Day 14
@@ -50,62 +50,97 @@ const getAllRocksInPath = (() => {
   return (path) => trace(path, path.length - 1);
 })();
 
-const bounds = (values) => [Math.min(...values), Math.max(...values)];
+const includes = (tile, tiles) => tiles.some((x) => equals(x, tile));
 
-const print = (sandSource, rocks, rocksLookup, sandAtRest, sandLookup) => {
+const print = (sandSource, rocks, sandAtRest, bounds) => {
   const render = (position) => {
-    if (rocksLookup.has(position.toString())) {
+    if (includes(position, rocks)) {
       return '#';
     }
-
-    if (position.toString() === sandSource.toString()) {
+    if (equals(position, sandSource)) {
       return '+';
     }
-
-    if (sandLookup.has(position.toString())) {
+    if (includes(position, sandAtRest)) {
       return 'o';
     }
-
     return '.';
   };
-
-  const allPoints = [sandSource, ...rocks, ...sandAtRest];
-  const [minX, maxX] = bounds(allPoints.map(({ x }) => x));
-  const [minY, maxY] = bounds(allPoints.map(({ y }) => y));
-
   console.log();
-
-  for (let y = minY; y <= maxY; y++) {
+  for (let y = bounds.bottom; y <= bounds.top; y++) {
     const line = [];
-    for (let x = minX; x <= maxX; x++) {
+    for (let x = bounds.left; x <= bounds.right; x++) {
       line.push(render(new Vector2(x, y)));
     }
     console.log(line.join(''));
   }
 };
 
+const isBlocked = (position, rocks, sandAtRest) =>
+  includes(position, rocks) || includes(position, sandAtRest);
+
+const findBounds = (positions) => {
+  const bounds = (values) => [Math.min(...values), Math.max(...values)];
+  const [left, right] = bounds(positions.map(({ x }) => x));
+  const [bottom, top] = bounds(positions.map(({ y }) => y));
+  return { left, right, bottom, top };
+};
+
+const outOfBounds = (position, bounds) => {
+  if (position.y < bounds.bottom || position.y > bounds.top) {
+    return true;
+  }
+  if (position.x > bounds.right || position.x < bounds.left) {
+    return true;
+  }
+  return false;
+};
+
+const moveSand = (position, rocks, sandAtRest) => {
+  let desired = add(position, down);
+  if (isBlocked(desired, rocks, sandAtRest)) {
+    desired = add(position, downLeft);
+  }
+  if (isBlocked(desired, rocks, sandAtRest)) {
+    desired = add(position, downRight);
+  }
+  return isBlocked(desired, rocks, sandAtRest) ? position : desired;
+};
+
+const produceSand = (source, rocks, sandAtRest, bounds) => {
+  let position = source;
+  // move until comes to rest or out of bounds.
+  while (!outOfBounds(position, bounds)) {
+    const newPosition = moveSand(position, rocks, sandAtRest);
+    // sand has come to rest.
+    if (newPosition === position) {
+      return newPosition;
+    }
+    position = newPosition;
+  }
+  return null;
+};
+
 /**
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
-  console.log();
   const sandSource = new Vector2(500, 0);
   const rocks = lines.reduce(
     (acc, line) => [...acc, ...getAllRocksInPath(parseLine(line))],
     []
   );
-  const rocksLookup = new Set(rocks.map((rock) => rock.toString()));
-  const sandAtRest = [
-    new Vector2(500, 8),
-    new Vector2(499, 8),
-    new Vector2(501, 8),
-    new Vector2(498, 8),
-    new Vector2(500, 7),
-  ];
-  const sandLookup = new Set(sandAtRest.map((sand) => sand.toString()));
+  const sandAtRest = [];
+  const bounds = findBounds([sandSource, ...rocks]);
 
-  print(sandSource, rocks, rocksLookup, sandAtRest, sandLookup);
-  return 1234;
+  while (true) {
+    const newSandPosition = produceSand(sandSource, rocks, sandAtRest, bounds);
+    if (!newSandPosition) {
+      break;
+    }
+    sandAtRest.push(newSandPosition);
+  }
+  
+  return sandAtRest.length;
 };
 
 /**
