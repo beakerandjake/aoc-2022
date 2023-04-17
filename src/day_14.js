@@ -92,16 +92,6 @@ const isBlocked = (position, rockLookup, sandLookup) => {
 };
 
 /**
- * Returns the extremes of the given positions.
- */
-const findBounds = (positions) => {
-  const bounds = (values) => [Math.min(...values), Math.max(...values)];
-  const [left, right] = bounds(positions.map(({ x }) => x));
-  const [bottom, top] = bounds(positions.map(({ y }) => y));
-  return { left, right, bottom, top };
-};
-
-/**
  * Move the sand until it comes to rest. If the sand cannot move the original position is returned.
  */
 const tryToMoveSand = (() => {
@@ -132,14 +122,14 @@ const simulate = (sandSource, rocks, collisionFn, simulateEndFn) => {
     if (simulateEndFn(newSandPosition, previousSandPosition)) {
       return sandLookup.size;
     }
-    // if this grain comes to rest, store its position and produce another one.
     if (newSandPosition === previousSandPosition) {
+      // grain is at rest, store its position and produce another one.
       sandLookup.add(newSandPosition.toString());
       previousSandPosition = sandSource;
-      continue;
+    } else {
+      // keep moving this grain of sand.
+      previousSandPosition = newSandPosition;
     }
-    // keep moving this grain of sand.
-    previousSandPosition = newSandPosition;
   }
 };
 
@@ -148,10 +138,19 @@ const simulate = (sandSource, rocks, collisionFn, simulateEndFn) => {
  */
 export const levelOne = (() => {
   /**
-   * Returns a function used to halt the simulation.
-   * Tests to see whether a grain of sand has fallen into the abyss.
+   * Returns the extremes of the given positions.
    */
-  const outOfBoundsTest = (sandSource, rocks) => {
+  const findBounds = (positions) => {
+    const bounds = (values) => [Math.min(...values), Math.max(...values)];
+    const [left, right] = bounds(positions.map(({ x }) => x));
+    const [bottom, top] = bounds(positions.map(({ y }) => y));
+    return { left, right, bottom, top };
+  };
+
+  /**
+   * Returns a function that returns true if a grain of sand has fallen into the abyss.
+   */
+  const endTest = (sandSource, rocks) => {
     const { bottom, top, left, right } = findBounds([sandSource, ...rocks]);
     return ({ x, y }) => y < bottom || y > top || x > right || x < left;
   };
@@ -159,7 +158,7 @@ export const levelOne = (() => {
   return ({ lines }) => {
     const sandSource = new Vector2(500, 0);
     const rocks = parseLines(lines);
-    return simulate(sandSource, rocks, isBlocked, outOfBoundsTest(sandSource, rocks));
+    return simulate(sandSource, rocks, isBlocked, endTest(sandSource, rocks));
   };
 })();
 
@@ -169,16 +168,19 @@ export const levelOne = (() => {
  * Returns the solution for level two of this puzzle.
  */
 export const levelTwo = (() => {
+  /**
+   * Returns a function that returns true if the sand has reached the source.
+   */
   const endTest = (sandSource) => (position) => equals(position, sandSource);
 
+  /**
+   * Returns a function that returns true if the position is occupied
+   * by a rock, sand or the floor.
+   */
   const collisionTest = (rocks) => {
     const floor = Math.max(...rocks.map(({ y }) => y)) + 2;
-    return (position, rockLookup, sandLookup) => {
-      if (position.y === floor) {
-        return true;
-      }
-      return isBlocked(position, rockLookup, sandLookup);
-    };
+    return (position, rockLookup, sandLookup) =>
+      isBlocked(position, rockLookup, sandLookup) || position.y === floor;
   };
 
   return ({ lines }) => {
