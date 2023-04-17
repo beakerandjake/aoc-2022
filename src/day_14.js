@@ -86,8 +86,10 @@ const parseLines = (() => {
 /**
  * Is the position blocked by a rock or sand?
  */
-const isBlocked = (positionString, rockLookup, sandLookup) =>
-  rockLookup.has(positionString) || sandLookup.has(positionString);
+const isBlocked = (position, rockLookup, sandLookup) => {
+  const positionString = position.toString();
+  return rockLookup.has(positionString) || sandLookup.has(positionString);
+};
 
 /**
  * Returns the extremes of the given positions.
@@ -104,10 +106,10 @@ const findBounds = (positions) => {
  */
 const tryToMoveSand = (() => {
   const movements = [down, downLeft, downRight];
-  return (position, rockLookup, sandLookup) => {
+  return (position, collisionFn) => {
     for (let index = 0; index < movements.length; index++) {
       const newPosition = add(position, movements[index]);
-      if (!isBlocked(newPosition.toString(), rockLookup, sandLookup)) {
+      if (!collisionFn(newPosition)) {
         return newPosition;
       }
     }
@@ -119,12 +121,13 @@ const tryToMoveSand = (() => {
  * Continually produce sand grains from the source until the end condition is met.
  * Returns the number of sand grains produced.
  */
-const simulate = (sandSource, rocks, simulateEndFn) => {
+const simulate = (sandSource, rocks, collisionFn, simulateEndFn) => {
   const rockLookup = new Set(rocks.map((x) => x.toString()));
   const sandLookup = new Set();
+  const collision = (position) => collisionFn(position, rockLookup, sandLookup);
   let previousSandPosition = sandSource;
   for (;;) {
-    const newSandPosition = tryToMoveSand(previousSandPosition, rockLookup, sandLookup);
+    const newSandPosition = tryToMoveSand(previousSandPosition, collision);
     // end simulation if new position triggers end condition.
     if (simulateEndFn(newSandPosition, previousSandPosition)) {
       return sandLookup.size;
@@ -156,29 +159,15 @@ export const levelOne = (() => {
   return ({ lines }) => {
     const sandSource = new Vector2(500, 0);
     const rocks = parseLines(lines);
-    return simulate(sandSource, rocks, outOfBoundsTest(sandSource, rocks));
+    return simulate(sandSource, rocks, isBlocked, outOfBoundsTest(sandSource, rocks));
   };
 })();
 
 /**
  * Returns the solution for level two of this puzzle.
  */
-export const levelTwo = ({ input, lines }) => {
+export const levelTwo = ({ lines }) => {
   // const sandSource = new Vector2(500, 0);
   // const rocks = parseLines(lines);
-  // const rockLookup = new Set(rocks.map((x) => x.toString()));
-  // const sandLookup = new Set();
-  // const bounds = findBounds([sandSource, ...rocks]);
-  // bounds.left -= 25;
-  // bounds.right += 25;
-  // bounds.top += 2;
-  // print(sandSource, rockLookup, sandLookup, bounds);
-  // while (true) {
-  //   const newSandPosition = produceSand(sandSource, rockLookup, sandLookup, bounds);
-  //   if (!newSandPosition) {
-  //     break;
-  //   }
-  //   sandLookup.add(newSandPosition.toString());
-  // }
-  // return sandLookup.size;
+
 };
