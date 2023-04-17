@@ -115,14 +115,16 @@ const outOfBounds = (position, bounds) => {
 const moveSand = (position, rockLookup, sandLookup) => {
   // move down first.
   let desired = add(position, down);
-  // if blocked move down left.
-  if (isBlocked(desired.toString(), rockLookup, sandLookup)) {
-    desired = add(position, downLeft);
+  if (!isBlocked(desired.toString(), rockLookup, sandLookup)) {
+    return desired;
   }
-  // if block move down right.
-  if (isBlocked(desired.toString(), rockLookup, sandLookup)) {
-    desired = add(position, downRight);
+  // if down is blocked, try to move down left.
+  desired = add(position, downLeft);
+  if (!isBlocked(desired.toString(), rockLookup, sandLookup)) {
+    return desired;
   }
+  // if down left is blocked, try to move down right.
+  desired = add(position, downRight);
   // if blocked, sand is at rest, return original position.
   return isBlocked(desired.toString(), rockLookup, sandLookup) ? position : desired;
 };
@@ -131,7 +133,7 @@ const moveSand = (position, rockLookup, sandLookup) => {
  * Move a particle of sand from the source until it either comes to rest
  * or falls out of bounds.
  */
-const produceSand = (source, rockLookup, sandLookup, bounds) => {
+const produceSand = (source, rockLookup, sandLookup, bounds, inBoundsCheck) => {
   let position = source;
   // move until comes to rest or out of bounds.
   while (!outOfBounds(position, bounds)) {
@@ -145,17 +147,25 @@ const produceSand = (source, rockLookup, sandLookup, bounds) => {
   return null;
 };
 
-const simulate = (sandSource, rocks, bounds, simulateEndFn) => {
+const simulate = (sandSource, rocks, simulateEndFn) => {
   const rockLookup = new Set(rocks.map((x) => x.toString()));
   const sandLookup = new Set();
+  let previousSandPosition = sandSource;
   for (;;) {
-    const newSandPosition = produceSand(sandSource, rockLookup, sandLookup, bounds);
-    if (simulateEndFn(newSandPosition)) {
-      break;
+    const newSandPosition = moveSand(previousSandPosition, rockLookup, sandLookup);
+    // end simulation if new position triggers end condition.
+    if (simulateEndFn(newSandPosition, previousSandPosition)) {
+      return sandLookup.size;
     }
-    sandLookup.add(newSandPosition.toString());
+    // if this grain comes to rest, store its position and produce another one.
+    if (newSandPosition === previousSandPosition) {
+      sandLookup.add(newSandPosition.toString());
+      previousSandPosition = sandSource;
+      continue;
+    }
+    // keep moving this grain of sand.
+    previousSandPosition = newSandPosition;
   }
-  return sandLookup.size;
 };
 
 /**
@@ -164,11 +174,9 @@ const simulate = (sandSource, rocks, bounds, simulateEndFn) => {
 export const levelOne = ({ lines }) => {
   const sandSource = new Vector2(500, 0);
   const rocks = parseLines(lines);
-  return simulate(
-    sandSource,
-    rocks,
-    findBounds([sandSource, ...rocks]),
-    (newSandPosition) => !newSandPosition
+  const bounds = findBounds([sandSource, ...rocks]);
+  return simulate(sandSource, rocks, (newSandPosition) =>
+    outOfBounds(newSandPosition, bounds)
   );
 };
 
