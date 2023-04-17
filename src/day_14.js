@@ -7,47 +7,53 @@ import { Vector2, equals, add, down, downLeft, downRight } from './util/vector2.
  */
 
 /**
- * Parses a single line of input and returns the scan trace.
+ * Parse all lines of input and return all of the rocks in the cave.
  */
-const parseLine = (() => {
+const parseLines = (() => {
   const coordinateRegex = /(\d+),(\d+)/g;
-  return (line) =>
+  /**
+   * Parses a single line of input and returns the scan trace.
+   */
+  const parseLine = (line) =>
     [...line.matchAll(coordinateRegex)].map(
-      (match) => new Vector2(toNumber(match[1]), toNumber(match[2]))
+      ([, x, y]) => new Vector2(toNumber(x), toNumber(y))
     );
-})();
 
-/**
- * Returns an array of all numbers between the start and end (excluding start and end).
- */
-const numbersInBetween = (a, b) => {
-  const max = Math.max(a, b);
-  const toReturn = [];
-  let current = Math.min(a, b);
-  while (++current < max) {
-    toReturn.push(current);
-  }
-  return toReturn;
-};
+  /**
+   * Returns an array of all numbers between the start and end (excluding start and end).
+   */
+  const numbersInBetween = (a, b) => {
+    const max = Math.max(a, b);
+    const toReturn = [];
+    let current = Math.min(a, b);
+    while (++current < max) {
+      toReturn.push(current);
+    }
+    return toReturn;
+  };
 
-/**
- * Returns an array containing all rocks between the start and the end (excluding start and end).
- */
-const expandPath = (start, end) =>
-  start.x === end.x
-    ? numbersInBetween(start.y, end.y).map((y) => new Vector2(start.x, y))
-    : numbersInBetween(start.x, end.x).map((x) => new Vector2(x, start.y));
+  /**
+   * Returns an array containing all rocks between the start and the end (excluding start and end).
+   */
+  const expandPath = (start, end) =>
+    start.x === end.x
+      ? numbersInBetween(start.y, end.y).map((y) => new Vector2(start.x, y))
+      : numbersInBetween(start.x, end.x).map((x) => new Vector2(x, start.y));
 
-/**
- * Returns an array containing all rocks in the given path.
- */
-const getAllRocksInPath = (() => {
-  const trace = (path, idx) =>
-    idx === 0
-      ? [path[idx]]
-      : [path[idx], ...expandPath(path[idx], path[idx - 1]), ...trace(path, idx - 1)];
+  /**
+   * Returns an array containing all rocks in the given path.
+   */
+  const getAllRocksInPath = (() => {
+    const trace = (path, idx) =>
+      idx === 0
+        ? [path[idx]]
+        : [path[idx], ...expandPath(path[idx], path[idx - 1]), ...trace(path, idx - 1)];
 
-  return (path) => trace(path, path.length - 1);
+    return (path) => trace(path, path.length - 1);
+  })();
+
+  return (lines) =>
+    lines.reduce((acc, line) => [...acc, ...getAllRocksInPath(parseLine(line))], []);
 })();
 
 const includes = (tile, tiles) => tiles.some((x) => equals(x, tile));
@@ -75,8 +81,8 @@ const print = (sandSource, rocks, sandAtRest, bounds) => {
   }
 };
 
-const isBlocked = (position, rocks, sandAtRest) =>
-  includes(position, rocks) || includes(position, sandAtRest);
+const isBlocked = (position, rockLookup, sandLookup) =>
+  rockLookup.has(position) || sandLookup.has(position);
 
 const findBounds = (positions) => {
   const bounds = (values) => [Math.min(...values), Math.max(...values)];
@@ -95,22 +101,22 @@ const outOfBounds = (position, bounds) => {
   return false;
 };
 
-const moveSand = (position, rocks, sandAtRest) => {
+const moveSand = (position, rockLookup, sandLookup) => {
   let desired = add(position, down);
-  if (isBlocked(desired, rocks, sandAtRest)) {
+  if (isBlocked(desired.toString(), rockLookup, sandLookup)) {
     desired = add(position, downLeft);
   }
-  if (isBlocked(desired, rocks, sandAtRest)) {
+  if (isBlocked(desired.toString(), rockLookup, sandLookup)) {
     desired = add(position, downRight);
   }
-  return isBlocked(desired, rocks, sandAtRest) ? position : desired;
+  return isBlocked(desired.toString(), rockLookup, sandLookup) ? position : desired;
 };
 
-const produceSand = (source, rocks, sandAtRest, bounds) => {
+const produceSand = (source, rockLookup, sandLookup, bounds) => {
   let position = source;
   // move until comes to rest or out of bounds.
   while (!outOfBounds(position, bounds)) {
-    const newPosition = moveSand(position, rocks, sandAtRest);
+    const newPosition = moveSand(position, rockLookup, sandLookup);
     // sand has come to rest.
     if (newPosition === position) {
       return newPosition;
@@ -125,21 +131,21 @@ const produceSand = (source, rocks, sandAtRest, bounds) => {
  */
 export const levelOne = ({ lines }) => {
   const sandSource = new Vector2(500, 0);
-  const rocks = lines.reduce(
-    (acc, line) => [...acc, ...getAllRocksInPath(parseLine(line))],
-    []
-  );
+  const rocks = parseLines(lines);
+  const rockLookup = new Set(rocks.map((x) => x.toString()));
   const sandAtRest = [];
+  const sandLookup = new Set();
   const bounds = findBounds([sandSource, ...rocks]);
 
   while (true) {
-    const newSandPosition = produceSand(sandSource, rocks, sandAtRest, bounds);
+    const newSandPosition = produceSand(sandSource, rockLookup, sandLookup, bounds);
     if (!newSandPosition) {
       break;
     }
     sandAtRest.push(newSandPosition);
+    sandLookup.add(newSandPosition.toString());
   }
-  
+
   return sandAtRest.length;
 };
 
