@@ -133,20 +133,18 @@ export const levelOne = ({ lines }) => {
   const sandSource = new Vector2(500, 0);
   const rocks = parseLines(lines);
   const rockLookup = new Set(rocks.map((x) => x.toString()));
-  const sandAtRest = [];
-  const sandLookup = new Set();
+  const sandAtRest = new Set();
   const bounds = findBounds([sandSource, ...rocks]);
 
   while (true) {
-    const newSandPosition = produceSand(sandSource, rockLookup, sandLookup, bounds);
+    const newSandPosition = produceSand(sandSource, rockLookup, sandAtRest, bounds);
     if (!newSandPosition) {
       break;
     }
-    sandAtRest.push(newSandPosition);
-    sandLookup.add(newSandPosition.toString());
+    sandAtRest.add(newSandPosition.toString());
   }
 
-  return sandAtRest.length;
+  return sandAtRest.size;
 };
 
 /**
