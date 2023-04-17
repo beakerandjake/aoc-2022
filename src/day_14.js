@@ -145,15 +145,47 @@ const produceSand = (source, rockLookup, sandLookup, bounds) => {
   return null;
 };
 
+const simulate = (sandSource, rocks, bounds, simulateEndFn) => {
+  const rockLookup = new Set(rocks.map((x) => x.toString()));
+  const sandLookup = new Set();
+  for (;;) {
+    const newSandPosition = produceSand(sandSource, rockLookup, sandLookup, bounds);
+    if (simulateEndFn(newSandPosition)) {
+      break;
+    }
+    sandLookup.add(newSandPosition.toString());
+  }
+  return sandLookup.size;
+};
+
 /**
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
   const sandSource = new Vector2(500, 0);
   const rocks = parseLines(lines);
+  return simulate(
+    sandSource,
+    rocks,
+    findBounds([sandSource, ...rocks]),
+    (newSandPosition) => !newSandPosition
+  );
+};
+
+/**
+ * Returns the solution for level two of this puzzle.
+ */
+export const levelTwo = ({ input, lines }) => {
+  const sandSource = new Vector2(500, 0);
+  const rocks = parseLines(lines);
   const rockLookup = new Set(rocks.map((x) => x.toString()));
   const sandLookup = new Set();
   const bounds = findBounds([sandSource, ...rocks]);
+  bounds.left -= 25;
+  bounds.right += 25;
+  bounds.top += 2;
+
+  print(sandSource, rockLookup, sandLookup, bounds);
 
   while (true) {
     const newSandPosition = produceSand(sandSource, rockLookup, sandLookup, bounds);
@@ -164,11 +196,4 @@ export const levelOne = ({ lines }) => {
   }
 
   return sandLookup.size;
-};
-
-/**
- * Returns the solution for level two of this puzzle.
- */
-export const levelTwo = ({ input, lines }) => {
-  // your code here
 };
