@@ -84,7 +84,7 @@ const parseLines = (() => {
 })();
 
 /**
- * Is the position blocked by a rock or sand?
+ * Returns true if the position blocked by rock or sand.
  */
 const isBlocked = (position, rockLookup, sandLookup) => {
   const positionString = position.toString();
