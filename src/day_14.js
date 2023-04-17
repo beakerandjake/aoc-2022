@@ -116,26 +116,6 @@ const tryToMoveSand = (() => {
 })();
 
 /**
- * Move the sand until it comes to rest. If the sand cannot move the original position is returned.
- */
-const moveSand = (position, rockLookup, sandLookup) => {
-  // move down first.
-  let desired = add(position, down);
-  if (!isBlocked(desired.toString(), rockLookup, sandLookup)) {
-    return desired;
-  }
-  // if down is blocked, try to move down left.
-  desired = add(position, downLeft);
-  if (!isBlocked(desired.toString(), rockLookup, sandLookup)) {
-    return desired;
-  }
-  // if down left is blocked, try to move down right.
-  desired = add(position, downRight);
-  // if blocked, sand is at rest, return original position.
-  return isBlocked(desired.toString(), rockLookup, sandLookup) ? position : desired;
-};
-
-/**
  * Continually produce sand grains from the source until the end condition is met.
  * Returns the number of sand grains produced.
  */
