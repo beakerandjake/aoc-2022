@@ -56,17 +56,15 @@ const parseLines = (() => {
     lines.reduce((acc, line) => [...acc, ...getAllRocksInPath(parseLine(line))], []);
 })();
 
-const includes = (tile, tiles) => tiles.some((x) => equals(x, tile));
-
-const print = (sandSource, rocks, sandAtRest, bounds) => {
+const print = (sandSource, rockLookup, sandLookup, bounds) => {
   const render = (position) => {
-    if (includes(position, rocks)) {
+    if (rockLookup.has(position)) {
       return '#';
     }
-    if (equals(position, sandSource)) {
+    if (position === sandSource.toString()) {
       return '+';
     }
-    if (includes(position, sandAtRest)) {
+    if (sandLookup.has(position)) {
       return 'o';
     }
     return '.';
@@ -75,7 +73,7 @@ const print = (sandSource, rocks, sandAtRest, bounds) => {
   for (let y = bounds.bottom; y <= bounds.top; y++) {
     const line = [];
     for (let x = bounds.left; x <= bounds.right; x++) {
-      line.push(render(new Vector2(x, y)));
+      line.push(render(new Vector2(x, y).toString()));
     }
     console.log(line.join(''));
   }
