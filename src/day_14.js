@@ -102,6 +102,22 @@ const findBounds = (positions) => {
 /**
  * Move the sand until it comes to rest. If the sand cannot move the original position is returned.
  */
+const tryToMoveSand = (() => {
+  const movements = [down, downLeft, downRight];
+  return (position, rockLookup, sandLookup) => {
+    for (let index = 0; index < movements.length; index++) {
+      const newPosition = add(position, movements[index]);
+      if (!isBlocked(newPosition.toString(), rockLookup, sandLookup)) {
+        return newPosition;
+      }
+    }
+    return position;
+  };
+})();
+
+/**
+ * Move the sand until it comes to rest. If the sand cannot move the original position is returned.
+ */
 const moveSand = (position, rockLookup, sandLookup) => {
   // move down first.
   let desired = add(position, down);
@@ -128,7 +144,7 @@ const simulate = (sandSource, rocks, simulateEndFn) => {
   const sandLookup = new Set();
   let previousSandPosition = sandSource;
   for (;;) {
-    const newSandPosition = moveSand(previousSandPosition, rockLookup, sandLookup);
+    const newSandPosition = tryToMoveSand(previousSandPosition, rockLookup, sandLookup);
     // end simulation if new position triggers end condition.
     if (simulateEndFn(newSandPosition, previousSandPosition)) {
       return sandLookup.size;
