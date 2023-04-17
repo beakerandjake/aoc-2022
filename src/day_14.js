@@ -1,5 +1,5 @@
 import { toNumber } from './util/string.js';
-import { Vector2, add, down, downLeft, downRight } from './util/vector2.js';
+import { Vector2, add, down, downLeft, downRight, equals } from './util/vector2.js';
 
 /**
  * Contains solutions for Day 14
@@ -163,11 +163,27 @@ export const levelOne = (() => {
   };
 })();
 
+// end if hits the floor
+
 /**
  * Returns the solution for level two of this puzzle.
  */
-export const levelTwo = ({ lines }) => {
-  // const sandSource = new Vector2(500, 0);
-  // const rocks = parseLines(lines);
+export const levelTwo = (() => {
+  const endTest = (sandSource) => (position) => equals(position, sandSource);
 
-};
+  const collisionTest = (rocks) => {
+    const floor = Math.max(...rocks.map(({ y }) => y)) + 2;
+    return (position, rockLookup, sandLookup) => {
+      if (position.y === floor) {
+        return true;
+      }
+      return isBlocked(position, rockLookup, sandLookup);
+    };
+  };
+
+  return ({ lines }) => {
+    const sandSource = new Vector2(500, 0);
+    const rocks = parseLines(lines);
+    return simulate(sandSource, rocks, collisionTest(rocks), endTest(sandSource)) + 1;
+  };
+})();
