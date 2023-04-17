@@ -50,8 +50,9 @@ const getAllRocksInPath = (() => {
   return (path) => trace(path, path.length - 1);
 })();
 
-const print = (sandSource, rocks, rocksLookup) => {
-  const bounds = (values) => [Math.min(...values), Math.max(...values)];
+const bounds = (values) => [Math.min(...values), Math.max(...values)];
+
+const print = (sandSource, rocks, rocksLookup, sandAtRest, sandLookup) => {
   const render = (position) => {
     if (rocksLookup.has(position.toString())) {
       return '#';
@@ -61,14 +62,18 @@ const print = (sandSource, rocks, rocksLookup) => {
       return '+';
     }
 
+    if (sandLookup.has(position.toString())) {
+      return 'o';
+    }
+
     return '.';
   };
-  const allPoints = [sandSource, ...rocks];
+
+  const allPoints = [sandSource, ...rocks, ...sandAtRest];
   const [minX, maxX] = bounds(allPoints.map(({ x }) => x));
   const [minY, maxY] = bounds(allPoints.map(({ y }) => y));
 
-  console.log('minX', minX, 'maxY', maxY);
-  console.log('minY', minY, 'maxY', maxY);
+  console.log();
 
   for (let y = minY; y <= maxY; y++) {
     const line = [];
@@ -90,9 +95,16 @@ export const levelOne = ({ lines }) => {
     []
   );
   const rocksLookup = new Set(rocks.map((rock) => rock.toString()));
-  print(sandSource, rocks, rocksLookup);
-  // console.log(rocks);
+  const sandAtRest = [
+    new Vector2(500, 8),
+    new Vector2(499, 8),
+    new Vector2(501, 8),
+    new Vector2(498, 8),
+    new Vector2(500, 7),
+  ];
+  const sandLookup = new Set(sandAtRest.map((sand) => sand.toString()));
 
+  print(sandSource, rocks, rocksLookup, sandAtRest, sandLookup);
   return 1234;
 };
 
