@@ -130,23 +130,9 @@ const moveSand = (position, rockLookup, sandLookup) => {
 };
 
 /**
- * Move a particle of sand from the source until it either comes to rest
- * or falls out of bounds.
+ * Continually produce sand grains from the source until the end condition is met.
+ * Returns the number of sand grains produced.
  */
-const produceSand = (source, rockLookup, sandLookup, bounds, inBoundsCheck) => {
-  let position = source;
-  // move until comes to rest or out of bounds.
-  while (!outOfBounds(position, bounds)) {
-    const newPosition = moveSand(position, rockLookup, sandLookup);
-    // sand has come to rest.
-    if (newPosition === position) {
-      return newPosition;
-    }
-    position = newPosition;
-  }
-  return null;
-};
-
 const simulate = (sandSource, rocks, simulateEndFn) => {
   const rockLookup = new Set(rocks.map((x) => x.toString()));
   const sandLookup = new Set();
@@ -184,24 +170,24 @@ export const levelOne = ({ lines }) => {
  * Returns the solution for level two of this puzzle.
  */
 export const levelTwo = ({ input, lines }) => {
-  const sandSource = new Vector2(500, 0);
-  const rocks = parseLines(lines);
-  const rockLookup = new Set(rocks.map((x) => x.toString()));
-  const sandLookup = new Set();
-  const bounds = findBounds([sandSource, ...rocks]);
-  bounds.left -= 25;
-  bounds.right += 25;
-  bounds.top += 2;
+  // const sandSource = new Vector2(500, 0);
+  // const rocks = parseLines(lines);
+  // const rockLookup = new Set(rocks.map((x) => x.toString()));
+  // const sandLookup = new Set();
+  // const bounds = findBounds([sandSource, ...rocks]);
+  // bounds.left -= 25;
+  // bounds.right += 25;
+  // bounds.top += 2;
 
-  print(sandSource, rockLookup, sandLookup, bounds);
+  // print(sandSource, rockLookup, sandLookup, bounds);
 
-  while (true) {
-    const newSandPosition = produceSand(sandSource, rockLookup, sandLookup, bounds);
-    if (!newSandPosition) {
-      break;
-    }
-    sandLookup.add(newSandPosition.toString());
-  }
+  // while (true) {
+  //   const newSandPosition = produceSand(sandSource, rockLookup, sandLookup, bounds);
+  //   if (!newSandPosition) {
+  //     break;
+  //   }
+  //   sandLookup.add(newSandPosition.toString());
+  // }
 
-  return sandLookup.size;
+  // return sandLookup.size;
 };
