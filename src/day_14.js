@@ -1,5 +1,5 @@
 import { toNumber } from './util/string.js';
-import { Vector2, equals, add, down, downLeft, downRight } from './util/vector2.js';
+import { Vector2, add, down, downLeft, downRight } from './util/vector2.js';
 
 /**
  * Contains solutions for Day 14
@@ -97,19 +97,6 @@ const findBounds = (positions) => {
 };
 
 /**
- * Is the given position out of the bounds?
- */
-const outOfBounds = (position, bounds) => {
-  if (position.y < bounds.bottom || position.y > bounds.top) {
-    return true;
-  }
-  if (position.x > bounds.right || position.x < bounds.left) {
-    return true;
-  }
-  return false;
-};
-
-/**
  * Move the sand until it comes to rest. If the sand cannot move the original position is returned.
  */
 const moveSand = (position, rockLookup, sandLookup) => {
@@ -157,14 +144,22 @@ const simulate = (sandSource, rocks, simulateEndFn) => {
 /**
  * Returns the solution for level one of this puzzle.
  */
-export const levelOne = ({ lines }) => {
-  const sandSource = new Vector2(500, 0);
-  const rocks = parseLines(lines);
-  const bounds = findBounds([sandSource, ...rocks]);
-  return simulate(sandSource, rocks, (newSandPosition) =>
-    outOfBounds(newSandPosition, bounds)
-  );
-};
+export const levelOne = (() => {
+  /**
+   * Returns a function used to halt the simulation.
+   * Tests to see whether a grain of sand has fallen into the abyss.
+   */
+  const outOfBoundsTest = (sandSource, rocks) => {
+    const { bottom, top, left, right } = findBounds([sandSource, ...rocks]);
+    return ({ x, y }) => y < bottom || y > top || x > right || x < left;
+  };
+
+  return ({ lines }) => {
+    const sandSource = new Vector2(500, 0);
+    const rocks = parseLines(lines);
+    return simulate(sandSource, rocks, outOfBoundsTest(sandSource, rocks));
+  };
+})();
 
 /**
  * Returns the solution for level two of this puzzle.
@@ -178,9 +173,7 @@ export const levelTwo = ({ input, lines }) => {
   // bounds.left -= 25;
   // bounds.right += 25;
   // bounds.top += 2;
-
   // print(sandSource, rockLookup, sandLookup, bounds);
-
   // while (true) {
   //   const newSandPosition = produceSand(sandSource, rockLookup, sandLookup, bounds);
   //   if (!newSandPosition) {
@@ -188,6 +181,5 @@ export const levelTwo = ({ input, lines }) => {
   //   }
   //   sandLookup.add(newSandPosition.toString());
   // }
-
   // return sandLookup.size;
 };
