@@ -7,6 +7,32 @@ import { Vector2, add, down, downLeft, downRight } from './util/vector2.js';
  */
 
 /**
+ * Print the cave to the console.
+ */
+const print = (sandSource, rockLookup, sandLookup, bounds) => {
+  const render = (position) => {
+    if (rockLookup.has(position)) {
+      return '#';
+    }
+    if (position === sandSource.toString()) {
+      return '+';
+    }
+    if (sandLookup.has(position)) {
+      return 'o';
+    }
+    return '.';
+  };
+  console.log();
+  for (let y = bounds.bottom; y <= bounds.top; y++) {
+    const line = [];
+    for (let x = bounds.left; x <= bounds.right; x++) {
+      line.push(render(new Vector2(x, y).toString()));
+    }
+    console.log(line.join(''));
+  }
+};
+
+/**
  * Parse all lines of input and return all of the rocks in the cave.
  */
 const parseLines = (() => {
@@ -56,29 +82,6 @@ const parseLines = (() => {
   return (lines) =>
     lines.reduce((acc, line) => [...acc, ...getAllRocksInPath(parseLine(line))], []);
 })();
-
-const print = (sandSource, rockLookup, sandLookup, bounds) => {
-  const render = (position) => {
-    if (rockLookup.has(position)) {
-      return '#';
-    }
-    if (position === sandSource.toString()) {
-      return '+';
-    }
-    if (sandLookup.has(position)) {
-      return 'o';
-    }
-    return '.';
-  };
-  console.log();
-  for (let y = bounds.bottom; y <= bounds.top; y++) {
-    const line = [];
-    for (let x = bounds.left; x <= bounds.right; x++) {
-      line.push(render(new Vector2(x, y).toString()));
-    }
-    console.log(line.join(''));
-  }
-};
 
 /**
  * Is the position blocked by a rock or sand?
