@@ -36,12 +36,11 @@ const print = (sandSource, rockLookup, sandLookup, bounds) => {
  * Parse all lines of input and return all of the rocks in the cave.
  */
 const parseLines = (() => {
-  const coordinateRegex = /(\d+),(\d+)/g;
   /**
    * Parses a single line of input and returns the scan trace.
    */
   const parseLine = (line) =>
-    [...line.matchAll(coordinateRegex)].map(
+    [...line.matchAll(/(\d+),(\d+)/g)].map(
       ([, x, y]) => new Vector2(toNumber(x), toNumber(y))
     );
 
