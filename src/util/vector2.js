@@ -33,6 +33,23 @@ export const add = (lhs, rhs) => new Vector2(lhs.x + rhs.x, lhs.y + rhs.y);
  */
 export const distanceSquared = (lhs, rhs) => (lhs.y - rhs.y) ** 2 + (lhs.x - rhs.x) ** 2;
 
+/**
+ * Returns the min and max values of the array.
+ * @param {Number[]} values
+ */
+const bounds = (values) => [Math.min(...values), Math.max(...values)];
+
+/**
+ * Finds the top, bottom, left, and right extremes of the positions.
+ * The 'zero' is top left, meaning positions increase from top to bottom and left to right.
+ * @param {Vector2[]} positions
+ */
+export const findBounds = (positions) => {
+  const [left, right] = bounds(positions.map(({ x }) => x));
+  const [top, bottom] = bounds(positions.map(({ y }) => y));
+  return { left, right, bottom, top };
+};
+
 export const up = new Vector2(0, -1);
 export const down = new Vector2(0, 1);
 export const left = new Vector2(-1, 0);
