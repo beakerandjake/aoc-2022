@@ -1,5 +1,13 @@
 import { toNumber } from './util/string.js';
-import { Vector2, add, down, downLeft, downRight, equals } from './util/vector2.js';
+import {
+  Vector2,
+  add,
+  down,
+  downLeft,
+  downRight,
+  equals,
+  findBounds,
+} from './util/vector2.js';
 
 /**
  * Contains solutions for Day 14
@@ -137,21 +145,11 @@ const simulate = (sandSource, rocks, collisionFn, simulateEndFn) => {
  */
 export const levelOne = (() => {
   /**
-   * Returns the extremes of the given positions.
-   */
-  const findBounds = (positions) => {
-    const bounds = (values) => [Math.min(...values), Math.max(...values)];
-    const [left, right] = bounds(positions.map(({ x }) => x));
-    const [bottom, top] = bounds(positions.map(({ y }) => y));
-    return { left, right, bottom, top };
-  };
-
-  /**
    * Returns a function that returns true if a grain of sand has fallen into the abyss.
    */
   const endTest = (sandSource, rocks) => {
     const { bottom, top, left, right } = findBounds([sandSource, ...rocks]);
-    return ({ x, y }) => y < bottom || y > top || x > right || x < left;
+    return ({ x, y }) => y < top || y > bottom || x > right || x < left;
   };
 
   return ({ lines }) => {
