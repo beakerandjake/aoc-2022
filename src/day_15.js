@@ -18,10 +18,17 @@ const parseLine = (line) => {
   const [sensorMatch, beaconMatch] = line.matchAll(/x=(-?\d+), y=(-?\d+)/g);
   const sensorPosition = parseMatch(sensorMatch);
   const beaconPosition = parseMatch(beaconMatch);
+  const distanceToBeacon = taxicabDistance(sensorPosition, beaconPosition);
   return {
     sensorPosition,
     beaconPosition,
-    distanceToBeacon: taxicabDistance(sensorPosition, beaconPosition),
+    distanceToBeacon,
+    bounds: [
+      add(sensorPosition, new Vector2(-distanceToBeacon, 0)),
+      add(sensorPosition, new Vector2(distanceToBeacon, 0)),
+      add(sensorPosition, new Vector2(0, -distanceToBeacon)),
+      add(sensorPosition, new Vector2(0, distanceToBeacon)),
+    ],
   };
 };
 
@@ -37,19 +44,13 @@ export const levelOne = ({ lines }) => {
   const sensors = lines.map(parseLine);
   const bounds = findBounds(
     sensors.reduce((acc, item) => {
-      acc.push(item.beaconPosition);
-      // left most point
-      acc.push(add(item.sensorPosition, new Vector2(-item.distanceToBeacon, 0)));
-      // right most point
-      acc.push(add(item.sensorPosition, new Vector2(item.distanceToBeacon, 0)));
-      // top most point
-      acc.push(add(item.sensorPosition, new Vector2(0, -item.distanceToBeacon)));
-      // bottom most point
-      acc.push(add(item.sensorPosition, new Vector2(0, item.distanceToBeacon)));
+      acc.push(...item.bounds);
       return acc;
     }, [])
   );
-  const beaconPositions = new Set(sensors.map((item) => item.beaconPosition.toString()));
+  const beaconPositions = new Set(
+    sensors.map(({ beaconPosition }) => beaconPosition.toString())
+  );
 
   const rowNumber = 2000000;
   let occupiedCount = 0;
@@ -57,8 +58,8 @@ export const levelOne = ({ lines }) => {
     const position = new Vector2(x, rowNumber);
     const occupied = sensors.some(
       ({ sensorPosition, distanceToBeacon }) =>
-        !beaconPositions.has(position.toString()) &&
-        taxicabDistance(position, sensorPosition) <= distanceToBeacon
+        taxicabDistance(position, sensorPosition) <= distanceToBeacon &&
+        !beaconPositions.has(position.toString())
     );
     if (occupied) {
       occupiedCount += 1;
@@ -66,6 +67,7 @@ export const levelOne = ({ lines }) => {
   }
 
   return occupiedCount;
+  // return 1234;
 };
 
 /**
