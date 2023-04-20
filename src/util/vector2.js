@@ -34,6 +34,14 @@ export const add = (lhs, rhs) => new Vector2(lhs.x + rhs.x, lhs.y + rhs.y);
 export const distanceSquared = (lhs, rhs) => (lhs.y - rhs.y) ** 2 + (lhs.x - rhs.x) ** 2;
 
 /**
+ * Returns the manhattan or taxicab distance between the two vectors.
+ * @param {Vector2} lhs
+ * @param {Vector2} rhs
+ */
+export const taxicabDistance = (lhs, rhs) =>
+  Math.abs(lhs.x - rhs.x) + Math.abs(lhs.y - rhs.y);
+
+/**
  * Returns the min and max values of the array.
  * @param {Number[]} values
  */
