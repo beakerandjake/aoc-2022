@@ -40,9 +40,8 @@ const parseLine = (line) => {
  * @returns {Number|String}
  */
 export const levelOne = ({ lines }) => {
-  // your code here
   const sensors = lines.map(parseLine);
-  const bounds = findBounds(
+  const { left, right } = findBounds(
     sensors.reduce((acc, item) => {
       acc.push(...item.bounds);
       return acc;
@@ -54,14 +53,15 @@ export const levelOne = ({ lines }) => {
 
   const rowNumber = 2000000;
   let occupiedCount = 0;
-  for (let x = bounds.left; x <= bounds.right; x++) {
+  for (let x = left; x <= right; x++) {
     const position = new Vector2(x, rowNumber);
-    const occupied = sensors.some(
-      ({ sensorPosition, distanceToBeacon }) =>
-        taxicabDistance(position, sensorPosition) <= distanceToBeacon &&
-        !beaconPositions.has(position.toString())
-    );
-    if (occupied) {
+    if (
+      sensors.some(
+        ({ sensorPosition, distanceToBeacon }) =>
+          taxicabDistance(position, sensorPosition) <= distanceToBeacon &&
+          !beaconPositions.has(position.toString())
+      )
+    ) {
       occupiedCount += 1;
     }
   }
