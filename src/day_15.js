@@ -26,15 +26,10 @@ const parseLine = (line) => {
 /**
  * Calculates the extremities of the sensor based on the distance to the closest beacon.
  */
-const calculateSensorRange = ({ sensorPosition, beaconPosition }) => {
-  const distanceToBeacon = taxicabDistance(sensorPosition, beaconPosition);
-  return {
-    position: sensorPosition,
-    distanceToBeacon: taxicabDistance(sensorPosition, beaconPosition),
-    left: sensorPosition.x - distanceToBeacon,
-    right: sensorPosition.x + distanceToBeacon,
-  };
-};
+const calculateSensorRange = ({ sensorPosition, beaconPosition }) => ({
+  position: sensorPosition,
+  distanceToBeacon: taxicabDistance(sensorPosition, beaconPosition),
+});
 
 /**
  * Creates a lookup of beacon positions.
@@ -53,12 +48,6 @@ const parseLines = (lines) => {
 };
 
 /**
- * Finds the left/right extremities of the world based on all sensors.
- */
-const findWorldBounds = (sensors) =>
-  bounds(sensors.reduce((acc, { left, right }) => [...acc, left, right], []));
-
-/**
  * Is the position within range of the sensor?
  */
 const inRangeOfSensor = (position, sensor) =>
@@ -69,6 +58,21 @@ const inRangeOfSensor = (position, sensor) =>
  */
 export const levelOne = (() => {
   /**
+   * Finds the left/right extremities of the world based on all sensors.
+   */
+  const findWorldBounds = (sensors) =>
+    bounds(
+      sensors.reduce(
+        (acc, { position, distanceToBeacon }) => [
+          ...acc,
+          position.x - distanceToBeacon,
+          position.x + distanceToBeacon,
+        ],
+        []
+      )
+    );
+
+  /**
    * Returns true if the position cannot contain the distress beacon.
    */
   const positionIsOccupied = (position, sensors, beacons) =>
@@ -78,7 +82,8 @@ export const levelOne = (() => {
   /**
    * Returns the number of positions in the row which cannot contain the distress beacon.
    */
-  const countOccupiedPositions = (rowNumber, sensors, beacons, left, right) => {
+  const countOccupiedPositions = (rowNumber, sensors, beacons) => {
+    const [left, right] = findWorldBounds(sensors);
     let occupiedCount = 0;
     const position = new Vector2(left, rowNumber);
     while (position.x++ <= right) {
@@ -91,8 +96,7 @@ export const levelOne = (() => {
 
   return ({ lines }) => {
     const { sensors, beacons } = parseLines(lines);
-    const [left, right] = findWorldBounds(sensors);
-    return countOccupiedPositions(2000000, sensors, beacons, left, right);
+    return countOccupiedPositions(2000000, sensors, beacons);
   };
 })();
 
