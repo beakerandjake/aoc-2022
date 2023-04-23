@@ -3,8 +3,9 @@
  * Puzzle Description: https://adventofcode.com/2022/day/15
  */
 
+import { toSet, bounds } from './util/array.js';
 import { toNumber } from './util/string.js';
-import { Vector2, taxicabDistance, findBounds, add } from './util/vector2.js';
+import { Vector2, taxicabDistance, add } from './util/vector2.js';
 
 /**
  * Parse a regex match and returns a new Vector2.
@@ -12,25 +13,52 @@ import { Vector2, taxicabDistance, findBounds, add } from './util/vector2.js';
 const parseMatch = (match) => new Vector2(toNumber(match[1]), toNumber(match[2]));
 
 /**
- * Parse a single line of input and return information relating to the sensor and closest beacon.
+ * Parse a single line of input and returns the sensor and closest beacon.
  */
 const parseLine = (line) => {
   const [sensorMatch, beaconMatch] = line.matchAll(/x=(-?\d+), y=(-?\d+)/g);
-  const sensorPosition = parseMatch(sensorMatch);
-  const beaconPosition = parseMatch(beaconMatch);
-  const distanceToBeacon = taxicabDistance(sensorPosition, beaconPosition);
   return {
-    sensorPosition,
-    beaconPosition,
-    distanceToBeacon,
-    bounds: [
-      add(sensorPosition, new Vector2(-distanceToBeacon, 0)),
-      add(sensorPosition, new Vector2(distanceToBeacon, 0)),
-      add(sensorPosition, new Vector2(0, -distanceToBeacon)),
-      add(sensorPosition, new Vector2(0, distanceToBeacon)),
-    ],
+    sensorPosition: parseMatch(sensorMatch),
+    beaconPosition: parseMatch(beaconMatch),
   };
 };
+
+/**
+ * Calculates the extremities of the sensor based on the distance to the closest beacon.
+ */
+const calculateSensorRange = ({ sensorPosition, beaconPosition }) => {
+  const distanceToBeacon = taxicabDistance(sensorPosition, beaconPosition);
+  return {
+    position: sensorPosition,
+    distanceToBeacon: taxicabDistance(sensorPosition, beaconPosition),
+    left: sensorPosition.x - distanceToBeacon,
+    right: sensorPosition.x + distanceToBeacon,
+    top: sensorPosition.y - distanceToBeacon,
+    bottom: sensorPosition.y + distanceToBeacon,
+  };
+};
+
+/**
+ * Creates a lookup of beacon positions.
+ */
+const createBeaconLookup = (items) =>
+  toSet(items.map(({ beaconPosition }) => beaconPosition.toString()));
+
+/**
+ * Parses the input and returns the sensors and beacon positions.
+ */
+const parseLines = (lines) => {
+  const parsed = lines.map(parseLine);
+  const sensors = parsed.map(calculateSensorRange);
+  const beacons = createBeaconLookup(parsed);
+  return { sensors, beacons };
+};
+
+/**
+ * Finds the left/right extremities of the world based on all sensors.
+ */
+const findWorldBounds = (sensors) =>
+  bounds(sensors.reduce((acc, { left, right }) => [...acc, left, right], []));
 
 /**
  * Returns the solution for level one of this puzzle.
@@ -40,16 +68,8 @@ const parseLine = (line) => {
  * @returns {Number|String}
  */
 export const levelOne = ({ lines }) => {
-  const sensors = lines.map(parseLine);
-  const { left, right } = findBounds(
-    sensors.reduce((acc, item) => {
-      acc.push(...item.bounds);
-      return acc;
-    }, [])
-  );
-  const beaconPositions = new Set(
-    sensors.map(({ beaconPosition }) => beaconPosition.toString())
-  );
+  const { sensors, beacons } = parseLines(lines);
+  const [left, right] = findWorldBounds(sensors);
 
   const rowNumber = 2000000;
   let occupiedCount = 0;
@@ -57,9 +77,9 @@ export const levelOne = ({ lines }) => {
     const position = new Vector2(x, rowNumber);
     if (
       sensors.some(
-        ({ sensorPosition, distanceToBeacon }) =>
+        ({ position: sensorPosition, distanceToBeacon }) =>
           taxicabDistance(position, sensorPosition) <= distanceToBeacon &&
-          !beaconPositions.has(position.toString())
+          !beacons.has(position.toString())
       )
     ) {
       occupiedCount += 1;
@@ -67,7 +87,6 @@ export const levelOne = ({ lines }) => {
   }
 
   return occupiedCount;
-  // return 1234;
 };
 
 /**
