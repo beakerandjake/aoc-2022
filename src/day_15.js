@@ -33,8 +33,6 @@ const calculateSensorRange = ({ sensorPosition, beaconPosition }) => {
     distanceToBeacon: taxicabDistance(sensorPosition, beaconPosition),
     left: sensorPosition.x - distanceToBeacon,
     right: sensorPosition.x + distanceToBeacon,
-    top: sensorPosition.y - distanceToBeacon,
-    bottom: sensorPosition.y + distanceToBeacon,
   };
 };
 
