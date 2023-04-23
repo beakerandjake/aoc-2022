@@ -61,19 +61,18 @@ const findWorldBounds = (sensors) =>
   bounds(sensors.reduce((acc, { left, right }) => [...acc, left, right], []));
 
 /**
- * Returns true if the position cannot contain the distress beacon.
- */
-const positionIsOccupied = (position, sensors, beacons) =>
-  sensors.some(
-    ({ position: sensorPosition, distanceToBeacon }) =>
-      taxicabDistance(position, sensorPosition) <= distanceToBeacon &&
-      !beacons.has(position.toString())
-  );
-
-/**
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = (() => {
+  /**
+   * Returns true if the position cannot contain the distress beacon.
+   */
+  const positionIsOccupied = (position, sensors, beacons) =>
+    sensors.some(
+      ({ position: sensorPosition, distanceToBeacon }) =>
+        taxicabDistance(position, sensorPosition) <= distanceToBeacon
+    ) && !beacons.has(position.toString());
+
   /**
    * Returns the number of positions in the row which cannot contain the distress beacon.
    */
@@ -95,6 +94,12 @@ export const levelOne = (() => {
   };
 })();
 
+const positionIsEmpty = (position, sensors, beacons) =>
+  sensors.every(
+    ({ position: sensorPosition, distanceToBeacon }) =>
+      taxicabDistance(position, sensorPosition) > distanceToBeacon
+  ) && !beacons.has(position.toString());
+
 /**
  * Returns the solution for level two of this puzzle.
  * @param {Object} args - Provides both raw and split input.
@@ -104,14 +109,14 @@ export const levelOne = (() => {
  */
 export const levelTwo = ({ input, lines }) => {
   const { sensors, beacons } = parseLines(lines);
+  console.log([...beacons].join('\n'));
 
   // your code here
   for (let x = 0; x <= 20; x++) {
     for (let y = 0; y <= 20; y++) {
-      // console.log('x, y', x, y);
       const position = new Vector2(x, y);
-      if (!positionIsOccupied(position, sensors, beacons)) {
-        console.log('found position', position);
+      if (positionIsEmpty(position, sensors, beacons)) {
+        console.log('found position', position.toString());
         return position.x * 4000000 + position.y;
       }
     }
