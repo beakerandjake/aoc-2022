@@ -64,3 +64,10 @@ export const sum = (array) => array.reduce((acc, x) => acc + x, 0);
  * @param {Number} end
  */
 export const product = (array) => array.reduce((acc, x) => acc * x, 1);
+
+/**
+ * Creates a new set from the array.
+ * @param {Array} array
+ * @param {Function} mapFn - Invoked on each item in the array, allows customization of what gets inserted.
+ */
+export const toSet = (array, mapFn = (x) => x) => new Set(array.map(mapFn));
