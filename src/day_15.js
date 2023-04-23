@@ -61,6 +61,12 @@ const findWorldBounds = (sensors) =>
   bounds(sensors.reduce((acc, { left, right }) => [...acc, left, right], []));
 
 /**
+ * Is the position within range of the sensor?
+ */
+const inRangeOfSensor = (position, sensor) =>
+  taxicabDistance(position, sensor.position) <= sensor.distanceToBeacon;
+
+/**
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = (() => {
@@ -68,10 +74,8 @@ export const levelOne = (() => {
    * Returns true if the position cannot contain the distress beacon.
    */
   const positionIsOccupied = (position, sensors, beacons) =>
-    sensors.some(
-      ({ position: sensorPosition, distanceToBeacon }) =>
-        taxicabDistance(position, sensorPosition) <= distanceToBeacon
-    ) && !beacons.has(position.toString());
+    sensors.some((sensor) => inRangeOfSensor(position, sensor)) &&
+    !beacons.has(position.toString());
 
   /**
    * Returns the number of positions in the row which cannot contain the distress beacon.
