@@ -42,7 +42,7 @@ const calculateSensorRange = ({ sensorPosition, beaconPosition }) => {
  * Creates a lookup of beacon positions.
  */
 const createBeaconLookup = (items) =>
-  toSet(items.map(({ beaconPosition }) => beaconPosition.toString()));
+  toSet(items, ({ beaconPosition }) => beaconPosition.toString());
 
 /**
  * Parses the input and returns the sensors and beacon positions.
@@ -61,19 +61,19 @@ const findWorldBounds = (sensors) =>
   bounds(sensors.reduce((acc, { left, right }) => [...acc, left, right], []));
 
 /**
+ * Returns true if the position cannot contain the distress beacon.
+ */
+const positionIsOccupied = (position, sensors, beacons) =>
+  sensors.some(
+    ({ position: sensorPosition, distanceToBeacon }) =>
+      taxicabDistance(position, sensorPosition) <= distanceToBeacon &&
+      !beacons.has(position.toString())
+  );
+
+/**
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = (() => {
-  /**
-   * Returns true if the position cannot contain the distress beacon.
-   */
-  const positionIsOccupied = (position, sensors, beacons) =>
-    sensors.some(
-      ({ position: sensorPosition, distanceToBeacon }) =>
-        taxicabDistance(position, sensorPosition) <= distanceToBeacon &&
-        !beacons.has(position.toString())
-    );
-
   /**
    * Returns the number of positions in the row which cannot contain the distress beacon.
    */
@@ -103,5 +103,18 @@ export const levelOne = (() => {
  * @returns {Number|String}
  */
 export const levelTwo = ({ input, lines }) => {
+  const { sensors, beacons } = parseLines(lines);
+
   // your code here
+  for (let x = 0; x <= 20; x++) {
+    for (let y = 0; y <= 20; y++) {
+      // console.log('x, y', x, y);
+      const position = new Vector2(x, y);
+      if (!positionIsOccupied(position, sensors, beacons)) {
+        console.log('found position', position);
+        return position.x * 4000000 + position.y;
+      }
+    }
+  }
+  return 1234;
 };
