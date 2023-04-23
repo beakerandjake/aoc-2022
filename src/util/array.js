@@ -71,3 +71,9 @@ export const product = (array) => array.reduce((acc, x) => acc * x, 1);
  * @param {Function} mapFn - Invoked on each item in the array, allows customization of what gets inserted.
  */
 export const toSet = (array, mapFn = (x) => x) => new Set(array.map(mapFn));
+
+/**
+ * Returns the min and max values of the array.
+ * @param {Number[]} values
+ */
+export const bounds = (values) => [Math.min(...values), Math.max(...values)];

@@ -1,3 +1,5 @@
+import { bounds } from './array.js';
+
 /**
  * Representation of 2d vectors and points.
  */
@@ -40,12 +42,6 @@ export const distanceSquared = (lhs, rhs) => (lhs.y - rhs.y) ** 2 + (lhs.x - rhs
  */
 export const taxicabDistance = (lhs, rhs) =>
   Math.abs(lhs.x - rhs.x) + Math.abs(lhs.y - rhs.y);
-
-/**
- * Returns the min and max values of the array.
- * @param {Number[]} values
- */
-const bounds = (values) => [Math.min(...values), Math.max(...values)];
 
 /**
  * Finds the top, bottom, left, and right extremes of the positions.
