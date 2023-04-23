@@ -62,32 +62,38 @@ const findWorldBounds = (sensors) =>
 
 /**
  * Returns the solution for level one of this puzzle.
- * @param {Object} args - Provides both raw and split input.
- * @param {String} args.input - The original, unparsed input string.
- * @param {String[]} args.lines - Array containing each line of the input string.
- * @returns {Number|String}
  */
-export const levelOne = ({ lines }) => {
-  const { sensors, beacons } = parseLines(lines);
-  const [left, right] = findWorldBounds(sensors);
+export const levelOne = (() => {
+  /**
+   * Returns true if the position cannot contain the distress beacon.
+   */
+  const positionIsOccupied = (position, sensors, beacons) =>
+    sensors.some(
+      ({ position: sensorPosition, distanceToBeacon }) =>
+        taxicabDistance(position, sensorPosition) <= distanceToBeacon &&
+        !beacons.has(position.toString())
+    );
 
-  const rowNumber = 2000000;
-  let occupiedCount = 0;
-  for (let x = left; x <= right; x++) {
-    const position = new Vector2(x, rowNumber);
-    if (
-      sensors.some(
-        ({ position: sensorPosition, distanceToBeacon }) =>
-          taxicabDistance(position, sensorPosition) <= distanceToBeacon &&
-          !beacons.has(position.toString())
-      )
-    ) {
-      occupiedCount += 1;
+  /**
+   * Returns the number of positions in the row which cannot contain the distress beacon.
+   */
+  const countOccupiedPositions = (rowNumber, sensors, beacons, left, right) => {
+    let occupiedCount = 0;
+    const position = new Vector2(left, rowNumber);
+    while (position.x++ <= right) {
+      if (positionIsOccupied(position, sensors, beacons)) {
+        occupiedCount += 1;
+      }
     }
-  }
+    return occupiedCount;
+  };
 
-  return occupiedCount;
-};
+  return ({ lines }) => {
+    const { sensors, beacons } = parseLines(lines);
+    const [left, right] = findWorldBounds(sensors);
+    return countOccupiedPositions(2000000, sensors, beacons, left, right);
+  };
+})();
 
 /**
  * Returns the solution for level two of this puzzle.
