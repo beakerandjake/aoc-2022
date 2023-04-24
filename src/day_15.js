@@ -116,6 +116,9 @@ const teleportXToEdgeOfSensor = (sensor, position) =>
 
 const teleportToEdge = (position, sensor) => {};
 
+const rightXEdge = ({ position: sensorPosition, distanceToBeacon }, y) =>
+  sensorPosition.x + distanceToBeacon - Math.abs(sensorPosition.y - y);
+
 /**
  * Returns the solution for level two of this puzzle.
  * @param {Object} args - Provides both raw and split input.
@@ -126,45 +129,54 @@ const teleportToEdge = (position, sensor) => {};
 export const levelTwo = ({ lines }) => {
   const { sensors, beacons } = parseLines(lines);
 
-  const sensor = sensors.find((q) => q.position.x === 8 && q.position.y === 7);
-  const positions = [
-    new Vector2(8, -2),
-    new Vector2(7, -1),
-    new Vector2(6, 0),
-    new Vector2(5, 1),
-    new Vector2(4, 2),
-    new Vector2(3, 3),
-    new Vector2(2, 4),
-    new Vector2(1, 5),
-    new Vector2(0, 6),
-    new Vector2(-1, 7),
-    new Vector2(0, 8),
-    new Vector2(1, 9),
-    new Vector2(2, 10),
-    new Vector2(3, 11),
-    new Vector2(4, 12),
-    new Vector2(5, 13),
-    new Vector2(6, 14),
-    new Vector2(7, 15),
-    new Vector2(8, 16),
-  ];
-  positions.forEach((position) => {
-    const newPosition = teleportXToEdgeOfSensor(sensor, position);
-    console.log('position', position, 'newPosition', newPosition);
-  });
-  // for (let index = -2; index <= 7; index++) {
-  //   const
-  // }
-  // console.log(sensor);
+  // const sensor = sensors.find((q) => q.position.x === 8 && q.position.y === 7);
+  // const positions = [
+  //   new Vector2(8, -2),
+  //   new Vector2(8, -1),
+  //   new Vector2(9, 0),
+  //   new Vector2(10, 1),
+  //   new Vector2(7, 2),
+  //   new Vector2(3, 3),
+  //   new Vector2(2, 4),
+  //   new Vector2(1, 5),
+  //   new Vector2(0, 6),
+  //   new Vector2(-1, 7),
+  //   new Vector2(0, 8),
+  //   new Vector2(1, 9),
+  //   new Vector2(2, 10),
+  //   new Vector2(3, 11),
+  //   new Vector2(4, 12),
+  //   new Vector2(5, 13),
+  //   new Vector2(6, 14),
+  //   new Vector2(7, 15),
+  //   new Vector2(8, 16),
+  // ];
+  // positions.forEach((position) => {
+  //   const newPosition = new Vector2(rightXEdge(sensor, position.y), position.y);
+  //   console.log('position', position, 'newPosition', newPosition);
+  // });
 
-  // // your code here
-  // for (let y = 1000; y >= 0; y--) {
-  //   for (let x = 0; x <= 1000; x++) {
-  //     const position = new Vector2(x, y);
-  //     if (positionIsEmpty(position, sensors, beacons)) {
-  //       return position.x * 4000000 + position.y;
-  //     }
-  //   }
-  // }
-  return 1234;
+  const position = new Vector2(0, 0);
+  while (position.y <= 4000000) {
+    while (position.x <= 4000000) {
+      // console.log(position);
+      const closestSensor = sensors.find((sensor) => inRangeOfSensor(position, sensor));
+
+      // console.log('closest sensor', closestSensor);
+      if (!closestSensor && !beacons.has(position.toString())) {
+        // console.log('returning');
+        return position.x * 4000000 + position.y;
+      }
+
+      if (closestSensor) {
+        position.x = rightXEdge(closestSensor, position.y) + 1;
+      } else {
+        position.x += 1;
+      }
+    }
+    position.y += 1;
+    position.x = 0;
+  }
+
+  throw new Error('Could not find distress beacon');
 };
