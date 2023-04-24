@@ -51,9 +51,10 @@ export const levelOne = (() => {
    */
   const parseLines = (lines) => {
     const parsed = lines.map(parseLine);
-    const sensors = parsed.map(calculateSensorRange);
-    const beacons = createBeaconLookup(parsed);
-    return { sensors, beacons };
+    return {
+      sensors: parsed.map(calculateSensorRange),
+      beacons: createBeaconLookup(parsed),
+    };
   };
 
   /**
@@ -109,6 +110,9 @@ export const levelTwo = (() => {
   const rightXEdge = ({ position, distanceToBeacon }, y) =>
     position.x + distanceToBeacon - Math.abs(position.y - y);
 
+  /**
+   * Calculates the tuning frequency of the position.
+   */
   const tuningFrequency = ({ x, y }) => x * 4000000 + y;
 
   return ({ lines }) => {
