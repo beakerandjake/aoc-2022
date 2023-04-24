@@ -31,22 +31,6 @@ const calculateSensorRange = ({ sensorPosition, beaconPosition }) => ({
 });
 
 /**
- * Creates a lookup of beacon positions.
- */
-const createBeaconLookup = (items) =>
-  toSet(items, ({ beaconPosition }) => beaconPosition.toString());
-
-/**
- * Parses the input and returns the sensors and beacon positions.
- */
-const parseLines = (lines) => {
-  const parsed = lines.map(parseLine);
-  const sensors = parsed.map(calculateSensorRange);
-  const beacons = createBeaconLookup(parsed);
-  return { sensors, beacons };
-};
-
-/**
  * Is the position within range of the sensor?
  */
 const inRangeOfSensor = (position, sensor) =>
@@ -56,6 +40,22 @@ const inRangeOfSensor = (position, sensor) =>
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = (() => {
+  /**
+   * Creates a lookup of beacon positions.
+   */
+  const createBeaconLookup = (items) =>
+    toSet(items, ({ beaconPosition }) => beaconPosition.toString());
+
+  /**
+   * Parses the input and returns the sensors and beacon positions.
+   */
+  const parseLines = (lines) => {
+    const parsed = lines.map(parseLine);
+    const sensors = parsed.map(calculateSensorRange);
+    const beacons = createBeaconLookup(parsed);
+    return { sensors, beacons };
+  };
+
   /**
    * Finds the left/right extremities of the world based on all sensors.
    */
@@ -78,13 +78,11 @@ export const levelOne = (() => {
     sensors.some((sensor) => inRangeOfSensor(position, sensor)) &&
     !beacons.has(position.toString());
 
-  /**
-   * Returns the number of positions in the row which cannot contain the distress beacon.
-   */
-  const countOccupiedPositions = (rowNumber, sensors, beacons) => {
+  return ({ lines }) => {
+    const { sensors, beacons } = parseLines(lines);
     const [left, right] = findWorldBounds(sensors);
     let occupiedCount = 0;
-    const position = new Vector2(left, rowNumber);
+    const position = new Vector2(left, 2000000);
     while (position.x++ <= right) {
       if (positionIsOccupied(position, sensors, beacons)) {
         occupiedCount += 1;
@@ -92,61 +90,42 @@ export const levelOne = (() => {
     }
     return occupiedCount;
   };
-
-  return ({ lines }) => {
-    const { sensors, beacons } = parseLines(lines);
-    return countOccupiedPositions(2000000, sensors, beacons);
-  };
 })();
-
-const positionIsEmpty = (position, sensors, beacons) =>
-  sensors.every((sensor) => !inRangeOfSensor(position, sensor)) &&
-  !beacons.has(position.toString());
-
-const maxSensorRowLength = (distanceToBeacon) => distanceToBeacon * 2 + 1;
-
-const sensorRowDecay = (sensorPosition, position) =>
-  2 * Math.abs(sensorPosition.y - position.y);
-
-const offsetXToEdgeOfSensor = (sensor, position) =>
-  maxSensorRowLength(sensor.distanceToBeacon) - sensorRowDecay(sensor.position, position);
-
-const teleportXToEdgeOfSensor = (sensor, position) =>
-  new Vector2(position.x + offsetXToEdgeOfSensor(sensor, position), position.y);
-
-const teleportToEdge = (position, sensor) => {};
-
-const rightXEdge = ({ position: sensorPosition, distanceToBeacon }, y) =>
-  sensorPosition.x + distanceToBeacon - Math.abs(sensorPosition.y - y);
 
 /**
  * Returns the solution for level two of this puzzle.
- * @param {Object} args - Provides both raw and split input.
- * @param {String} args.input - The original, unparsed input string.
- * @param {String[]} args.lines - Array containing each line of the input string.
- * @returns {Number|String}
  */
-export const levelTwo = ({ lines }) => {
-  const { sensors, beacons } = parseLines(lines);
+export const levelTwo = (() => {
+  /**
+   * Parse the input and returns the sensors.
+   */
+  const parseLines = (lines) =>
+    lines.map((line) => calculateSensorRange(parseLine(line)));
 
-  const position = new Vector2(0, 0);
-  while (position.y <= 4000000) {
-    while (position.x <= 4000000) {
-      const closestSensor = sensors.find((sensor) => inRangeOfSensor(position, sensor));
+  /**
+   * Given a y value that is within range of the sensor, returns the x value
+   * which corresponds to the edge the sensors range for that row.
+   */
+  const rightXEdge = ({ position, distanceToBeacon }, y) =>
+    position.x + distanceToBeacon - Math.abs(position.y - y);
 
-      if (!closestSensor && !beacons.has(position.toString())) {
-        return position.x * 4000000 + position.y;
-      }
+  const tuningFrequency = ({ x, y }) => x * 4000000 + y;
 
-      if (closestSensor) {
+  return ({ lines }) => {
+    const sensors = parseLines(lines);
+    const position = new Vector2(0, 0);
+    while (position.y <= 4000000) {
+      while (position.x <= 4000000) {
+        const closestSensor = sensors.find((sensor) => inRangeOfSensor(position, sensor));
+        if (!closestSensor) {
+          return tuningFrequency(position);
+        }
         position.x = rightXEdge(closestSensor, position.y) + 1;
-      } else {
-        position.x += 1;
       }
+      position.y += 1;
+      position.x = 0;
     }
-    position.y += 1;
-    position.x = 0;
-  }
 
-  throw new Error('Could not find distress beacon');
-};
+    throw new Error('Could not find tuning frequency');
+  };
+})();
