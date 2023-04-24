@@ -2,7 +2,6 @@
  * Contains solutions for Day 15
  * Puzzle Description: https://adventofcode.com/2022/day/15
  */
-
 import { toSet, bounds } from './util/array.js';
 import { toNumber } from './util/string.js';
 import { Vector2, taxicabDistance, add } from './util/vector2.js';
@@ -104,6 +103,19 @@ const positionIsEmpty = (position, sensors, beacons) =>
   sensors.every((sensor) => !inRangeOfSensor(position, sensor)) &&
   !beacons.has(position.toString());
 
+const maxSensorRowLength = (distanceToBeacon) => distanceToBeacon * 2 + 1;
+
+const sensorRowDecay = (sensorPosition, position) =>
+  2 * Math.abs(sensorPosition.y - position.y);
+
+const offsetXToEdgeOfSensor = (sensor, position) =>
+  maxSensorRowLength(sensor.distanceToBeacon) - sensorRowDecay(sensor.position, position);
+
+const teleportXToEdgeOfSensor = (sensor, position) =>
+  new Vector2(position.x + offsetXToEdgeOfSensor(sensor, position), position.y);
+
+const teleportToEdge = (position, sensor) => {};
+
 /**
  * Returns the solution for level two of this puzzle.
  * @param {Object} args - Provides both raw and split input.
@@ -113,6 +125,37 @@ const positionIsEmpty = (position, sensors, beacons) =>
  */
 export const levelTwo = ({ lines }) => {
   const { sensors, beacons } = parseLines(lines);
+
+  const sensor = sensors.find((q) => q.position.x === 8 && q.position.y === 7);
+  const positions = [
+    new Vector2(8, -2),
+    new Vector2(7, -1),
+    new Vector2(6, 0),
+    new Vector2(5, 1),
+    new Vector2(4, 2),
+    new Vector2(3, 3),
+    new Vector2(2, 4),
+    new Vector2(1, 5),
+    new Vector2(0, 6),
+    new Vector2(-1, 7),
+    new Vector2(0, 8),
+    new Vector2(1, 9),
+    new Vector2(2, 10),
+    new Vector2(3, 11),
+    new Vector2(4, 12),
+    new Vector2(5, 13),
+    new Vector2(6, 14),
+    new Vector2(7, 15),
+    new Vector2(8, 16),
+  ];
+  positions.forEach((position) => {
+    const newPosition = teleportXToEdgeOfSensor(sensor, position);
+    console.log('position', position, 'newPosition', newPosition);
+  });
+  // for (let index = -2; index <= 7; index++) {
+  //   const
+  // }
+  // console.log(sensor);
 
   // // your code here
   // for (let y = 1000; y >= 0; y--) {
