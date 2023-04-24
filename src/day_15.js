@@ -101,10 +101,8 @@ export const levelOne = (() => {
 })();
 
 const positionIsEmpty = (position, sensors, beacons) =>
-  sensors.every(
-    ({ position: sensorPosition, distanceToBeacon }) =>
-      taxicabDistance(position, sensorPosition) > distanceToBeacon
-  ) && !beacons.has(position.toString());
+  sensors.every((sensor) => !inRangeOfSensor(position, sensor)) &&
+  !beacons.has(position.toString());
 
 /**
  * Returns the solution for level two of this puzzle.
@@ -113,19 +111,17 @@ const positionIsEmpty = (position, sensors, beacons) =>
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelTwo = ({ input, lines }) => {
+export const levelTwo = ({ lines }) => {
   const { sensors, beacons } = parseLines(lines);
-  console.log([...beacons].join('\n'));
 
-  // your code here
-  for (let x = 0; x <= 20; x++) {
-    for (let y = 0; y <= 20; y++) {
-      const position = new Vector2(x, y);
-      if (positionIsEmpty(position, sensors, beacons)) {
-        console.log('found position', position.toString());
-        return position.x * 4000000 + position.y;
-      }
-    }
-  }
+  // // your code here
+  // for (let y = 1000; y >= 0; y--) {
+  //   for (let x = 0; x <= 1000; x++) {
+  //     const position = new Vector2(x, y);
+  //     if (positionIsEmpty(position, sensors, beacons)) {
+  //       return position.x * 4000000 + position.y;
+  //     }
+  //   }
+  // }
   return 1234;
 };
