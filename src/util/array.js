@@ -77,3 +77,11 @@ export const toSet = (array, mapFn = (x) => x) => new Set(array.map(mapFn));
  * @param {Number[]} values
  */
 export const bounds = (values) => [Math.min(...values), Math.max(...values)];
+
+/**
+ * Returns an array of numbers starting at *start*
+ * @param {Number} size
+ * @param {Number} startAt
+ */
+export const range = (size, start = 0) =>
+  [...Array(size).keys()].map((_, index) => index + start);
