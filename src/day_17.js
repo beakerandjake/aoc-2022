@@ -4,19 +4,20 @@
  */
 
 import { range } from './util/array.js';
-import { Vector2, add, equals } from './util/vector2.js';
+import { Vector2, add, equals, left, right } from './util/vector2.js';
 
-const left = new Vector2(-1, 0);
-const right = new Vector2(1, 0);
+/**
+ * Must redefine "down" for this world, the vector2 util defines (0,0) as top left.
+ * This puzzle is easier if we define (0,0) as bottom left.
+ */
 const down = new Vector2(0, -1);
 
 // todo smarter rocks, store and return left/right/top/bottom index and return the x/y values
 // will speed up collision detection.
-// circular linked list for jet patterns. 
+// circular linked list for jet patterns.
 // removes need to track index. must still know current node..
 // parsing input, add functions instead, removes unnecessary checks.
 // move is always the same, apply the movement fn then check for collision.
-
 
 const shapeTemplates = [
   // ####
@@ -58,14 +59,30 @@ const chamberBounds = {
 };
 
 /**
- * Parse the input and return the jet patterns.
- */
-const parseInput = (input) => [...input].map((character) => (character === '>' ? 1 : -1));
-
-/**
  * Returns a new rock with the movement applied.
  */
 const moveRock = (rock, movement) => rock.map((position) => add(position, movement));
+
+/**
+ * Returns a new rock moved one unit to the right.
+ */
+const moveRockRight = (rock) => moveRock(rock, right);
+
+/**
+ * Returns a new rock moved one unit to the left.
+ */
+const moveRockLeft = (rock) => moveRock(rock, left);
+
+/**
+ * Returns a new rock moved one unit down.
+ */
+const moveRockDown = (rock) => moveRock(rock, down);
+
+/**
+ * Parse the input and return the jet movement functions.
+ */
+const parseInput = (input) =>
+  [...input].map((character) => (character === '>' ? moveRockRight : moveRockLeft));
 
 /**
  * Returns true if the position will collide with the right side of the chamber.
@@ -192,44 +209,6 @@ const maps = [
  */
 export const levelOne = ({ input }) => {
   const jetPatterns = parseInput(input);
-  const currentJetIndex = 0;
-
-  const rock = produceRock(0, shapeTemplates[0]);
-  print(0, 4, [rock]);
-
-  const newRock = moveTest(rock, [], jetPatterns, currentJetIndex);
-
-  print(0, 4, [newRock]);
-
-  // const rock = produceRock(0, shapeTemplates[0]);
-  // print(0, 4, [rock]);
-
-  // const jetFn = getJetFn(jetPatterns, 0);
-  // const jetPosition = jetFn(rock, []);
-  // print(0, 4, [jetPosition]);
-
-  // const fallPosition = moveRock(jetPosition, down);
-  // print(0, 4, [fallPosition]);
-
-  // print(0, 12, [rock]);
-  // rock = moveRockRight(rock);
-  // print(0, 12, [rock]);
-  // rock = moveRockRight(rock);
-  // print(0, 12, [rock]);
-  // rock = moveRockRight(rock);
-  // print(0, 12, [rock]);
-  // rock = moveRockRight(rock);
-  // print(0, 12, [rock]);
-
-  // const highest = highestPointOnRocks(maps);
-  // console.log(highest);
-
-  // console.log(renderRow(0, [shapeTemplates[2].map((x) => add(x, new Vector2(0, 0)))]));
-  // print(0, 10, [
-  //   shapeTemplates[2],
-  //   shapeTemplates[1].map((x) => add(x, new Vector2(1, 3))),
-  // ]);
-  // console.log();
   return 1234;
 };
 
