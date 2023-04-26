@@ -4,7 +4,7 @@
  */
 
 import { range } from './util/array.js';
-import { Vector2, add, equals } from './util/vector2.js';
+import { Vector2, add, down, equals, left, right } from './util/vector2.js';
 
 const shapeTemplates = [
   // ####
@@ -42,6 +42,19 @@ const shapeTemplates = [
 const parseInput = (input) => [...input].map((character) => (character === '>' ? 1 : -1));
 
 /**
+ * Returns a new rock with the movement applied.
+ */
+const moveRock = (rock, movement) => rock.map((position) => add(position, movement));
+const moveRockLeft = (shape) => moveRock(shape, left);
+const moveRockRight = (shape) => moveRock(shape, right);
+const moveRockDown = (shape) => moveRock(shape, down);
+
+/**
+ * Returns true if the position will collide with the floor.
+ */
+const collidesWithWalls = (position) => position.x < 0 || position.x > 6;
+
+/**
  * Returns true if the position will collide with the floor.
  */
 const collidesWithFloor = (position) => position.y < 0;
@@ -52,8 +65,21 @@ const collidesWithFloor = (position) => position.y < 0;
 const collidesWithRock = (position, rock) =>
   rock.some((shapePosition) => equals(position, shapePosition));
 
-const collidesWithAnyShape = (position, shapes) =>
-  shapes.some((shape) => collidesWithRock(position, shape));
+/**
+ * Returns the highest y value the rock reaches.
+ */
+const highestPointOnRock = (rock) => Math.max(...rock.map(({ y }) => y));
+
+/**
+ * Returns the highest y value on the pile of rocks.
+ */
+const highestPointOnRocks = (rocks) => Math.max(...rocks.map(highestPointOnRock));
+
+/**
+ * Returns true if the position will collide with any of the shapes.
+ */
+const collidesWithAnyRock = (position, rocks) =>
+  rocks.some((rock) => collidesWithRock(position, rock));
 
 const print = (() => {
   const border = '+-------+';
@@ -61,7 +87,7 @@ const print = (() => {
   const renderRow = (y, shapes) => {
     let row = '';
     for (let x = 0; x < 7; x++) {
-      row += collidesWithAnyShape(new Vector2(x, y), shapes) ? '#' : '.';
+      row += collidesWithAnyRock(new Vector2(x, y), shapes) ? '#' : '.';
     }
     return `|${row}|`;
   };
@@ -72,16 +98,18 @@ const print = (() => {
     range(rowEnd - rowStart, rowStart)
       .map((y) => renderRow(y, shapes))
       .reverse()
-      .forEach((line) => console.log(line));
+      .forEach((line, index, lines) =>
+        console.log(`${line} - ${lines.length - index - 1 + rowStart}`)
+      );
     console.log(`${border}`);
   };
 })();
 
 const maps = [
   shapeTemplates[0],
-  shapeTemplates[1].map((x) => add(x, new Vector2(1, 1))),
-  shapeTemplates[2].map((x) => add(x, new Vector2(2, 4))),
-  shapeTemplates[3].map((x) => add(x, new Vector2(0, 1))),
+  moveRock(shapeTemplates[1], new Vector2(1, 1)),
+  moveRock(shapeTemplates[2], new Vector2(2, 4)),
+  moveRock(shapeTemplates[3], new Vector2(2, 5)),
 ];
 
 /**
@@ -90,7 +118,10 @@ const maps = [
 export const levelOne = ({ input }) => {
   // const jetPatterns = parseInput(input);
 
-  print(0, 10, maps);
+  print(0, 12, maps);
+
+  const highest = highestPointOnRocks(maps);
+  console.log(highest);
 
   // console.log(renderRow(0, [shapeTemplates[2].map((x) => add(x, new Vector2(0, 0)))]));
   // print(0, 10, [
