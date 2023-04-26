@@ -23,6 +23,7 @@ module.exports = {
     'lines-between-class-members': 'off',
     'max-classes-per-file': 'off',
     'import/extensions': 'off',
-    'no-underscore-dangle': 'off'
+    'no-underscore-dangle': 'off',
+    'import/prefer-default-export': 'off',
   },
 };
