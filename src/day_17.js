@@ -41,11 +41,19 @@ const shapeTemplates = [
  */
 const parseInput = (input) => [...input].map((character) => (character === '>' ? 1 : -1));
 
-const collides = (position, shape) =>
-  shape.some((shapePosition) => equals(position, shapePosition));
+/**
+ * Returns true if the position will collide with the floor.
+ */
+const collidesWithFloor = (position) => position.y < 0;
+
+/**
+ * Returns true if the position will collides with the rock.
+ */
+const collidesWithRock = (position, rock) =>
+  rock.some((shapePosition) => equals(position, shapePosition));
 
 const collidesWithAnyShape = (position, shapes) =>
-  shapes.some((shape) => collides(position, shape));
+  shapes.some((shape) => collidesWithRock(position, shape));
 
 const print = (() => {
   const border = '+-------+';
@@ -59,28 +67,37 @@ const print = (() => {
   };
 
   return (rowStart, rowEnd, shapes) => {
-    console.log(border);
+    console.log();
+    console.log(`${border}`);
     range(rowEnd - rowStart, rowStart)
       .map((y) => renderRow(y, shapes))
       .reverse()
       .forEach((line) => console.log(line));
-    console.log(border);
+    console.log(`${border}`);
   };
 })();
+
+const maps = [
+  shapeTemplates[0],
+  shapeTemplates[1].map((x) => add(x, new Vector2(1, 1))),
+  shapeTemplates[2].map((x) => add(x, new Vector2(2, 4))),
+  shapeTemplates[3].map((x) => add(x, new Vector2(0, 1))),
+];
 
 /**
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ input }) => {
-  console.log();
-  console.log();
-  const jetPatterns = parseInput(input);
+  // const jetPatterns = parseInput(input);
+
+  print(0, 10, maps);
+
   // console.log(renderRow(0, [shapeTemplates[2].map((x) => add(x, new Vector2(0, 0)))]));
-  print(0, 10, [
-    shapeTemplates[2],
-    shapeTemplates[1].map((x) => add(x, new Vector2(1, 3))),
-  ]);
-  console.log();
+  // print(0, 10, [
+  //   shapeTemplates[2],
+  //   shapeTemplates[1].map((x) => add(x, new Vector2(1, 3))),
+  // ]);
+  // console.log();
   return 1234;
 };
 
