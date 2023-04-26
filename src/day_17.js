@@ -4,10 +4,19 @@
  */
 
 import { range } from './util/array.js';
-import { Vector2, add, down, equals, left, right } from './util/vector2.js';
+import { Vector2, add, equals } from './util/vector2.js';
+
+const left = new Vector2(-1, 0);
+const right = new Vector2(1, 0);
+const down = new Vector2(0, -1);
 
 // todo smarter rocks, store and return left/right/top/bottom index and return the x/y values
 // will speed up collision detection.
+// circular linked list for jet patterns. 
+// removes need to track index. must still know current node..
+// parsing input, add functions instead, removes unnecessary checks.
+// move is always the same, apply the movement fn then check for collision.
+
 
 const shapeTemplates = [
   // ####
@@ -39,6 +48,9 @@ const shapeTemplates = [
   [new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 2), new Vector2(0, 3)],
 ];
 
+/**
+ * The extreme x and y scalar values of the chamber.
+ */
 const chamberBounds = {
   left: 0,
   right: 6,
@@ -56,46 +68,33 @@ const parseInput = (input) => [...input].map((character) => (character === '>' ?
 const moveRock = (rock, movement) => rock.map((position) => add(position, movement));
 
 /**
- * Returns a new rock moved one unit to the left.
- */
-const moveRockLeft = (rock) => moveRock(rock, left);
-
-/**
- * Returns a new rock moved one unit to the right.
- */
-const moveRockRight = (rock) => moveRock(rock, right);
-
-/**
- * Returns a new rock moved one unit down.
- */
-const moveRockDown = (rock) => moveRock(rock, down);
-
-/**
  * Returns true if the position will collide with the right side of the chamber.
  */
-const collidesWithRightWall = (position) => position.x > chamberBounds.right;
+const collidesWithRightWall = ({ x }) => x > chamberBounds.right;
 
 /**
  * Returns true if the position will collide with the left side of the chamber.
  */
-const collidesWithLeftWall = (position) => position.x < chamberBounds.left;
+const collidesWithLeftWall = ({ x }) => x < chamberBounds.left;
 
 /**
- * Returns true if the position will collide with the left or right wall.
+ * Returns true if any point of the rock will collide with a left or right wall.
  */
-const collidesWithWalls = (position) =>
-  collidesWithLeftWall(position) || collidesWithRightWall(position);
+const collidesWithWalls = (rock) =>
+  rock.some(
+    (position) => collidesWithLeftWall(position) || collidesWithRightWall(position)
+  );
 
 /**
- * Returns true if the position will collide with the floor.
+ * Returns true if any point of the rock will collide with the floor.
  */
-const collidesWithFloor = (position) => position.y < chamberBounds.bottom;
+const collidesWithFloor = (rock) => rock.some(({ y }) => y < chamberBounds.bottom);
 
 /**
- * Returns true if the position will collides with the rock.
+ * Returns true if any point of the rock will collide with the position.
  */
 const collidesWithRock = (position, rock) =>
-  rock.some((shapePosition) => equals(position, shapePosition));
+  rock.some((rockPosition) => equals(position, rockPosition));
 
 /**
  * Returns true if the position will collide with any of the shapes.
@@ -119,14 +118,37 @@ const highestPointOnRocks = (rocks) => Math.max(...rocks.map(highestPointOnRock)
 const produceRock = (highestY, rockTemplate) =>
   moveRock(rockTemplate, new Vector2(2, highestY + 3));
 
-const blowRock = (rock, direction) => {
+/**
+ * Attempts to blow the rock in the direction and return the new position, if the rock cannot be moved the old rock is returned.
+ */
+const blowRock = (rock, direction, rocks) => {
   const newRock = moveRock(rock, direction);
-  return newRock.some((position) => collidesWithWalls(position)) ? rock : newRock;
+  return collidesWithWalls(newRock) ||
+    collidesWithFloor(newRock) || // floor check needed for l/r movement?
+    collidesWithAnyRock(newRock, rocks)
+    ? rock
+    : newRock;
 };
 
-const blowRockRight = (rock) => blowRock(rock, right);
+const rockFallDown = (rock, rocks) => {
+  const newRock = moveRock(rock, down);
+  return collidesWithAnyRock(newRock, rocks) || collidesWithFloor(newRock)
+    ? rock
+    : newRock;
+};
 
-const blowRockLeft = (rock) => blowRock(rock, left);
+/**
+ * Attempts to blow the rock right and returns the new rock position.
+ */
+const blowRockRight = (rock, rocks) => blowRock(rock, right, rocks);
+
+/**
+ * Attempts to blow the rock left and returns the new rock position.
+ */
+const blowRockLeft = (rock, rocks) => blowRock(rock, left, rocks);
+
+const getJetFn = (jetPatterns, index) =>
+  jetPatterns[index] === 1 ? blowRockRight : blowRockLeft;
 
 const print = (() => {
   const border = '+-------+';
@@ -152,6 +174,12 @@ const print = (() => {
   };
 })();
 
+const moveTest = (rock, rocks, jetPatterns, jetPatternIndex) => {
+  let newRock = getJetFn(jetPatterns, jetPatternIndex)(rock, rocks);
+  newRock = rockFallDown(newRock, rocks);
+  return newRock;
+};
+
 const maps = [
   shapeTemplates[0],
   moveRock(shapeTemplates[1], new Vector2(1, 1)),
@@ -163,14 +191,25 @@ const maps = [
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ input }) => {
-  // const jetPatterns = parseInput(input);
+  const jetPatterns = parseInput(input);
+  const currentJetIndex = 0;
 
-  let rock = produceRock(0, shapeTemplates[3]);
+  const rock = produceRock(0, shapeTemplates[0]);
+  print(0, 4, [rock]);
 
-  range(10).forEach(() => {
-    rock = blowRockRight(rock);
-    // print(0, 6, [rock]);
-  });
+  const newRock = moveTest(rock, [], jetPatterns, currentJetIndex);
+
+  print(0, 4, [newRock]);
+
+  // const rock = produceRock(0, shapeTemplates[0]);
+  // print(0, 4, [rock]);
+
+  // const jetFn = getJetFn(jetPatterns, 0);
+  // const jetPosition = jetFn(rock, []);
+  // print(0, 4, [jetPosition]);
+
+  // const fallPosition = moveRock(jetPosition, down);
+  // print(0, 4, [fallPosition]);
 
   // print(0, 12, [rock]);
   // rock = moveRockRight(rock);
