@@ -6,6 +6,9 @@
 import { range } from './util/array.js';
 import { Vector2, add, down, equals, left, right } from './util/vector2.js';
 
+// todo smarter rocks, store and return left/right/top/bottom index and return the x/y values
+// will speed up collision detection.
+
 const shapeTemplates = [
   // ####
   [new Vector2(0, 0), new Vector2(1, 0), new Vector2(2, 0), new Vector2(3, 0)],
@@ -36,6 +39,12 @@ const shapeTemplates = [
   [new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 2), new Vector2(0, 3)],
 ];
 
+const chamberBounds = {
+  left: 0,
+  right: 6,
+  bottom: 0,
+};
+
 /**
  * Parse the input and return the jet patterns.
  */
@@ -45,25 +54,54 @@ const parseInput = (input) => [...input].map((character) => (character === '>' ?
  * Returns a new rock with the movement applied.
  */
 const moveRock = (rock, movement) => rock.map((position) => add(position, movement));
-const moveRockLeft = (shape) => moveRock(shape, left);
-const moveRockRight = (shape) => moveRock(shape, right);
-const moveRockDown = (shape) => moveRock(shape, down);
+
+/**
+ * Returns a new rock moved one unit to the left.
+ */
+const moveRockLeft = (rock) => moveRock(rock, left);
+
+/**
+ * Returns a new rock moved one unit to the right.
+ */
+const moveRockRight = (rock) => moveRock(rock, right);
+
+/**
+ * Returns a new rock moved one unit down.
+ */
+const moveRockDown = (rock) => moveRock(rock, down);
+
+/**
+ * Returns true if the position will collide with the right side of the chamber.
+ */
+const collidesWithRightWall = (position) => position.x > chamberBounds.right;
+
+/**
+ * Returns true if the position will collide with the left side of the chamber.
+ */
+const collidesWithLeftWall = (position) => position.x < chamberBounds.left;
+
+/**
+ * Returns true if the position will collide with the left or right wall.
+ */
+const collidesWithWalls = (position) =>
+  collidesWithLeftWall(position) || collidesWithRightWall(position);
 
 /**
  * Returns true if the position will collide with the floor.
  */
-const collidesWithWalls = (position) => position.x < 0 || position.x > 6;
-
-/**
- * Returns true if the position will collide with the floor.
- */
-const collidesWithFloor = (position) => position.y < 0;
+const collidesWithFloor = (position) => position.y < chamberBounds.bottom;
 
 /**
  * Returns true if the position will collides with the rock.
  */
 const collidesWithRock = (position, rock) =>
   rock.some((shapePosition) => equals(position, shapePosition));
+
+/**
+ * Returns true if the position will collide with any of the shapes.
+ */
+const collidesWithAnyRock = (position, rocks) =>
+  rocks.some((rock) => collidesWithRock(position, rock));
 
 /**
  * Returns the highest y value the rock reaches.
@@ -76,10 +114,19 @@ const highestPointOnRock = (rock) => Math.max(...rock.map(({ y }) => y));
 const highestPointOnRocks = (rocks) => Math.max(...rocks.map(highestPointOnRock));
 
 /**
- * Returns true if the position will collide with any of the shapes.
+ * Produces a new rock at the spawn point defined by the highest Y.
  */
-const collidesWithAnyRock = (position, rocks) =>
-  rocks.some((rock) => collidesWithRock(position, rock));
+const produceRock = (highestY, rockTemplate) =>
+  moveRock(rockTemplate, new Vector2(2, highestY + 3));
+
+const blowRock = (rock, direction) => {
+  const newRock = moveRock(rock, direction);
+  return newRock.some((position) => collidesWithWalls(position)) ? rock : newRock;
+};
+
+const blowRockRight = (rock) => blowRock(rock, right);
+
+const blowRockLeft = (rock) => blowRock(rock, left);
 
 const print = (() => {
   const border = '+-------+';
@@ -118,10 +165,25 @@ const maps = [
 export const levelOne = ({ input }) => {
   // const jetPatterns = parseInput(input);
 
-  print(0, 12, maps);
+  let rock = produceRock(0, shapeTemplates[3]);
 
-  const highest = highestPointOnRocks(maps);
-  console.log(highest);
+  range(10).forEach(() => {
+    rock = blowRockRight(rock);
+    // print(0, 6, [rock]);
+  });
+
+  // print(0, 12, [rock]);
+  // rock = moveRockRight(rock);
+  // print(0, 12, [rock]);
+  // rock = moveRockRight(rock);
+  // print(0, 12, [rock]);
+  // rock = moveRockRight(rock);
+  // print(0, 12, [rock]);
+  // rock = moveRockRight(rock);
+  // print(0, 12, [rock]);
+
+  // const highest = highestPointOnRocks(maps);
+  // console.log(highest);
 
   // console.log(renderRow(0, [shapeTemplates[2].map((x) => add(x, new Vector2(0, 0)))]));
   // print(0, 10, [
