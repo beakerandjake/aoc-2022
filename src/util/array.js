@@ -85,3 +85,20 @@ export const bounds = (values) => [Math.min(...values), Math.max(...values)];
  */
 export const range = (size, start = 0) =>
   [...Array(size).keys()].map((_, index) => index + start);
+
+/**
+ * Returns an iterator function which will return the next item each time it is invoked.
+ * Once the last item is reached, the next invocation will return the first item.
+ * Expects an immutable array of items whose length does not change.
+ * @param {Array} items
+ */
+export const loopingIterator = (items) => {
+  const { length } = items;
+  let index = -1;
+  return () => {
+    if (++index === length) {
+      index = 0;
+    }
+    return items[index];
+  };
+};
