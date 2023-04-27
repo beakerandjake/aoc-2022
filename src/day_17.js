@@ -3,7 +3,7 @@
  * Puzzle Description: https://adventofcode.com/2022/day/17
  */
 
-import { range } from './util/array.js';
+import { loopingIterator, range } from './util/array.js';
 import { Vector2, add, equals, left, right } from './util/vector2.js';
 
 /**
@@ -12,41 +12,13 @@ import { Vector2, add, equals, left, right } from './util/vector2.js';
  */
 const down = new Vector2(0, -1);
 
-class Node {
-  constructor(value, next) {
-    this.value = value;
-    this.next = next;
-  }
-}
-
-class CircularLinkedList {
-  push(value) {
-    const newNode = new Node(value);
-
-    if (this.tail) {
-      newNode.next = this.tail.next;
-      this.tail.next = newNode;
-      this.tail = newNode;
-    } else {
-      this.tail = newNode;
-      this.tail.next = newNode;
-    }
-  }
-
-  get head() {
-    return this.tail ? this.tail.next : undefined;
-  }
-}
-
 // todo smarter rocks, store and return left/right/top/bottom index and return the x/y values
 // will speed up collision detection.
-// circular linked list for jet patterns.
-// removes need to track index. must still know current node..
 // parsing input, add functions instead, removes unnecessary checks.
 // move is always the same, apply the movement fn then check for collision.
 // attempt to move, return new position or false, gives faster check to see if stuck.
 
-const shapeTemplates = [
+const rockTemplates = [
   // ####
   [new Vector2(0, 0), new Vector2(1, 0), new Vector2(2, 0), new Vector2(3, 0)],
   // .#.
@@ -154,7 +126,7 @@ const highestPointOnRock = (rock) => Math.max(...rock.map(({ y }) => y));
 /**
  * Returns the highest y value on the pile of rocks.
  */
-const highestPointOnRocks = (rocks) => Math.max(...rocks.map(highestPointOnRock));
+const highestPointOnRocks = (rocks) => Math.max(...rocks.map(highestPointOnRock), 0);
 
 /**
  * Produces a new rock at the spawn point defined by the highest Y.
@@ -165,19 +137,27 @@ const produceRock = (highestY, rockTemplate) =>
 const print = (() => {
   const border = '+-------+';
 
-  const renderRow = (y, shapes) => {
+  const renderRow = (y, fallingRock, rocksAtRest) => {
     let row = '';
-    for (let x = 0; x < 7; x++) {
-      row += collidesWithAnyRock(new Vector2(x, y), shapes) ? '#' : '.';
+    const position = new Vector2(0, y);
+    while (position.x <= chamberBounds.right) {
+      let toRender = '.';
+      if (collidesWithRock(position, fallingRock)) {
+        toRender = '@';
+      } else if (collidesWithAnyRock(position, rocksAtRest)) {
+        toRender = '#';
+      }
+      row += toRender;
+      position.x += 1;
     }
     return `|${row}|`;
   };
 
-  return (rowStart, rowEnd, shapes) => {
+  return (rowStart, rowEnd, fallingRock, rocksAtRest) => {
     console.log();
     console.log(`${border}`);
     range(rowEnd - rowStart, rowStart)
-      .map((y) => renderRow(y, shapes))
+      .map((y) => renderRow(y, fallingRock, rocksAtRest))
       .reverse()
       .forEach((line, index, lines) =>
         console.log(`${line} - ${lines.length - index - 1 + rowStart}`)
@@ -196,40 +176,38 @@ const jetCollisionFn = (rocks) => (rock) =>
  */
 const attemptToMoveRock = (rock, movementFn, collisionFn) => {
   const newRock = movementFn(rock);
-  return !collisionFn(newRock) ? newRock : false;
+  return !collisionFn(newRock) ? newRock : rock;
 };
 
-const test = (rock, rocks, jets, currentJetIndex) => {};
-
-const rocksEqual = (lhs, rhs) =>
-  lhs.every((lhsPosition, index) => equals(lhsPosition, rhs[index]));
-
-const fallRockUntilAtRest = (rock, rocks, getNextJetFn) => {
-  // jetFn is a function that returns the next jet function.
-  // returns the final resting position of the rock.
-  let z = 0;
+const fallRockUntilAtRest = (fallingRock, rocksAtRest, getNextJetBlastFn) => {
+  let currentRock = fallingRock;
+  const maxY = highestPointOnRocks(rocksAtRest) + 5;
+  console.log('spawn');
+  print(0, maxY, fallingRock, rocksAtRest);
   for (;;) {
-    // blast the rock with the current jet.
-    const rockAfterJet = attemptToMoveRock(rock, getNextJetFn(), jetCollisionFn(rocks));
-    print(0, 6, [rockAfterJet]);
-    const rockAfterFall = attemptToMoveRock(
-      rockAfterJet,
-      moveRockDown,
-      collidesWithFloor
+    const afterJetBlast = attemptToMoveRock(
+      currentRock,
+      getNextJetBlastFn(),
+      jetCollisionFn(rocksAtRest)
     );
-    print(0, 6, [rockAfterFall]);
 
-    if (rocksEqual(rockAfterJet, rockAfterFall)) {
-      return rockAfterFall;
+    console.log('push');
+    print(0, maxY, afterJetBlast, rocksAtRest);
+
+    const afterDrop = attemptToMoveRock(
+      afterJetBlast,
+      moveRockDown,
+      jetCollisionFn(rocksAtRest)
+    );
+
+    console.log('drop');
+    print(0, maxY, afterDrop, rocksAtRest);
+
+    if (afterDrop === afterJetBlast) {
+      return currentRock;
     }
 
-    console.log('after jet', rockAfterJet.map((x) => x.toString()).join(', '));
-
-    z++;
-
-    if (z > 10) {
-      return rock;
-    }
+    currentRock = afterDrop;
   }
 };
 
@@ -237,19 +215,19 @@ const fallRockUntilAtRest = (rock, rocks, getNextJetFn) => {
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ input }) => {
-  const jetPatterns = parseInput(input);
+  const getNextJetBlast = loopingIterator(parseInput(input));
+  const getNextRock = loopingIterator(rockTemplates);
+  const rocksAtRest = [];
 
-  // let currentJetIndex = 0;
-  // const rock = produceRock(0, shapeTemplates[0]);
-  // print(0, 6, [rock]);
-
-  // const newRock = fallRockUntilAtRest(rock, [], () => {
-  //   const toReturn = jetPatterns[currentJetIndex];
-  //   currentJetIndex =
-  //     currentJetIndex === jetPatterns.length - 1 ? 0 : currentJetIndex + 1;
-  //   return toReturn;
-  // });
-  // print(0, 6, [newRock]);
+  while (rocksAtRest.length < 1) {
+    rocksAtRest.push(
+      fallRockUntilAtRest(
+        produceRock(highestPointOnRocks(rocksAtRest), getNextRock()),
+        rocksAtRest,
+        getNextJetBlast
+      )
+    );
+  }
 
   return 1234;
 };
