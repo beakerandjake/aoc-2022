@@ -129,9 +129,9 @@ const highestPointOnRock = (rock) => Math.max(...rock.map(({ y }) => y));
 const highestPointOnRocks = (rocks) => Math.max(...rocks.map(highestPointOnRock), 0);
 
 /**
- * Produces a new rock at the spawn point defined by the highest Y.
+ * Spawns a new rock at the spawn point defined by the highest Y.
  */
-const produceRock = (highestY, rockTemplate) =>
+const spawnRock = (highestY, rockTemplate) =>
   moveRock(rockTemplate, new Vector2(2, highestY + 3));
 
 const print = (() => {
@@ -181,7 +181,7 @@ const attemptToMoveRock = (rock, movementFn, collisionFn) => {
 
 const fallRockUntilAtRest = (fallingRock, rocksAtRest, getNextJetBlastFn) => {
   let currentRock = fallingRock;
-  const maxY = highestPointOnRocks(rocksAtRest) + 5;
+  const maxY = highestPointOnRocks(rocksAtRest) + 6;
   console.log('spawn');
   print(0, maxY, fallingRock, rocksAtRest);
   for (;;) {
@@ -219,10 +219,10 @@ export const levelOne = ({ input }) => {
   const getNextRock = loopingIterator(rockTemplates);
   const rocksAtRest = [];
 
-  while (rocksAtRest.length < 1) {
+  while (rocksAtRest.length < 3) {
     rocksAtRest.push(
       fallRockUntilAtRest(
-        produceRock(highestPointOnRocks(rocksAtRest), getNextRock()),
+        spawnRock(highestPointOnRocks(rocksAtRest), getNextRock()),
         rocksAtRest,
         getNextJetBlast
       )
