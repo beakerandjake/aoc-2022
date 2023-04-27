@@ -12,12 +12,39 @@ import { Vector2, add, equals, left, right } from './util/vector2.js';
  */
 const down = new Vector2(0, -1);
 
+class Node {
+  constructor(value, next) {
+    this.value = value;
+    this.next = next;
+  }
+}
+
+class CircularLinkedList {
+  push(value) {
+    const newNode = new Node(value);
+
+    if (this.tail) {
+      newNode.next = this.tail.next;
+      this.tail.next = newNode;
+      this.tail = newNode;
+    } else {
+      this.tail = newNode;
+      this.tail.next = newNode;
+    }
+  }
+
+  get head() {
+    return this.tail ? this.tail.next : undefined;
+  }
+}
+
 // todo smarter rocks, store and return left/right/top/bottom index and return the x/y values
 // will speed up collision detection.
 // circular linked list for jet patterns.
 // removes need to track index. must still know current node..
 // parsing input, add functions instead, removes unnecessary checks.
 // move is always the same, apply the movement fn then check for collision.
+// attempt to move, return new position or false, gives faster check to see if stuck.
 
 const shapeTemplates = [
   // ####
@@ -135,38 +162,6 @@ const highestPointOnRocks = (rocks) => Math.max(...rocks.map(highestPointOnRock)
 const produceRock = (highestY, rockTemplate) =>
   moveRock(rockTemplate, new Vector2(2, highestY + 3));
 
-/**
- * Attempts to blow the rock in the direction and return the new position, if the rock cannot be moved the old rock is returned.
- */
-const blowRock = (rock, direction, rocks) => {
-  const newRock = moveRock(rock, direction);
-  return collidesWithWalls(newRock) ||
-    collidesWithFloor(newRock) || // floor check needed for l/r movement?
-    collidesWithAnyRock(newRock, rocks)
-    ? rock
-    : newRock;
-};
-
-const rockFallDown = (rock, rocks) => {
-  const newRock = moveRock(rock, down);
-  return collidesWithAnyRock(newRock, rocks) || collidesWithFloor(newRock)
-    ? rock
-    : newRock;
-};
-
-/**
- * Attempts to blow the rock right and returns the new rock position.
- */
-const blowRockRight = (rock, rocks) => blowRock(rock, right, rocks);
-
-/**
- * Attempts to blow the rock left and returns the new rock position.
- */
-const blowRockLeft = (rock, rocks) => blowRock(rock, left, rocks);
-
-const getJetFn = (jetPatterns, index) =>
-  jetPatterns[index] === 1 ? blowRockRight : blowRockLeft;
-
 const print = (() => {
   const border = '+-------+';
 
@@ -191,24 +186,71 @@ const print = (() => {
   };
 })();
 
-const moveTest = (rock, rocks, jetPatterns, jetPatternIndex) => {
-  let newRock = getJetFn(jetPatterns, jetPatternIndex)(rock, rocks);
-  newRock = rockFallDown(newRock, rocks);
-  return newRock;
+const jetCollisionFn = (rocks) => (rock) =>
+  collidesWithWalls(rock) || collidesWithFloor(rock) || collidesWithAnyRock(rock, rocks);
+
+/**
+ * Applies the movement function to the rock, then checks the collision function.
+ * If the collision function returns false then the new position is returned.
+ * If the collision function returns true, then false is returned, indicating the rock cannot move.
+ */
+const attemptToMoveRock = (rock, movementFn, collisionFn) => {
+  const newRock = movementFn(rock);
+  return !collisionFn(newRock) ? newRock : false;
 };
 
-const maps = [
-  shapeTemplates[0],
-  moveRock(shapeTemplates[1], new Vector2(1, 1)),
-  moveRock(shapeTemplates[2], new Vector2(2, 4)),
-  moveRock(shapeTemplates[3], new Vector2(2, 5)),
-];
+const test = (rock, rocks, jets, currentJetIndex) => {};
+
+const rocksEqual = (lhs, rhs) =>
+  lhs.every((lhsPosition, index) => equals(lhsPosition, rhs[index]));
+
+const fallRockUntilAtRest = (rock, rocks, getNextJetFn) => {
+  // jetFn is a function that returns the next jet function.
+  // returns the final resting position of the rock.
+  let z = 0;
+  for (;;) {
+    // blast the rock with the current jet.
+    const rockAfterJet = attemptToMoveRock(rock, getNextJetFn(), jetCollisionFn(rocks));
+    print(0, 6, [rockAfterJet]);
+    const rockAfterFall = attemptToMoveRock(
+      rockAfterJet,
+      moveRockDown,
+      collidesWithFloor
+    );
+    print(0, 6, [rockAfterFall]);
+
+    if (rocksEqual(rockAfterJet, rockAfterFall)) {
+      return rockAfterFall;
+    }
+
+    console.log('after jet', rockAfterJet.map((x) => x.toString()).join(', '));
+
+    z++;
+
+    if (z > 10) {
+      return rock;
+    }
+  }
+};
 
 /**
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ input }) => {
   const jetPatterns = parseInput(input);
+
+  // let currentJetIndex = 0;
+  // const rock = produceRock(0, shapeTemplates[0]);
+  // print(0, 6, [rock]);
+
+  // const newRock = fallRockUntilAtRest(rock, [], () => {
+  //   const toReturn = jetPatterns[currentJetIndex];
+  //   currentJetIndex =
+  //     currentJetIndex === jetPatterns.length - 1 ? 0 : currentJetIndex + 1;
+  //   return toReturn;
+  // });
+  // print(0, 6, [newRock]);
+
   return 1234;
 };
 
