@@ -6,6 +6,8 @@
 import { loopingIterator, range } from './util/array.js';
 import { Vector2, add, equals, left, right } from './util/vector2.js';
 
+// points, leftEdgeIndex, rightEdgeIndex
+
 /**
  * Must redefine "down" for this world, the vector2 util defines (0,0) as top left.
  * This puzzle is easier if we define (0,0) as bottom left.
@@ -107,16 +109,18 @@ const collidesWithWalls = (rock) =>
 const collidesWithFloor = (rock) => rock.some(({ y }) => y < chamberBounds.bottom);
 
 /**
- * Returns true if any point of the rock will collide with the position.
+ * Returns true if the position intersect with any point of the rock.
  */
-const collidesWithRock = (position, rock) =>
+const positionIntersectsRock = (position, rock) =>
   rock.some((rockPosition) => equals(position, rockPosition));
 
 /**
- * Returns true if the position will collide with any of the shapes.
+ * Returns true if the rock intersects with any rock at rest.
  */
-const collidesWithAnyRock = (position, rocks) =>
-  rocks.some((rock) => collidesWithRock(position, rock));
+const intersectsWithAnyRockAtRest = (rock, rocksAtRest) =>
+  rock.some((position) =>
+    rocksAtRest.some((rockAtRest) => positionIntersectsRock(position, rockAtRest))
+  );
 
 /**
  * Returns the highest y value the rock reaches.
@@ -137,14 +141,17 @@ const spawnRock = (highestY, rockTemplate) =>
 const print = (() => {
   const border = '+-------+';
 
+  const positionIntersectsAnyRock = (position, rocks) =>
+    rocks.some((rock) => positionIntersectsRock(position, rock));
+
   const renderRow = (y, fallingRock, rocksAtRest) => {
     let row = '';
     const position = new Vector2(0, y);
     while (position.x <= chamberBounds.right) {
       let toRender = '.';
-      if (collidesWithRock(position, fallingRock)) {
+      if (positionIntersectsRock(position, fallingRock)) {
         toRender = '@';
-      } else if (collidesWithAnyRock(position, rocksAtRest)) {
+      } else if (positionIntersectsAnyRock(position, rocksAtRest)) {
         toRender = '#';
       }
       row += toRender;
@@ -167,7 +174,9 @@ const print = (() => {
 })();
 
 const jetCollisionFn = (rocks) => (rock) =>
-  collidesWithWalls(rock) || collidesWithFloor(rock) || collidesWithAnyRock(rock, rocks);
+  collidesWithWalls(rock) ||
+  collidesWithFloor(rock) ||
+  intersectsWithAnyRockAtRest(rock, rocks);
 
 /**
  * Applies the movement function to the rock, then checks the collision function.
@@ -203,8 +212,8 @@ const fallRockUntilAtRest = (fallingRock, rocksAtRest, getNextJetBlastFn) => {
     console.log('drop');
     print(0, maxY, afterDrop, rocksAtRest);
 
-    if (afterDrop === afterJetBlast) {
-      return currentRock;
+    if (afterJetBlast === afterDrop) {
+      return afterDrop;
     }
 
     currentRock = afterDrop;
