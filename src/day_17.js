@@ -215,18 +215,8 @@ const fallRockUntilAtRest = (fallingRock, rocksAtRest, getNextJetBlastFn) => {
   }
 };
 
-/**
- * Performance improvements:
- * Batch settled rocks into array of sets, check "higher" sets first as a higher collision is more likely.
- * Change storage of settled rocks, array of 8 bit numbers as flags, allows o(1) check to see if position is occupied.
- *  will make detecting loops easier for level 2.
- */
-
-/**
- * Returns the solution for level one of this puzzle.
- */
-export const levelOne = ({ lines }) => {
-  const getNextJetBlast = loopingIterator(parseInput(lines[0]));
+const solve = (numberOfRocks, input) => {
+  const getNextJetBlast = loopingIterator(parseInput(input));
   const getNextRock = loopingIterator(rockTemplates);
   const rocksAtRest = new Set(
     fallRockUntilAtRest(
@@ -236,9 +226,9 @@ export const levelOne = ({ lines }) => {
     ).map((x) => x.toString())
   );
   let highestY = 0;
-  let spawnCount = 2021;
+  let remainingRocks = numberOfRocks - 1;
 
-  while (spawnCount--) {
+  while (remainingRocks--) {
     const rockTemplate = getNextRock();
     const newRock = fallRockUntilAtRest(
       spawnRock(highestY, rockTemplate.points),
@@ -253,6 +243,18 @@ export const levelOne = ({ lines }) => {
 
   return highestY + 1;
 };
+
+/**
+ * Performance improvements:
+ * Batch settled rocks into array of sets, check "higher" sets first as a higher collision is more likely.
+ * Change storage of settled rocks, array of 8 bit numbers as flags, allows o(1) check to see if position is occupied.
+ *  will make detecting loops easier for level 2.
+ */
+
+/**
+ * Returns the solution for level one of this puzzle.
+ */
+export const levelOne = ({ lines }) => solve(2022, lines[0]);
 
 /**
  * Returns the solution for level two of this puzzle.
