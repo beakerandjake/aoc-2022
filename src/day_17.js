@@ -217,9 +217,9 @@ const fallRockUntilAtRest = (fallingRock, rocksAtRest, getNextJetBlastFn) => {
 
 /**
  * Performance improvements:
- * Rocks know top index, speeds up highest check.
- * Put settled rock positions into set instead of into array.
  * Batch settled rocks into array of sets, check "higher" sets first as a higher collision is more likely.
+ * Change storage of settled rocks, array of 8 bit numbers as flags, allows o(1) check to see if position is occupied.
+ *  will make detecting loops easier for level 2.
  */
 
 /**
