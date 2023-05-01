@@ -121,16 +121,6 @@ const intersectsWithAnyRockAtRest = (rock, rocksAtRest) =>
   );
 
 /**
- * Returns the highest y value the rock reaches.
- */
-const highestPointOnRock = (rock) => Math.max(...rock.map(({ y }) => y));
-
-/**
- * Returns the highest y value on the pile of rocks.
- */
-const highestPointOnRocks = (rocks) => Math.max(...rocks.map(highestPointOnRock), 0);
-
-/**
  * Spawns a new rock at the spawn point defined by the highest Y.
  */
 const spawnRock = (highestY, rockTemplate) =>
@@ -171,7 +161,11 @@ const print = (() => {
   };
 })();
 
-const jetCollisionFn = (rocks) => (rock) =>
+/**
+ * Returns a function that can be used to detect if the rock collides
+ * with the walls, floor or other rocks.
+ */
+const getRockCollisionFunction = (rocks) => (rock) =>
   collidesWithWalls(rock) ||
   collidesWithFloor(rock) ||
   intersectsWithAnyRockAtRest(rock, rocks);
@@ -190,17 +184,15 @@ const fallRockUntilAtRest = (fallingRock, rocksAtRest, getNextJetBlastFn) => {
   let currentRock = fallingRock;
 
   for (;;) {
+    const collisionFn = getRockCollisionFunction(rocksAtRest);
+
     const afterJetBlast = attemptToMoveRock(
       currentRock,
       getNextJetBlastFn(),
-      jetCollisionFn(rocksAtRest)
+      collisionFn
     );
 
-    const afterDrop = attemptToMoveRock(
-      afterJetBlast,
-      moveRockDown,
-      jetCollisionFn(rocksAtRest)
-    );
+    const afterDrop = attemptToMoveRock(afterJetBlast, moveRockDown, collisionFn);
 
     if (afterJetBlast === afterDrop) {
       return afterDrop;
@@ -209,6 +201,13 @@ const fallRockUntilAtRest = (fallingRock, rocksAtRest, getNextJetBlastFn) => {
     currentRock = afterDrop;
   }
 };
+
+/**
+ * Performance improvements:
+ * Rocks know top index, speeds up highest check.
+ * Put settled rock positions into set instead of into array.
+ * Batch settled rocks into array of sets, check "higher" sets first as a higher collision is more likely.
+ */
 
 /**
  * Returns the solution for level one of this puzzle.
