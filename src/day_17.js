@@ -131,9 +131,7 @@ const positionIntersectsRock = (position, rock) =>
  * Returns true if the rock intersects with any rock at rest.
  */
 const intersectsWithAnyRockAtRest = (rock, rocksAtRest) =>
-  rock.some((position) =>
-    rocksAtRest.some((rockAtRest) => positionIntersectsRock(position, rockAtRest))
-  );
+  rock.some((position) => rocksAtRest.has(position.toString()));
 
 /**
  * Spawns a new rock at the spawn point defined by the highest Y.
@@ -230,12 +228,17 @@ const fallRockUntilAtRest = (fallingRock, rocksAtRest, getNextJetBlastFn) => {
 export const levelOne = ({ lines }) => {
   const getNextJetBlast = loopingIterator(parseInput(lines[0]));
   const getNextRock = loopingIterator(rockTemplates);
-  const rocksAtRest = [
-    fallRockUntilAtRest(spawnRock(-1, getNextRock().points), [], getNextJetBlast),
-  ];
+  const rocksAtRest = new Set(
+    fallRockUntilAtRest(
+      spawnRock(-1, getNextRock().points),
+      new Set(),
+      getNextJetBlast
+    ).map((x) => x.toString())
+  );
   let highestY = 0;
+  let spawnCount = 2021;
 
-  while (rocksAtRest.length < 2022) {
+  while (spawnCount--) {
     const rockTemplate = getNextRock();
     const newRock = fallRockUntilAtRest(
       spawnRock(highestY, rockTemplate.points),
@@ -243,7 +246,9 @@ export const levelOne = ({ lines }) => {
       getNextJetBlast
     );
     highestY = Math.max(highestY, newRock[rockTemplate.topIndex].y);
-    rocksAtRest.push(newRock);
+    newRock.forEach((point) => {
+      rocksAtRest.add(point.toString());
+    });
   }
 
   return highestY + 1;
