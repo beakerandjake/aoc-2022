@@ -122,12 +122,6 @@ const collidesWithWalls = (rock) =>
 const collidesWithFloor = (rock) => rock.some(({ y }) => y < chamberBounds.bottom);
 
 /**
- * Returns true if the position intersect with any point of the rock.
- */
-const positionIntersectsRock = (position, rock) =>
-  rock.some((rockPosition) => equals(position, rockPosition));
-
-/**
  * Returns true if the rock intersects with any rock at rest.
  */
 const intersectsWithAnyRockAtRest = (rock, rocksAtRest) =>
@@ -141,6 +135,12 @@ const spawnRock = (highestY, rockTemplate) =>
 
 const print = (() => {
   const border = '+-------+';
+
+  /**
+   * Returns true if the position intersect with any point of the rock.
+   */
+  const positionIntersectsRock = (position, rock) =>
+    rock.some((rockPosition) => equals(position, rockPosition));
 
   const positionIntersectsAnyRock = (position, rocks) =>
     rocks.some((rock) => positionIntersectsRock(position, rock));
