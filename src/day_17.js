@@ -48,6 +48,9 @@ const rockTemplates = [
   // #
   // #
   [new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 2), new Vector2(0, 3)],
+  // ##
+  // ##
+  [new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 1), new Vector2(1, 1)],
 ];
 
 /**
@@ -190,9 +193,7 @@ const attemptToMoveRock = (rock, movementFn, collisionFn) => {
 
 const fallRockUntilAtRest = (fallingRock, rocksAtRest, getNextJetBlastFn) => {
   let currentRock = fallingRock;
-  const maxY = highestPointOnRocks(rocksAtRest) + 6;
-  console.log('spawn');
-  print(0, maxY, fallingRock, rocksAtRest);
+
   for (;;) {
     const afterJetBlast = attemptToMoveRock(
       currentRock,
@@ -200,17 +201,11 @@ const fallRockUntilAtRest = (fallingRock, rocksAtRest, getNextJetBlastFn) => {
       jetCollisionFn(rocksAtRest)
     );
 
-    console.log('push');
-    print(0, maxY, afterJetBlast, rocksAtRest);
-
     const afterDrop = attemptToMoveRock(
       afterJetBlast,
       moveRockDown,
       jetCollisionFn(rocksAtRest)
     );
-
-    console.log('drop');
-    print(0, maxY, afterDrop, rocksAtRest);
 
     if (afterJetBlast === afterDrop) {
       return afterDrop;
@@ -223,22 +218,24 @@ const fallRockUntilAtRest = (fallingRock, rocksAtRest, getNextJetBlastFn) => {
 /**
  * Returns the solution for level one of this puzzle.
  */
-export const levelOne = ({ input }) => {
-  const getNextJetBlast = loopingIterator(parseInput(input));
+export const levelOne = ({ lines }) => {
+  const getNextJetBlast = loopingIterator(parseInput(lines[0]));
   const getNextRock = loopingIterator(rockTemplates);
-  const rocksAtRest = [];
+  const rocksAtRest = [
+    fallRockUntilAtRest(spawnRock(0, getNextRock()), [], getNextJetBlast),
+  ];
 
-  while (rocksAtRest.length < 3) {
+  while (rocksAtRest.length < 2022) {
     rocksAtRest.push(
       fallRockUntilAtRest(
-        spawnRock(highestPointOnRocks(rocksAtRest), getNextRock()),
+        spawnRock(highestPointOnRocks(rocksAtRest) + 1, getNextRock()),
         rocksAtRest,
         getNextJetBlast
       )
     );
   }
 
-  return 1234;
+  return highestPointOnRocks(rocksAtRest) + 1;
 };
 
 /**
