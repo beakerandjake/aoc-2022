@@ -6,20 +6,15 @@
 import { loopingIterator, range } from './util/array.js';
 import { Vector2, add, equals, left, right } from './util/vector2.js';
 
-// points, leftEdgeIndex, rightEdgeIndex
-
 /**
  * Must redefine "down" for this world, the vector2 util defines (0,0) as top left.
  * This puzzle is easier if we define (0,0) as bottom left.
  */
 const down = new Vector2(0, -1);
 
-// todo smarter rocks, store and return left/right/top/bottom index and return the x/y values
-// will speed up collision detection.
-// parsing input, add functions instead, removes unnecessary checks.
-// move is always the same, apply the movement fn then check for collision.
-// attempt to move, return new position or false, gives faster check to see if stuck.
-
+/**
+ * Defines the shape of each rock that falls and the order they fall in.
+ */
 const rockTemplates = [
   // ####
   [new Vector2(0, 0), new Vector2(1, 0), new Vector2(2, 0), new Vector2(3, 0)],
