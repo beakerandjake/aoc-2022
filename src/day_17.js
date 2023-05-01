@@ -16,36 +16,51 @@ const down = new Vector2(0, -1);
  * Defines the shape of each rock that falls and the order they fall in.
  */
 const rockTemplates = [
-  // ####
-  [new Vector2(0, 0), new Vector2(1, 0), new Vector2(2, 0), new Vector2(3, 0)],
-  // .#.
-  // ###
-  // .#.
-  [
-    new Vector2(1, 0),
-    new Vector2(0, 1),
-    new Vector2(1, 1),
-    new Vector2(2, 1),
-    new Vector2(1, 2),
-  ],
-  // ..#
-  // ..#
-  // ###
-  [
-    new Vector2(2, 2),
-    new Vector2(2, 1),
-    new Vector2(0, 0),
-    new Vector2(1, 0),
-    new Vector2(2, 0),
-  ],
-  // #
-  // #
-  // #
-  // #
-  [new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 2), new Vector2(0, 3)],
-  // ##
-  // ##
-  [new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 1), new Vector2(1, 1)],
+  {
+    // ####
+    points: [new Vector2(0, 0), new Vector2(1, 0), new Vector2(2, 0), new Vector2(3, 0)],
+    topIndex: 0,
+  },
+  {
+    // .#.
+    // ###
+    // .#.
+    points: [
+      new Vector2(1, 0),
+      new Vector2(0, 1),
+      new Vector2(1, 1),
+      new Vector2(2, 1),
+      new Vector2(1, 2),
+    ],
+    topIndex: 4,
+  },
+  {
+    // ..#
+    // ..#
+    // ###
+    points: [
+      new Vector2(2, 2),
+      new Vector2(2, 1),
+      new Vector2(0, 0),
+      new Vector2(1, 0),
+      new Vector2(2, 0),
+    ],
+    topIndex: 0,
+  },
+  {
+    // #
+    // #
+    // #
+    // #
+    points: [new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 2), new Vector2(0, 3)],
+    topIndex: 3,
+  },
+  {
+    // ##
+    // ##
+    points: [new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 1), new Vector2(1, 1)],
+    topIndex: 3,
+  },
 ];
 
 /**
@@ -216,17 +231,18 @@ export const levelOne = ({ lines }) => {
   const getNextJetBlast = loopingIterator(parseInput(lines[0]));
   const getNextRock = loopingIterator(rockTemplates);
   const rocksAtRest = [
-    fallRockUntilAtRest(spawnRock(-1, getNextRock()), [], getNextJetBlast),
+    fallRockUntilAtRest(spawnRock(-1, getNextRock().points), [], getNextJetBlast),
   ];
   let highestY = 0;
 
   while (rocksAtRest.length < 2022) {
+    const rockTemplate = getNextRock();
     const newRock = fallRockUntilAtRest(
-      spawnRock(highestY, getNextRock()),
+      spawnRock(highestY, rockTemplate.points),
       rocksAtRest,
       getNextJetBlast
     );
-    highestY = Math.max(highestY, ...newRock.map(({ y }) => y));
+    highestY = Math.max(highestY, newRock[rockTemplate.topIndex].y);
     rocksAtRest.push(newRock);
   }
 
