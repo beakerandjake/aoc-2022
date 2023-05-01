@@ -3,7 +3,7 @@
  * @param {Number} value
  * @param {Number} index
  */
-export const isBitSet = (value, index) => value & (1 << index);
+export const isBitSet = (value, index) => (value & (1 << index)) !== 0;
 
 /**
  * Returns the value with the bit at the index set to 1.
