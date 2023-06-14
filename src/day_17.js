@@ -6,69 +6,18 @@
 import { loopingIterator, range } from './util/array.js';
 import { Vector2, add, equals, left, right } from './util/vector2.js';
 import { isBitSet } from './util/bitwise.js';
+import { inRange } from './util/math.js';
 
 /**
- * Defines each rock and the order they fall in.
- * Stored as an array of bitfields. Each 1 represents a point in space occupied by the rock.
+ * Render the world to the console.
  */
-// prettier-ignore
-const rockTemplates = [
-  // ####
-  [
-    0b1111000
-  ],
-  // .#.
-  // ###
-  // .#.
-  [
-    0b0100000, 
-    0b1110000, 
-    0b0100000
-  ],
-  // ..#
-  // ..#
-  // ###
-  [
-    0b0010000,
-    0b0010000,
-    0b1110000
-  ],
-  // #
-  // #
-  // #
-  // #
-  [
-    0b1000000,
-    0b1000000,
-    0b1000000,
-    0b1000000,
-  ],
-  // ##
-  // ##
-  [
-    0b1100000,
-    0b1100000,
-  ],
-];
-
-const moveRockLeft = (rock) => rock.map((x) => x << 1);
-
-const moveRockRight = (rock) => rock.map((x) => x >> 1);
-
 const print = (() => {
-  const isFallingRock = (y, x, fallingRock) => {
-    if (y > fallingRock.y || y < fallingRock.y - (fallingRock.points.length - 1)) {
-      return false;
-    }
-    return isBitSet(fallingRock.points[fallingRock.y - y], x);
-  };
+  const isFallingRock = (y, x, fallingRock) =>
+    y <= fallingRock.y &&
+    y > fallingRock.y - fallingRock.points.length &&
+    isBitSet(fallingRock.points[fallingRock.y - y], x);
 
-  const isRockAtRest = (y, x, world) => {
-    if (y >= world.length) {
-      return false;
-    }
-    return isBitSet(world[y], x);
-  };
+  const isRockAtRest = (y, x, world) => y < world.length && isBitSet(world[y], x);
 
   const rowToString = (y, world, fallingRock) => {
     let toReturn = '';
@@ -84,22 +33,50 @@ const print = (() => {
     return toReturn;
   };
 
-  const frame = (x) => `|${x}|`;
-
-  const addY = (row, y) => `${row} - ${y}`;
-
   return (world, fallingRock) => {
     const maxY = Math.max(world.length, fallingRock.y);
     console.log();
     for (let y = maxY; y >= 0; y--) {
-      let row = rowToString(y, world, fallingRock);
-      row = frame(row);
-      row = addY(row, y);
-      console.log(row);
+      console.log(`|${rowToString(y, world, fallingRock)}| - ${y}`);
     }
     console.log('+-------+');
   };
 })();
+
+/**
+ * Defines each rock and the order they fall in.
+ * Stored as an array of bitfields. Each 1 represents a point in space occupied by the rock.
+ */
+const rockTemplates = [
+  // ####
+  [0b1111000],
+  // .#.
+  // ###
+  // .#.
+  [0b0100000, 0b1110000, 0b0100000],
+  // ..#
+  // ..#
+  // ###
+  [0b0010000, 0b0010000, 0b1110000],
+  // #
+  // #
+  // #
+  // #
+  [0b1000000, 0b1000000, 0b1000000, 0b1000000],
+  // ##
+  // ##
+  [0b1100000, 0b1100000],
+];
+
+const moveRockLeft = (rock) => ({ ...rock, points: rock.points.map((x) => x << 1) });
+
+const moveRockRight = (rock) => ({ ...rock, points: rock.points.map((x) => x >> 1) });
+
+const moveRockUp = (rock) => ({ ...rock, y: rock.y + 1 });
+
+const moveRockDown = (rock) => ({ ...rock, y: rock.y - 1 });
+
+const tryToMoveRock = (rock, world, movementFn) => {};
 
 /**
  * Returns the solution for level one of this puzzle.
@@ -108,7 +85,7 @@ export const levelOne = ({ lines }) => {
   console.log();
   const world = [0b0011110, 0b0001000, 0b0011100, 0b0001000];
   const rock = {
-    y: 5,
+    y: 7,
     points: [...rockTemplates[0]],
   };
   print(world, rock);
