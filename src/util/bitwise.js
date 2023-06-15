@@ -11,3 +11,15 @@ export const isBitSet = (value, index) => (value & (1 << index)) !== 0;
  * @param {Number} index
  */
 export const setBit = (value, index) => value | (1 << index);
+
+/**
+ * Shift the bits one to the left.
+ * @param {Number} value
+ */
+export const leftShift = (value) => value << 1;
+
+/**
+ * Shift the bits one to the right.
+ * @param {Number} value
+ */
+export const rightShift = (value) => value >> 1;
