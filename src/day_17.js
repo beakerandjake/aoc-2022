@@ -9,7 +9,7 @@ import { isBitSet, leftShift, rightShift } from './util/bitwise.js';
 /**
  * Defines each rock and the order they fall in.
  * A rock is defined as an collection of rows representing the y axis (ascending).
- * Each row is a bitfield which represents the x axis (ascending), rows are as wide as the room.
+ * Each row represents points on the x axis, stored as a  bitfield rows are as wide as the room.
  * Every bit set to 1 represents a point occupied by the rock.
  * Every bit set to 0 represents empty space.
  * Rows start with points pre shifted right 2 units to allow for easier spawning.
@@ -72,15 +72,9 @@ const touchingLeftWall = (points) => pointIsOccupied(points, 0);
 const touchingRightWall = (points) => pointIsOccupied(points, maxRoomIndex);
 
 /**
- * Returns true if any points in the row collide.
+ * Returns true if any points in the rows collide.
  */
-const rowsCollide = (lhs, rhs) => (lhs & rhs) !== 0;
-
-/**
- * Returns true if any point in the rocks row collides with any stopped rock.
- */
-const collidesWithStoppedRock = (rockRow, rockRowY, stoppedRocks) =>
-  rockRowY < stoppedRocks.length && rowsCollide(rockRow, stoppedRocks[rockRowY]);
+const rowsCollide = (lhs = 0, rhs = 0) => (lhs & rhs) !== 0;
 
 /**
  * Returns a new rock representing the original rock after a jet blast was applied.
@@ -106,9 +100,9 @@ const applyJetBlast = (isLeftBlast, rock, stoppedRocks) => {
     // blast the rock with the jet, shifting it to the left or the right.
     const moved = movePoints(current);
 
-    // if the new position collides with any rock at rest
-    // then nothing happens, return the original rock.
-    if (collidesWithStoppedRock(moved, rock.y - rowIndex, stoppedRocks)) {
+    if (rowsCollide(moved, stoppedRocks[rock.y - rowIndex])) {
+      // if the new position collides with any rock at rest
+      // then nothing happens, return the original rock.
       return rock;
     }
 
@@ -134,7 +128,7 @@ const moveRockDown = (rock, stoppedRocks) => {
 
     // if the new position collides with any rock at rest
     // then nothing happens, return the original rock.
-    if (collidesWithStoppedRock(rock.rows[newY - y], y, stoppedRocks)) {
+    if(rowsCollide(rock.rows[newY - y], stoppedRocks[y])) {
       return rock;
     }
   }
