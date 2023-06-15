@@ -71,10 +71,10 @@ const rockTemplates = [
 ];
 
 /**
- * The chamber is 7 units wide, when bit packing a horizontal slice of the chamber
+ * The room is 7 units wide, when bit packing a horizontal slice of the room
  * the max possible zero based index is 6.
  */
-const maxChamberIndex = 6;
+const maxRoomIndex = 6;
 
 /**
  * Parse the input and return an array of jet blast directions.
@@ -93,17 +93,17 @@ const spawnRock = (highestRockY, rockTemplate) => ({
 /**
  * Returns true if the point at the x position in the row is not empty space.
  */
-const pointIsOccupied = (points, x) => isBitSet(points, maxChamberIndex - x);
+const pointIsOccupied = (points, x) => isBitSet(points, maxRoomIndex - x);
 
 /**
- * Returns true if the left most point in the row is touching the left wall of the chamber.
+ * Returns true if the left most point in the row is touching the left wall of the room.
  */
 const touchingLeftWall = (points) => pointIsOccupied(points, 0);
 
 /**
- * Returns true if the right most point in the row is touching the right wall of the chamber.
+ * Returns true if the right most point in the row is touching the right wall of the room.
  */
-const touchingRightWall = (points) => pointIsOccupied(points, maxChamberIndex);
+const touchingRightWall = (points) => pointIsOccupied(points, maxRoomIndex);
 
 /**
  * Returns true if any points in the row collide.
