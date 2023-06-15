@@ -45,7 +45,10 @@ const print = (() => {
 
 /**
  * Defines each rock and the order they fall in.
- * Stored as an array of bitfields. Each 1 represents a point in space occupied by the rock.
+ * A rock is defined as an collection of rows representing space along the y axis (ascending).
+ * Each row is a bitfield which represents points in space along the x axis (ascending).
+ * Every bit set to 1 represents a point in space occupied by the rock.
+ * Every bit set to 0 represents empty space.
  */
 const rockTemplates = [
   // ####
@@ -70,76 +73,73 @@ const rockTemplates = [
 
 /**
  * The chamber is 7 units wide, when bit packing a horizontal slice of the chamber
- * the max possible zero based index is 6. 
+ * the max possible zero based index is 6.
  */
 const maxChamberIndex = 6;
 
 /**
- * Rotate the bits of a 7 digit number one bit to the right.
+ * Returns true if the point at the x position in the row is empty space.
  */
-const rotateRight = (number) => (number >> 1) | (number << maxChamberIndex);
+const pointIsEmpty = (points, x) => (points & (1 << (maxChamberIndex - x))) === 0;
 
 /**
- * Rotate the bits of a 7 digit number one bit to the left.
+ * Returns true if the right most point in the row is touching the right wall of the chamber.
  */
-const rotateLeft = (number) => (number << 1) | (number >> maxChamberIndex);
+const touchingRightWall = (points) => !pointIsEmpty(points, maxChamberIndex);
 
-const bottom = (rock) => rock.y - rock.length - 1;
+/**
+ * Move all the points in the row one unit to the left.
+ */
+const moveRight = (points) => points >> 1;
 
-const moveRockLeft = (rock) => ({ ...rock, points: rock.points.map(rotateLeft) });
+/**
+ * Returns true if any points in the row collide.
+ */
+const rowsCollide = (lhs, rhs) => (lhs & rhs) !== 0;
 
-const moveRockRight = (rock) => ({ ...rock, points: rock.points.map(rotateRight) });
-
-const moveRockUp = (rock) => ({ ...rock, y: rock.y + 1 });
-
-const moveRockDown = (rock) => ({ ...rock, y: rock.y - 1 });
-
-const moveHorizontally = (rock, world) => {};
-
-const tryToMoveRight = (rock, world) => {
-  const moved = moveRockRight(rock);
-  if(moved.some(m, index) => rock.points[index] )
-
-  return moveRockRight(rock);
-};
-
-const tryToMoveLeft = (rock) => {
-  if (rock.points.some((x) => isBitSet(x, 6))) {
-    return rock;
+const moveIfAble = (rows, movementFn) => {
+  const newRows = [];
+  for (let index = 0; index < rows.length; index++) {
+    const oldPoints = rows[index];
+    const newPoints = movementFn(oldPoints, index);
+    if (oldPoints === newPoints) {
+      return rows;
+    }
+    newRows.push(newPoints);
   }
-  return moveRockLeft(rock);
+  return newRows;
 };
 
-const rowToString = (row) => {
-  let characters = '';
-  for (let index = maxChamberIndex; index >= 0; index--) {
-    characters += isBitSet(row, index) ? '1' : '0';
-  }
-  console.log(characters);
-};
+const pushRight = (rock, world) => ({
+  ...rock,
+  points: moveIfAble(rock.points, (points, index) => {
+    if (touchingRightWall(points)) {
+      return points;
+    }
+    const newPoints = moveRight(points);
+    const y = rock.y - index;
+    return y < world.length && rowsCollide(newPoints, world[y]) ? points : newPoints;
+  }),
+});
 
 /**
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
   console.log();
-  let test = 0b0000111;
-  rowToString(test);
+
+  const world = [0b0011110, 0b0001000, 0b0011100, 0b0001000, 0b0000010];
+  let rock = {
+    y: 8,
+    points: moveRight(moveRight(moveRight([...rockTemplates[1]]))),
+  };
+  print(world, rock);
   for (let index = 0; index < 10; index++) {
-    test = rotateLeft(test, 1);
-    rowToString(test);
+    console.log(`move right: ${index}`);
+    rock = pushRight(rock, world);
+    print(world, rock);
+    console.log('^^^^^^^^^^^^^^^^');
   }
-  // const world = [0b0011110, 0b0001000, 0b0011100, 0b0001000];
-  // let rock = {
-  //   y: 4,
-  //   points: [...rockTemplates[1]],
-  // };
-  // print(world, rock);
-  // for (let index = 0; index < 10; index++) {
-  //   console.log(`move right: ${index}`);
-  //   rock = tryToMoveRight(rock, world);
-  //   print(world, rock);
-  // }
   return 3127;
 };
 
