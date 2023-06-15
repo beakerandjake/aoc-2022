@@ -79,10 +79,10 @@ const rockTemplates = [
 const maxChamberIndex = 6;
 
 /**
- * Parse the input and return a looping iterator of jet blast functions.
+ * Parse the input and return an array of jet blast directions.
+ * true for left and false for right.
  */
-const parseInput = (input) =>
-  loopingIterator([...input].map((x) => (x === '<' ? leftShift : rightShift)));
+const parseInput = (input) => [...input].map((x) => x === '<');
 
 /**
  * Returns true if the point at the x position in the row is not empty space.
@@ -93,6 +93,11 @@ const pointIsOccupied = (points, x) => isBitSet(points, maxChamberIndex - x);
  * Returns true if the right most point in the row is touching the right wall of the chamber.
  */
 const touchingRightWall = (points) => pointIsOccupied(points, maxChamberIndex);
+
+/**
+ * Returns true if the left most point in the row is touching the left wall of the chamber.
+ */
+const touchingLeftWall = (points) => pointIsOccupied(points, 0);
 
 /**
  * Returns true if any points in the row collide.
@@ -108,279 +113,128 @@ const spawnRock = (highestRockY, rockTemplate) => ({
 });
 
 /**
+ * Returns true if any point in the rocks row collides with any stopped rock.
+ */
+const collidesWithStoppedRock = (rockRow, rockRowY, stoppedRocks) =>
+  rockRowY < stoppedRocks.length && rowsCollide(rockRow, stoppedRocks[rockRowY]);
+
+/**
+ * Returns a new rock representing the original rock after a jet blast was applied.
+ * If the movement would cause any part of the rock to move into the walls, floor, or a stopped rock the original rock is returned.
+ */
+const applyJetBlast = (isLeftBlast, rock, stoppedRocks) => {
+  const isTouchingWall = isLeftBlast ? touchingLeftWall : touchingRightWall;
+  const movePoints = isLeftBlast ? leftShift : rightShift;
+  const newPoints = [];
+
+  // apply the jet blast to each row of the rock.
+  // if any movement of any row cannot happen due to a collision
+  // then the original rock is returned.
+  for (let rowIndex = 0; rowIndex < rock.points.length; rowIndex++) {
+    const current = rock.points[rowIndex];
+
+    // if the rock cannot be blasted because its already touching a wall
+    // the nothing happens, return the original rock.
+    if (isTouchingWall(current)) {
+      return rock;
+    }
+
+    // blast the rock with the jet, shifting it to the left or the right.
+    const moved = movePoints(current);
+
+    // if the new position collides with any rock at rest
+    // then nothing happens, return the original rock.
+    if (collidesWithStoppedRock(moved, rock.y - rowIndex, stoppedRocks)) {
+      return rock;
+    }
+
+    newPoints.push(moved);
+  }
+
+  return { ...rock, points: newPoints };
+};
+
+/**
+ * Returns a new rock representing the original rock moved down one unit.
+ * If the movement would cause any part of the rock to move into floor, or a stopped rock the original rock is returned.
+ */
+const moveRockDown = (rock, stoppedRocks) => {
+  const newY = rock.y - 1;
+
+  for (let y = newY; y > newY - rock.points.length; y--) {
+    // if the downward movement causes the rock to clip the floor
+    // then nothing happens, return original rock.
+    if (y < 0) {
+      return rock;
+    }
+
+    // if the new position collides with any rock at rest
+    // then nothing happens, return the original rock.
+    if (collidesWithStoppedRock(rock.points[newY - y], y, stoppedRocks)) {
+      return rock;
+    }
+  }
+
+  return { ...rock, y: newY };
+};
+
+/**
+ * Returns a new rock representing the original rock after it has come to rest
+ * from alternating between pushing the rock with jets and falling the rock one unit.
+ */
+const fallRockUntilLands = (rock, stoppedRocks, getNextJetBlast) => {
+  let currentRock = rock;
+  while (true) {
+    const afterJetBlast = applyJetBlast(getNextJetBlast(), currentRock, stoppedRocks);
+    const afterFall = moveRockDown(afterJetBlast, stoppedRocks);
+    // if the rock came to rest, then return its final location.
+    if (afterJetBlast === afterFall) {
+      return afterFall;
+    }
+    currentRock = afterFall;
+  }
+};
+
+/**
+ * Returns a new array which contains the newly stopped rock merged into the existing stopped rocks array.
+ */
+const mergeRockIntoStoppedRocks = (rock, stoppedRocks) => {
+  const toReturn = [...stoppedRocks];
+  for (let index = rock.points.length - 1; index >= 0; index--) {
+    const y = rock.y - index;
+    const points = rock.points[index];
+    if (y > stoppedRocks.length - 1) {
+      // if the row exists outside of the "world" then push the row into the world.
+      toReturn.push(points);
+    } else {
+      // otherwise merge the rock into the existing row.
+      toReturn[y] |= points;
+    }
+  }
+  return toReturn;
+};
+
+/**
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
-  const jetBlastIterator = parseInput(lines[0]);
-  const stoppedRocks = [];
-  
+  const getNextJetBlast = loopingIterator(parseInput(lines[0]));
+  const getNextRockToSpawn = loopingIterator(rockTemplates);
+  let stoppedRocks = [];
+  let remainingRocks = 2022;
 
-  console.log(jetBlastIterator());
-  console.log(jetBlastIterator());
-  console.log(jetBlastIterator());
-  console.log(jetBlastIterator());
+  while (remainingRocks--) {
+    let rock = spawnRock(stoppedRocks.length, getNextRockToSpawn());
+    rock = fallRockUntilLands(rock, stoppedRocks, getNextJetBlast);
+    stoppedRocks = mergeRockIntoStoppedRocks(rock, stoppedRocks);
+  }
 
-  // const world = [0b0011110, 0b0001000, 0b0011100, 0b0001000];
-  const world = [];
-  const rock = spawnRock(world.length, rockTemplates[0]);
-
-  // print(world, rock);
-  return 3127;
+  return stoppedRocks.length;
 };
 
-// /**
-//  * Must redefine "down" for this world, the vector2 util defines (0,0) as top left.
-//  * This puzzle is easier if we define (0,0) as bottom left.
-//  */
-// const down = new Vector2(0, -1);
-
-// /**
-//  * Defines the shape of each rock that falls and the order they fall in.
-//  */
-// const rockTemplates = [
-//   {
-//     // ####
-//     points: [new Vector2(0, 0), new Vector2(1, 0), new Vector2(2, 0), new Vector2(3, 0)],
-//     topIndex: 0,
-//   },
-//   {
-//     // .#.
-//     // ###
-//     // .#.
-//     points: [
-//       new Vector2(1, 0),
-//       new Vector2(0, 1),
-//       new Vector2(1, 1),
-//       new Vector2(2, 1),
-//       new Vector2(1, 2),
-//     ],
-//     topIndex: 4,
-//   },
-//   {
-//     // ..#
-//     // ..#
-//     // ###
-//     points: [
-//       new Vector2(2, 2),
-//       new Vector2(2, 1),
-//       new Vector2(0, 0),
-//       new Vector2(1, 0),
-//       new Vector2(2, 0),
-//     ],
-//     topIndex: 0,
-//   },
-//   {
-//     // #
-//     // #
-//     // #
-//     // #
-//     points: [new Vector2(0, 0), new Vector2(0, 1), new Vector2(0, 2), new Vector2(0, 3)],
-//     topIndex: 3,
-//   },
-//   {
-//     // ##
-//     // ##
-//     points: [new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 1), new Vector2(1, 1)],
-//     topIndex: 3,
-//   },
-// ];
-
-// /**
-//  * The extreme x and y scalar values of the chamber.
-//  */
-// const chamberBounds = {
-//   left: 0,
-//   right: 6,
-//   bottom: 0,
-// };
-
-// /**
-//  * Returns a new rock with the movement applied.
-//  */
-// const moveRock = (rock, movement) => rock.map((position) => add(position, movement));
-
-// /**
-//  * Returns a new rock moved one unit to the right.
-//  */
-// const moveRockRight = (rock) => moveRock(rock, right);
-
-// /**
-//  * Returns a new rock moved one unit to the left.
-//  */
-// const moveRockLeft = (rock) => moveRock(rock, left);
-
-// /**
-//  * Returns a new rock moved one unit down.
-//  */
-// const moveRockDown = (rock) => moveRock(rock, down);
-
-// /**
-//  * Parse the input and return the jet movement functions.
-//  */
-// const parseInput = (input) =>
-//   [...input].map((character) => (character === '>' ? moveRockRight : moveRockLeft));
-
-// /**
-//  * Returns true if the position will collide with the right side of the chamber.
-//  */
-// const collidesWithRightWall = ({ x }) => x > chamberBounds.right;
-
-// /**
-//  * Returns true if the position will collide with the left side of the chamber.
-//  */
-// const collidesWithLeftWall = ({ x }) => x < chamberBounds.left;
-
-// /**
-//  * Returns true if any point of the rock will collide with a left or right wall.
-//  */
-// const collidesWithWalls = (rock) =>
-//   rock.some(
-//     (position) => collidesWithLeftWall(position) || collidesWithRightWall(position)
-//   );
-
-// /**
-//  * Returns true if any point of the rock will collide with the floor.
-//  */
-// const collidesWithFloor = (rock) => rock.some(({ y }) => y < chamberBounds.bottom);
-
-// /**
-//  * Returns true if the rock intersects with any rock at rest.
-//  */
-// const intersectsWithAnyRockAtRest = (rock, rocksAtRest) =>
-//   rock.some((position) => rocksAtRest.has(position.toString()));
-
-// /**
-//  * Spawns a new rock at the spawn point defined by the highest Y.
-//  */
-// const spawnRock = (highestY, rockTemplate) =>
-//   moveRock(rockTemplate, new Vector2(2, highestY + 4));
-
-// const print = (() => {
-//   const border = '+-------+';
-
-//   /**
-//    * Returns true if the position intersect with any point of the rock.
-//    */
-//   const positionIntersectsRock = (position, rock) =>
-//     rock.some((rockPosition) => equals(position, rockPosition));
-
-//   const positionIntersectsAnyRock = (position, rocks) =>
-//     rocks.some((rock) => positionIntersectsRock(position, rock));
-
-//   const renderRow = (y, fallingRock, rocksAtRest) => {
-//     let row = '';
-//     const position = new Vector2(0, y);
-//     while (position.x <= chamberBounds.right) {
-//       let toRender = '.';
-//       if (positionIntersectsRock(position, fallingRock)) {
-//         toRender = '@';
-//       } else if (positionIntersectsAnyRock(position, rocksAtRest)) {
-//         toRender = '#';
-//       }
-//       row += toRender;
-//       position.x += 1;
-//     }
-//     return `|${row}|`;
-//   };
-
-//   return (rowStart, rowEnd, fallingRock, rocksAtRest) => {
-//     console.log();
-//     console.log(`${border}`);
-//     range(rowEnd - rowStart, rowStart)
-//       .map((y) => renderRow(y, fallingRock, rocksAtRest))
-//       .reverse()
-//       .forEach((line, index, lines) =>
-//         console.log(`${line} - ${lines.length - index - 1 + rowStart}`)
-//       );
-//     console.log(`${border}`);
-//   };
-// })();
-
-// /**
-//  * Returns a function that can be used to detect if the rock collides
-//  * with the walls, floor or other rocks.
-//  */
-// const getRockCollisionFunction = (rocks) => (rock) =>
-//   collidesWithWalls(rock) ||
-//   collidesWithFloor(rock) ||
-//   intersectsWithAnyRockAtRest(rock, rocks);
-
-// /**
-//  * Applies the movement function to the rock, then checks the collision function.
-//  * If the collision function returns false then the new position is returned.
-//  * If the collision function returns true, then false is returned, indicating the rock cannot move.
-//  */
-// const attemptToMoveRock = (rock, movementFn, collisionFn) => {
-//   const newRock = movementFn(rock);
-//   return !collisionFn(newRock) ? newRock : rock;
-// };
-
-// const fallRockUntilAtRest = (fallingRock, rocksAtRest, getNextJetBlastFn) => {
-//   let currentRock = fallingRock;
-
-//   for (;;) {
-//     const collisionFn = getRockCollisionFunction(rocksAtRest);
-
-//     const afterJetBlast = attemptToMoveRock(
-//       currentRock,
-//       getNextJetBlastFn(),
-//       collisionFn
-//     );
-
-//     const afterDrop = attemptToMoveRock(afterJetBlast, moveRockDown, collisionFn);
-
-//     if (afterJetBlast === afterDrop) {
-//       return afterDrop;
-//     }
-
-//     currentRock = afterDrop;
-//   }
-// };
-
-// const solve = (numberOfRocks, input) => {
-//   const getNextJetBlast = loopingIterator(parseInput(input));
-//   const getNextRock = loopingIterator(rockTemplates);
-//   const rocksAtRest = new Set(
-//     fallRockUntilAtRest(
-//       spawnRock(-1, getNextRock().points),
-//       new Set(),
-//       getNextJetBlast
-//     ).map((x) => x.toString())
-//   );
-//   let highestY = 0;
-//   let remainingRocks = numberOfRocks - 1;
-
-//   while (remainingRocks--) {
-//     const rockTemplate = getNextRock();
-//     const newRock = fallRockUntilAtRest(
-//       spawnRock(highestY, rockTemplate.points),
-//       rocksAtRest,
-//       getNextJetBlast
-//     );
-//     highestY = Math.max(highestY, newRock[rockTemplate.topIndex].y);
-//     newRock.forEach((point) => {
-//       rocksAtRest.add(point.toString());
-//     });
-//   }
-
-//   return highestY + 1;
-// };
-
-// /**
-//  * Performance improvements:
-//  * Batch settled rocks into array of sets, check "higher" sets first as a higher collision is more likely.
-//  * Change storage of settled rocks, array of 8 bit numbers as flags, allows o(1) check to see if position is occupied.
-//  *  will make detecting loops easier for level 2.
-//  */
-
-// /**
-//  * Returns the solution for level one of this puzzle.
-//  */
-// export const levelOne = ({ lines }) => solve(2022, lines[0]);
-
-// /**
-//  * Returns the solution for level two of this puzzle.
-//  */
-// export const levelTwo = ({ input, lines }) => {
-//   // your code here
-// };
+/**
+ * Returns the solution for level two of this puzzle.
+ */
+export const levelTwo = ({ input, lines }) => {
+  // your code here
+};
