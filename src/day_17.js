@@ -4,9 +4,7 @@
  */
 
 import { loopingIterator, range } from './util/array.js';
-import { Vector2, add, equals, left, right } from './util/vector2.js';
 import { isBitSet, leftShift, rightShift } from './util/bitwise.js';
-import { inRange } from './util/math.js';
 
 /**
  * Render the world to the console.
