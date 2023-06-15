@@ -7,41 +7,6 @@ import { loopingIterator, range } from './util/array.js';
 import { isBitSet, leftShift, rightShift } from './util/bitwise.js';
 
 /**
- * Render the world to the console.
- */
-const print = (() => {
-  const isFallingRock = (y, x, fallingRock) =>
-    y <= fallingRock.y &&
-    y > fallingRock.y - fallingRock.points.length &&
-    isBitSet(fallingRock.points[fallingRock.y - y], x);
-
-  const isRockAtRest = (y, x, world) => y < world.length && isBitSet(world[y], x);
-
-  const rowToString = (y, world, fallingRock) => {
-    let toReturn = '';
-    for (let x = 6; x >= 0; x--) {
-      if (isFallingRock(y, x, fallingRock)) {
-        toReturn += '@';
-      } else if (isRockAtRest(y, x, world)) {
-        toReturn += '#';
-      } else {
-        toReturn += '.';
-      }
-    }
-    return toReturn;
-  };
-
-  return (world, fallingRock) => {
-    const maxY = Math.max(world.length, fallingRock.y);
-    console.log();
-    for (let y = maxY; y >= 0; y--) {
-      console.log(`|${rowToString(y, world, fallingRock)}| - ${y}`);
-    }
-    console.log('+-------+');
-  };
-})();
-
-/**
  * Defines each rock and the order they fall in.
  * A rock is defined as an collection of rows representing the y axis (ascending).
  * Each row is a bitfield which represents the x axis (ascending), rows are as wide as the room.
@@ -83,11 +48,12 @@ const maxRoomIndex = 6;
 const parseInput = (input) => [...input].map((x) => x === '<');
 
 /**
- * Spawns the rock template so its bottom edge is 3 units above the highest rock in the room.
+ * Spawns a new instance of the rock template.
+ * The new rocks bottom edge will be 3 units above the highest rock in the room.
  */
 const spawnRock = (highestRockY, rockTemplate) => ({
   y: highestRockY + 3 + rockTemplate.length - 1,
-  points: [...rockTemplate],
+  rows: [...rockTemplate],
 });
 
 /**
@@ -128,8 +94,8 @@ const applyJetBlast = (isLeftBlast, rock, stoppedRocks) => {
   // apply the jet blast to each row of the rock.
   // if any movement of any row cannot happen due to a collision
   // then the original rock is returned.
-  for (let rowIndex = 0; rowIndex < rock.points.length; rowIndex++) {
-    const current = rock.points[rowIndex];
+  for (let rowIndex = 0; rowIndex < rock.rows.length; rowIndex++) {
+    const current = rock.rows[rowIndex];
 
     // if the rock cannot be blasted because its already touching a wall
     // the nothing happens, return the original rock.
@@ -149,7 +115,7 @@ const applyJetBlast = (isLeftBlast, rock, stoppedRocks) => {
     newPoints.push(moved);
   }
 
-  return { ...rock, points: newPoints };
+  return { ...rock, rows: newPoints };
 };
 
 /**
@@ -159,7 +125,7 @@ const applyJetBlast = (isLeftBlast, rock, stoppedRocks) => {
 const moveRockDown = (rock, stoppedRocks) => {
   const newY = rock.y - 1;
 
-  for (let y = newY; y > newY - rock.points.length; y--) {
+  for (let y = newY; y > newY - rock.rows.length; y--) {
     // if the downward movement causes the rock to clip the floor
     // then nothing happens, return original rock.
     if (y < 0) {
@@ -168,7 +134,7 @@ const moveRockDown = (rock, stoppedRocks) => {
 
     // if the new position collides with any rock at rest
     // then nothing happens, return the original rock.
-    if (collidesWithStoppedRock(rock.points[newY - y], y, stoppedRocks)) {
+    if (collidesWithStoppedRock(rock.rows[newY - y], y, stoppedRocks)) {
       return rock;
     }
   }
@@ -198,9 +164,9 @@ const fallRockUntilLands = (rock, stoppedRocks, getNextJetBlast) => {
  */
 const mergeRockIntoStoppedRocks = (rock, stoppedRocks) => {
   const toReturn = [...stoppedRocks];
-  for (let index = rock.points.length - 1; index >= 0; index--) {
+  for (let index = rock.rows.length - 1; index >= 0; index--) {
     const y = rock.y - index;
-    const points = rock.points[index];
+    const points = rock.rows[index];
     if (y > stoppedRocks.length - 1) {
       // if the row exists outside of the "world" then push the row into the world.
       toReturn.push(points);
@@ -222,9 +188,12 @@ export const levelOne = ({ lines }) => {
   let remainingRocks = 2022;
 
   while (remainingRocks--) {
-    let rock = spawnRock(stoppedRocks.length, getNextRockToSpawn());
-    rock = fallRockUntilLands(rock, stoppedRocks, getNextJetBlast);
-    stoppedRocks = mergeRockIntoStoppedRocks(rock, stoppedRocks);
+    const newRock = fallRockUntilLands(
+      spawnRock(stoppedRocks.length, getNextRockToSpawn()),
+      stoppedRocks,
+      getNextJetBlast
+    );
+    stoppedRocks = mergeRockIntoStoppedRocks(newRock, stoppedRocks);
   }
 
   return stoppedRocks.length;
