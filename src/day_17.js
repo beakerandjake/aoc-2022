@@ -83,14 +83,17 @@ const maxChamberIndex = 6;
 const parseInput = (input) => [...input].map((x) => x === '<');
 
 /**
+ * Spawns the rock template so its bottom edge is 3 units above the highest rock in the room.
+ */
+const spawnRock = (highestRockY, rockTemplate) => ({
+  y: highestRockY + 3 + rockTemplate.length - 1,
+  points: [...rockTemplate],
+});
+
+/**
  * Returns true if the point at the x position in the row is not empty space.
  */
 const pointIsOccupied = (points, x) => isBitSet(points, maxChamberIndex - x);
-
-/**
- * Returns true if the right most point in the row is touching the right wall of the chamber.
- */
-const touchingRightWall = (points) => pointIsOccupied(points, maxChamberIndex);
 
 /**
  * Returns true if the left most point in the row is touching the left wall of the chamber.
@@ -98,17 +101,14 @@ const touchingRightWall = (points) => pointIsOccupied(points, maxChamberIndex);
 const touchingLeftWall = (points) => pointIsOccupied(points, 0);
 
 /**
+ * Returns true if the right most point in the row is touching the right wall of the chamber.
+ */
+const touchingRightWall = (points) => pointIsOccupied(points, maxChamberIndex);
+
+/**
  * Returns true if any points in the row collide.
  */
 const rowsCollide = (lhs, rhs) => (lhs & rhs) !== 0;
-
-/**
- * Spawns the rock template so its bottom edge is 3 units above the highest rock in the room.
- */
-const spawnRock = (highestRockY, rockTemplate) => ({
-  y: highestRockY + 3 + rockTemplate.length - 1,
-  points: [...rockTemplate],
-});
 
 /**
  * Returns true if any point in the rocks row collides with any stopped rock.
