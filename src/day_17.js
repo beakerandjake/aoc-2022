@@ -5,7 +5,7 @@
 
 import { loopingIterator, range } from './util/array.js';
 import { Vector2, add, equals, left, right } from './util/vector2.js';
-import { isBitSet } from './util/bitwise.js';
+import { isBitSet, leftShift, rightShift } from './util/bitwise.js';
 import { inRange } from './util/math.js';
 
 /**
@@ -45,30 +45,31 @@ const print = (() => {
 
 /**
  * Defines each rock and the order they fall in.
- * A rock is defined as an collection of rows representing space along the y axis (ascending).
- * Each row is a bitfield which represents points in space along the x axis (ascending).
- * Every bit set to 1 represents a point in space occupied by the rock.
+ * A rock is defined as an collection of rows representing the y axis (ascending).
+ * Each row is a bitfield which represents the x axis (ascending), rows are as wide as the room.
+ * Every bit set to 1 represents a point occupied by the rock.
  * Every bit set to 0 represents empty space.
+ * Rows start with points pre shifted right 2 units to allow for easier spawning.
  */
 const rockTemplates = [
   // ####
-  [0b1111000],
+  [0b0011110],
   // .#.
   // ###
   // .#.
-  [0b0100000, 0b1110000, 0b0100000],
+  [0b0001000, 0b0011100, 0b0001000],
   // ..#
   // ..#
   // ###
-  [0b0010000, 0b0010000, 0b1110000],
+  [0b0000100, 0b0000100, 0b0011100],
   // #
   // #
   // #
   // #
-  [0b1000000, 0b1000000, 0b1000000, 0b1000000],
+  [0b0010000, 0b0010000, 0b0010000, 0b0010000],
   // ##
   // ##
-  [0b1100000, 0b1100000],
+  [0b0011000, 0b0011000],
 ];
 
 /**
@@ -78,68 +79,52 @@ const rockTemplates = [
 const maxChamberIndex = 6;
 
 /**
- * Returns true if the point at the x position in the row is empty space.
+ * Parse the input and return a looping iterator of jet blast functions.
  */
-const pointIsEmpty = (points, x) => (points & (1 << (maxChamberIndex - x))) === 0;
+const parseInput = (input) =>
+  loopingIterator([...input].map((x) => (x === '<' ? leftShift : rightShift)));
+
+/**
+ * Returns true if the point at the x position in the row is not empty space.
+ */
+const pointIsOccupied = (points, x) => isBitSet(points, maxChamberIndex - x);
 
 /**
  * Returns true if the right most point in the row is touching the right wall of the chamber.
  */
-const touchingRightWall = (points) => !pointIsEmpty(points, maxChamberIndex);
-
-/**
- * Move all the points in the row one unit to the left.
- */
-const moveRight = (points) => points >> 1;
+const touchingRightWall = (points) => pointIsOccupied(points, maxChamberIndex);
 
 /**
  * Returns true if any points in the row collide.
  */
 const rowsCollide = (lhs, rhs) => (lhs & rhs) !== 0;
 
-const moveIfAble = (rows, movementFn) => {
-  const newRows = [];
-  for (let index = 0; index < rows.length; index++) {
-    const oldPoints = rows[index];
-    const newPoints = movementFn(oldPoints, index);
-    if (oldPoints === newPoints) {
-      return rows;
-    }
-    newRows.push(newPoints);
-  }
-  return newRows;
-};
-
-const pushRight = (rock, world) => ({
-  ...rock,
-  points: moveIfAble(rock.points, (points, index) => {
-    if (touchingRightWall(points)) {
-      return points;
-    }
-    const newPoints = moveRight(points);
-    const y = rock.y - index;
-    return y < world.length && rowsCollide(newPoints, world[y]) ? points : newPoints;
-  }),
+/**
+ * Spawns the rock template so its bottom edge is 3 units above the highest rock in the room.
+ */
+const spawnRock = (highestRockY, rockTemplate) => ({
+  y: highestRockY + 3 + rockTemplate.length - 1,
+  points: [...rockTemplate],
 });
 
 /**
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
-  console.log();
+  const jetBlastIterator = parseInput(lines[0]);
+  const stoppedRocks = [];
+  
 
-  const world = [0b0011110, 0b0001000, 0b0011100, 0b0001000, 0b0000010];
-  let rock = {
-    y: 8,
-    points: moveRight(moveRight(moveRight([...rockTemplates[1]]))),
-  };
-  print(world, rock);
-  for (let index = 0; index < 10; index++) {
-    console.log(`move right: ${index}`);
-    rock = pushRight(rock, world);
-    print(world, rock);
-    console.log('^^^^^^^^^^^^^^^^');
-  }
+  console.log(jetBlastIterator());
+  console.log(jetBlastIterator());
+  console.log(jetBlastIterator());
+  console.log(jetBlastIterator());
+
+  // const world = [0b0011110, 0b0001000, 0b0011100, 0b0001000];
+  const world = [];
+  const rock = spawnRock(world.length, rockTemplates[0]);
+
+  // print(world, rock);
   return 3127;
 };
 
