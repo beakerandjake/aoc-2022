@@ -68,27 +68,78 @@ const rockTemplates = [
   [0b1100000, 0b1100000],
 ];
 
-const moveRockLeft = (rock) => ({ ...rock, points: rock.points.map((x) => x << 1) });
+/**
+ * The chamber is 7 units wide, when bit packing a horizontal slice of the chamber
+ * the max possible zero based index is 6. 
+ */
+const maxChamberIndex = 6;
 
-const moveRockRight = (rock) => ({ ...rock, points: rock.points.map((x) => x >> 1) });
+/**
+ * Rotate the bits of a 7 digit number one bit to the right.
+ */
+const rotateRight = (number) => (number >> 1) | (number << maxChamberIndex);
+
+/**
+ * Rotate the bits of a 7 digit number one bit to the left.
+ */
+const rotateLeft = (number) => (number << 1) | (number >> maxChamberIndex);
+
+const bottom = (rock) => rock.y - rock.length - 1;
+
+const moveRockLeft = (rock) => ({ ...rock, points: rock.points.map(rotateLeft) });
+
+const moveRockRight = (rock) => ({ ...rock, points: rock.points.map(rotateRight) });
 
 const moveRockUp = (rock) => ({ ...rock, y: rock.y + 1 });
 
 const moveRockDown = (rock) => ({ ...rock, y: rock.y - 1 });
 
-const tryToMoveRock = (rock, world, movementFn) => {};
+const moveHorizontally = (rock, world) => {};
+
+const tryToMoveRight = (rock, world) => {
+  const moved = moveRockRight(rock);
+  if(moved.some(m, index) => rock.points[index] )
+
+  return moveRockRight(rock);
+};
+
+const tryToMoveLeft = (rock) => {
+  if (rock.points.some((x) => isBitSet(x, 6))) {
+    return rock;
+  }
+  return moveRockLeft(rock);
+};
+
+const rowToString = (row) => {
+  let characters = '';
+  for (let index = maxChamberIndex; index >= 0; index--) {
+    characters += isBitSet(row, index) ? '1' : '0';
+  }
+  console.log(characters);
+};
 
 /**
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
   console.log();
-  const world = [0b0011110, 0b0001000, 0b0011100, 0b0001000];
-  const rock = {
-    y: 7,
-    points: [...rockTemplates[0]],
-  };
-  print(world, rock);
+  let test = 0b0000111;
+  rowToString(test);
+  for (let index = 0; index < 10; index++) {
+    test = rotateLeft(test, 1);
+    rowToString(test);
+  }
+  // const world = [0b0011110, 0b0001000, 0b0011100, 0b0001000];
+  // let rock = {
+  //   y: 4,
+  //   points: [...rockTemplates[1]],
+  // };
+  // print(world, rock);
+  // for (let index = 0; index < 10; index++) {
+  //   console.log(`move right: ${index}`);
+  //   rock = tryToMoveRight(rock, world);
+  //   print(world, rock);
+  // }
   return 3127;
 };
 
