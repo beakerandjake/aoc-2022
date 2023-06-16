@@ -95,16 +95,13 @@ const dropRock = (rock, stoppedRocks) => {
  * from alternating between pushing the rock with jets and falling the rock one unit.
  */
 const moveRockUntilStops = (rock, stoppedRocks, getNextJetBlast) => {
-  let currentRock = rock;
-  while (true) {
-    const afterJetBlast = pushRock(currentRock, stoppedRocks, getNextJetBlast());
-    const afterFall = dropRock(afterJetBlast, stoppedRocks);
-    // if the rock came to rest, then return its final location.
-    if (afterJetBlast === afterFall) {
-      return afterFall;
-    }
-    currentRock = afterFall;
+  let previous = null;
+  let current = rock;
+  while (current !== previous) {
+    previous = pushRock(current, stoppedRocks, getNextJetBlast());
+    current = dropRock(previous, stoppedRocks);
   }
+  return current;
 };
 
 /**
