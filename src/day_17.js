@@ -66,39 +66,39 @@ const spawnRock = (highestRockY, rockTemplate) => ({
 const rowsCollide = (lhs, rhs = 0) => (lhs & rhs) !== 0;
 
 /**
- * Returns a new rock representing the original rock after a jet blast was applied.
+ * Returns a new rock representing the original rock after a jet of hot gas pushes the rock one unit.
  * If the movement would cause any part of the rock to move into the walls, floor, or a stopped rock the original rock is returned.
  */
-const applyJetBlast = (rock, stoppedRocks, jetBlastFn) => {
+const pushRock = (rock, stoppedRocks, jetFn) => {
   const newPoints = conditionalMap(rock.rows, (row, index) => {
-    const pushed = jetBlastFn(row);
+    const pushed = jetFn(row);
     return rowsCollide(pushed, stoppedRocks[rock.y - index]) ? row : pushed;
   });
-  return newPoints === rock.rows ? rock : { ...rock, rows: newPoints };
+  return newPoints !== rock.rows ? { ...rock, rows: newPoints } : rock;
 };
 
 /**
  * Returns a new rock representing the original rock moved down one unit.
  * If the movement would cause any part of the rock to move into floor, or a stopped rock the original rock is returned.
  */
-const moveRockDown = (rock, stoppedRocks) => {
+const dropRock = (rock, stoppedRocks) => {
   const newY = rock.y - 1;
-  const canMoveDown = rock.rows.every((row, index) => {
+  const canDrop = rock.rows.every((row, index) => {
     const rowY = newY - index;
     return rowY >= 0 && !rowsCollide(row, stoppedRocks[rowY]);
   });
-  return canMoveDown ? { ...rock, y: newY } : rock;
+  return canDrop ? { ...rock, y: newY } : rock;
 };
 
 /**
  * Returns a new rock representing the original rock after it has come to rest
  * from alternating between pushing the rock with jets and falling the rock one unit.
  */
-const fallRockUntilLands = (rock, stoppedRocks, getNextJetBlast) => {
+const moveRockUntilStops = (rock, stoppedRocks, getNextJetBlast) => {
   let currentRock = rock;
   while (true) {
-    const afterJetBlast = applyJetBlast(currentRock, stoppedRocks, getNextJetBlast());
-    const afterFall = moveRockDown(afterJetBlast, stoppedRocks);
+    const afterJetBlast = pushRock(currentRock, stoppedRocks, getNextJetBlast());
+    const afterFall = dropRock(afterJetBlast, stoppedRocks);
     // if the rock came to rest, then return its final location.
     if (afterJetBlast === afterFall) {
       return afterFall;
@@ -128,16 +128,16 @@ const mergeRockIntoStoppedRocks = (rock, stoppedRocks) => {
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
-  const getNextJetBlast = loopingIterator(parseInput(lines[0]));
+  const getNextJet = loopingIterator(parseInput(lines[0]));
   const getNextRockToSpawn = loopingIterator(rockTemplates);
   const stoppedRocks = [];
   let remainingRocks = 2022;
 
   while (remainingRocks--) {
-    const newRock = fallRockUntilLands(
+    const newRock = moveRockUntilStops(
       spawnRock(stoppedRocks.length, getNextRockToSpawn()),
       stoppedRocks,
-      getNextJetBlast
+      getNextJet
     );
     mergeRockIntoStoppedRocks(newRock, stoppedRocks);
   }
