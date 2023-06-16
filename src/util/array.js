@@ -1,3 +1,5 @@
+import { equals } from './logic.js';
+
 /**
  * Removes the first element of the array.
  * Does not mutate the original array but instead returns a new copy.
@@ -114,7 +116,7 @@ export const loopingIterator = (items) => {
  * @param {Function} mapFn
  * @param {Function} conditionalFn
  */
-export const conditionalMap = (items, mapFn, conditionalFn) => {
+export const conditionalMap = (items, mapFn, conditionalFn = equals) => {
   const mappedItems = [];
   for (let index = 0; index < items.length; index++) {
     const original = items[index];
