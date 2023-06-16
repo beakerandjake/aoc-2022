@@ -83,22 +83,11 @@ const applyJetBlast = (rock, stoppedRocks, jetBlastFn) => {
  */
 const moveRockDown = (rock, stoppedRocks) => {
   const newY = rock.y - 1;
-
-  for (let y = newY; y > newY - rock.rows.length; y--) {
-    // if the downward movement causes the rock to clip the floor
-    // then nothing happens, return original rock.
-    if (y < 0) {
-      return rock;
-    }
-
-    // if the new position collides with any rock at rest
-    // then nothing happens, return the original rock.
-    if (rowsCollide(rock.rows[newY - y], stoppedRocks[y])) {
-      return rock;
-    }
-  }
-
-  return { ...rock, y: newY };
+  const canMoveDown = rock.rows.every((row, index) => {
+    const rowY = newY - index;
+    return rowY >= 0 && !rowsCollide(row, stoppedRocks[rowY]);
+  });
+  return canMoveDown ? { ...rock, y: newY } : rock;
 };
 
 /**
