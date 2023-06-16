@@ -70,9 +70,9 @@ const rowsCollide = (lhs, rhs = 0) => (lhs & rhs) !== 0;
  * If the movement would cause any part of the rock to move into the walls, floor, or a stopped rock the original rock is returned.
  */
 const applyJetBlast = (rock, stoppedRocks, jetBlastFn) => {
-  const newPoints = conditionalMap(rock.rows, (points, index) => {
-    const pushed = jetBlastFn(points);
-    return rowsCollide(pushed, stoppedRocks[rock.y - index]) ? points : pushed;
+  const newPoints = conditionalMap(rock.rows, (row, index) => {
+    const pushed = jetBlastFn(row);
+    return rowsCollide(pushed, stoppedRocks[rock.y - index]) ? row : pushed;
   });
   return newPoints === rock.rows ? rock : { ...rock, rows: newPoints };
 };
