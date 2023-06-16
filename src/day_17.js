@@ -119,22 +119,20 @@ const fallRockUntilLands = (rock, stoppedRocks, getNextJetBlast) => {
 };
 
 /**
- * Returns a new array which contains the newly stopped rock merged into the existing stopped rocks array.
+ * Merge the newly stopped rock merged into the existing stopped rocks array.
+ * This method mutates the stopped rocks array.
  */
 const mergeRockIntoStoppedRocks = (rock, stoppedRocks) => {
-  const toReturn = [...stoppedRocks];
   for (let index = rock.rows.length - 1; index >= 0; index--) {
     const y = rock.y - index;
     const points = rock.rows[index];
     if (y > stoppedRocks.length - 1) {
-      // if the row exists outside of the "world" then push the row into the world.
-      toReturn.push(points);
+      stoppedRocks.push(points);
     } else {
-      // otherwise merge the rock into the existing row.
-      toReturn[y] |= points;
+      // eslint-disable-next-line no-param-reassign
+      stoppedRocks[y] |= points;
     }
   }
-  return toReturn;
 };
 
 /**
@@ -143,7 +141,7 @@ const mergeRockIntoStoppedRocks = (rock, stoppedRocks) => {
 export const levelOne = ({ lines }) => {
   const getNextJetBlast = loopingIterator(parseInput(lines[0]));
   const getNextRockToSpawn = loopingIterator(rockTemplates);
-  let stoppedRocks = [];
+  const stoppedRocks = [];
   let remainingRocks = 2022;
 
   while (remainingRocks--) {
@@ -152,7 +150,7 @@ export const levelOne = ({ lines }) => {
       stoppedRocks,
       getNextJetBlast
     );
-    stoppedRocks = mergeRockIntoStoppedRocks(newRock, stoppedRocks);
+    mergeRockIntoStoppedRocks(newRock, stoppedRocks);
   }
 
   return stoppedRocks.length;
