@@ -3,8 +3,8 @@
  * Puzzle Description: https://adventofcode.com/2022/day/17
  */
 
-import { loopingIterator, range } from './util/array.js';
-import { isBitSet, leftShift, rightShift } from './util/bitwise.js';
+import { conditionalMap, loopingIterator, range } from './util/array.js';
+import { equals } from './util/logic.js';
 
 /**
  * Defines each rock and the order they fall in.
@@ -42,10 +42,21 @@ const rockTemplates = [
 const maxRoomIndex = 6;
 
 /**
- * Parse the input and return an array of jet blast directions.
- * true for left and false for right.
+ * Attempts to push all points on the row one unit to the left.
+ * If a point is already touching the left wall then the original points are returned.
  */
-const parseInput = (input) => [...input].map((x) => x === '<');
+const pushLeft = (row) => ((row & 0b1000000) === 0 ? row << 1 : row);
+
+/**
+ * Attempts to push all points on the row one unit to the right.
+ * If a point is already touching the right wall then the original points are returned.
+ */
+const pushRight = (row) => ((row & 0b0000001) === 0 ? row >> 1 : row);
+
+/**
+ * Parse the input and return an array of jet blast push functions.
+ */
+const parseInput = (input) => [...input].map((x) => (x === '<' ? pushLeft : pushRight));
 
 /**
  * Spawns a new instance of the rock template.
@@ -57,60 +68,9 @@ const spawnRock = (highestRockY, rockTemplate) => ({
 });
 
 /**
- * Returns true if the point at the x position in the row is not empty space.
- */
-const pointIsOccupied = (points, x) => isBitSet(points, maxRoomIndex - x);
-
-/**
- * Returns true if the left most point in the row is touching the left wall of the room.
- */
-const touchingLeftWall = (points) => pointIsOccupied(points, 0);
-
-/**
- * Returns true if the right most point in the row is touching the right wall of the room.
- */
-const touchingRightWall = (points) => pointIsOccupied(points, maxRoomIndex);
-
-/**
  * Returns true if any points in the rows collide.
  */
-const rowsCollide = (lhs = 0, rhs = 0) => (lhs & rhs) !== 0;
-
-/**
- * Returns a new rock representing the original rock after a jet blast was applied.
- * If the movement would cause any part of the rock to move into the walls, floor, or a stopped rock the original rock is returned.
- */
-const applyJetBlast = (isLeftBlast, rock, stoppedRocks) => {
-  const isTouchingWall = isLeftBlast ? touchingLeftWall : touchingRightWall;
-  const movePoints = isLeftBlast ? leftShift : rightShift;
-  const newPoints = [];
-
-  // apply the jet blast to each row of the rock.
-  // if any movement of any row cannot happen due to a collision
-  // then the original rock is returned.
-  for (let rowIndex = 0; rowIndex < rock.rows.length; rowIndex++) {
-    const current = rock.rows[rowIndex];
-
-    // if the rock cannot be blasted because its already touching a wall
-    // the nothing happens, return the original rock.
-    if (isTouchingWall(current)) {
-      return rock;
-    }
-
-    // blast the rock with the jet, shifting it to the left or the right.
-    const moved = movePoints(current);
-
-    if (rowsCollide(moved, stoppedRocks[rock.y - rowIndex])) {
-      // if the new position collides with any rock at rest
-      // then nothing happens, return the original rock.
-      return rock;
-    }
-
-    newPoints.push(moved);
-  }
-
-  return { ...rock, rows: newPoints };
-};
+const rowsCollide = (lhs, rhs = 0) => (lhs & rhs) !== 0;
 
 /**
  * Returns a new rock representing the original rock moved down one unit.
@@ -128,29 +88,12 @@ const moveRockDown = (rock, stoppedRocks) => {
 
     // if the new position collides with any rock at rest
     // then nothing happens, return the original rock.
-    if(rowsCollide(rock.rows[newY - y], stoppedRocks[y])) {
+    if (rowsCollide(rock.rows[newY - y], stoppedRocks[y])) {
       return rock;
     }
   }
 
   return { ...rock, y: newY };
-};
-
-/**
- * Returns a new rock representing the original rock after it has come to rest
- * from alternating between pushing the rock with jets and falling the rock one unit.
- */
-const fallRockUntilLands = (rock, stoppedRocks, getNextJetBlast) => {
-  let currentRock = rock;
-  while (true) {
-    const afterJetBlast = applyJetBlast(getNextJetBlast(), currentRock, stoppedRocks);
-    const afterFall = moveRockDown(afterJetBlast, stoppedRocks);
-    // if the rock came to rest, then return its final location.
-    if (afterJetBlast === afterFall) {
-      return afterFall;
-    }
-    currentRock = afterFall;
-  }
 };
 
 /**
@@ -170,6 +113,35 @@ const mergeRockIntoStoppedRocks = (rock, stoppedRocks) => {
     }
   }
   return toReturn;
+};
+
+/**
+ * Returns a new rock representing the original rock after a jet blast was applied.
+ * If the movement would cause any part of the rock to move into the walls, floor, or a stopped rock the original rock is returned.
+ */
+const applyJetBlast = (rock, stoppedRocks, jetBlastFn) => {
+  const newPoints = conditionalMap(rock.rows, (points, index) => {
+    const pushed = jetBlastFn(points);
+    return rowsCollide(pushed, stoppedRocks[rock.y - index]) ? points : pushed;
+  });
+  return newPoints === rock.rows ? rock : { ...rock, rows: newPoints };
+};
+
+/**
+ * Returns a new rock representing the original rock after it has come to rest
+ * from alternating between pushing the rock with jets and falling the rock one unit.
+ */
+const fallRockUntilLands = (rock, stoppedRocks, getNextJetBlast) => {
+  let currentRock = rock;
+  while (true) {
+    const afterJetBlast = applyJetBlast(currentRock, stoppedRocks, getNextJetBlast());
+    const afterFall = moveRockDown(afterJetBlast, stoppedRocks);
+    // if the rock came to rest, then return its final location.
+    if (afterJetBlast === afterFall) {
+      return afterFall;
+    }
+    currentRock = afterFall;
+  }
 };
 
 /**
