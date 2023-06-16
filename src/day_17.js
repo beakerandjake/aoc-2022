@@ -3,8 +3,7 @@
  * Puzzle Description: https://adventofcode.com/2022/day/17
  */
 
-import { conditionalMap, loopingIterator, range } from './util/array.js';
-import { equals } from './util/logic.js';
+import { conditionalMap, loopingIterator } from './util/array.js';
 
 /**
  * Defines each rock and the order they fall in.
@@ -34,12 +33,6 @@ const rockTemplates = [
   // ##
   [0b0011000, 0b0011000],
 ];
-
-/**
- * The room is 7 units wide, when bit packing a horizontal slice of the room
- * the max possible zero based index is 6.
- */
-const maxRoomIndex = 6;
 
 /**
  * Attempts to push all points on the row one unit to the left.
@@ -73,6 +66,18 @@ const spawnRock = (highestRockY, rockTemplate) => ({
 const rowsCollide = (lhs, rhs = 0) => (lhs & rhs) !== 0;
 
 /**
+ * Returns a new rock representing the original rock after a jet blast was applied.
+ * If the movement would cause any part of the rock to move into the walls, floor, or a stopped rock the original rock is returned.
+ */
+const applyJetBlast = (rock, stoppedRocks, jetBlastFn) => {
+  const newPoints = conditionalMap(rock.rows, (points, index) => {
+    const pushed = jetBlastFn(points);
+    return rowsCollide(pushed, stoppedRocks[rock.y - index]) ? points : pushed;
+  });
+  return newPoints === rock.rows ? rock : { ...rock, rows: newPoints };
+};
+
+/**
  * Returns a new rock representing the original rock moved down one unit.
  * If the movement would cause any part of the rock to move into floor, or a stopped rock the original rock is returned.
  */
@@ -97,6 +102,23 @@ const moveRockDown = (rock, stoppedRocks) => {
 };
 
 /**
+ * Returns a new rock representing the original rock after it has come to rest
+ * from alternating between pushing the rock with jets and falling the rock one unit.
+ */
+const fallRockUntilLands = (rock, stoppedRocks, getNextJetBlast) => {
+  let currentRock = rock;
+  while (true) {
+    const afterJetBlast = applyJetBlast(currentRock, stoppedRocks, getNextJetBlast());
+    const afterFall = moveRockDown(afterJetBlast, stoppedRocks);
+    // if the rock came to rest, then return its final location.
+    if (afterJetBlast === afterFall) {
+      return afterFall;
+    }
+    currentRock = afterFall;
+  }
+};
+
+/**
  * Returns a new array which contains the newly stopped rock merged into the existing stopped rocks array.
  */
 const mergeRockIntoStoppedRocks = (rock, stoppedRocks) => {
@@ -113,35 +135,6 @@ const mergeRockIntoStoppedRocks = (rock, stoppedRocks) => {
     }
   }
   return toReturn;
-};
-
-/**
- * Returns a new rock representing the original rock after a jet blast was applied.
- * If the movement would cause any part of the rock to move into the walls, floor, or a stopped rock the original rock is returned.
- */
-const applyJetBlast = (rock, stoppedRocks, jetBlastFn) => {
-  const newPoints = conditionalMap(rock.rows, (points, index) => {
-    const pushed = jetBlastFn(points);
-    return rowsCollide(pushed, stoppedRocks[rock.y - index]) ? points : pushed;
-  });
-  return newPoints === rock.rows ? rock : { ...rock, rows: newPoints };
-};
-
-/**
- * Returns a new rock representing the original rock after it has come to rest
- * from alternating between pushing the rock with jets and falling the rock one unit.
- */
-const fallRockUntilLands = (rock, stoppedRocks, getNextJetBlast) => {
-  let currentRock = rock;
-  while (true) {
-    const afterJetBlast = applyJetBlast(currentRock, stoppedRocks, getNextJetBlast());
-    const afterFall = moveRockDown(afterJetBlast, stoppedRocks);
-    // if the rock came to rest, then return its final location.
-    if (afterJetBlast === afterFall) {
-      return afterFall;
-    }
-    currentRock = afterFall;
-  }
 };
 
 /**
