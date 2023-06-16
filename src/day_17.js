@@ -3,7 +3,7 @@
  * Puzzle Description: https://adventofcode.com/2022/day/17
  */
 
-import { conditionalMap, loopingIterator } from './util/array.js';
+import { conditionalMap, loopingIterator, forEachReverse } from './util/array.js';
 
 /**
  * Defines each rock and the order they fall in.
@@ -109,16 +109,15 @@ const moveRockUntilStops = (rock, stoppedRocks, getNextJetBlast) => {
  * This method mutates the stopped rocks array.
  */
 const mergeRockIntoStoppedRocks = (rock, stoppedRocks) => {
-  for (let index = rock.rows.length - 1; index >= 0; index--) {
-    const y = rock.y - index;
-    const points = rock.rows[index];
-    if (y > stoppedRocks.length - 1) {
-      stoppedRocks.push(points);
+  forEachReverse(rock.rows, (row, index) => {
+    const rowY = rock.y - index;
+    if (rowY >= stoppedRocks.length) {
+      stoppedRocks.push(row);
     } else {
       // eslint-disable-next-line no-param-reassign
-      stoppedRocks[y] |= points;
+      stoppedRocks[rowY] |= row;
     }
-  }
+  });
 };
 
 /**
