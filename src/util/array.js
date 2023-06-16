@@ -102,3 +102,27 @@ export const loopingIterator = (items) => {
     return items[index];
   };
 };
+
+/**
+ * Attempts to return a new array populated with the results of calling a map function on every element in the calling array.
+ * Applies a conditional check which compares each original item to the mapped item.
+ * If a conditional check returns true then the map is cancelled and the original array is returned.
+ * If a conditional check returns false then the map continues with the next item.
+ * If all conditional checks return false then a new, mapped array is returned.
+ * If any conditional check returns true than the original, unmapped array is returned.
+ * @param {Array} items
+ * @param {Function} mapFn
+ * @param {Function} conditionalFn
+ */
+export const conditionalMap = (items, mapFn, conditionalFn) => {
+  const mappedItems = [];
+  for (let index = 0; index < items.length; index++) {
+    const original = items[index];
+    const mapped = mapFn(original, index);
+    if (conditionalFn(original, mapped)) {
+      return items;
+    }
+    mappedItems.push(mapped);
+  }
+  return mappedItems;
+};
