@@ -120,6 +120,8 @@ const mergeRockIntoStoppedRocks = (rock, stoppedRocks) => {
   });
 };
 
+const dropRocks = ()
+
 /**
  * Returns the solution for level one of this puzzle.
  */
@@ -142,8 +144,26 @@ export const levelOne = ({ lines }) => {
 };
 
 /**
+ * Checks to see if the stopped rocks have formed a pattern.
+ * If a pattern is found a new array is returned containing the pattern.
+ * Otherwise an empty array is returned.
+ */
+const extractLoop = (stoppedRocks) => {
+  if (stoppedRocks.length % 2 !== 0) {
+    return [];
+  }
+  const halfway = stoppedRocks.length / 2;
+  for (let index = 0; index < halfway; index++) {
+    if (stoppedRocks[index] !== stoppedRocks[halfway + index]) {
+      return [];
+    }
+  }
+  return stoppedRocks.slice(halfway);
+};
+
+/**
  * Returns the solution for level two of this puzzle.
  */
 export const levelTwo = ({ input, lines }) => {
-  // your code here
+  return 1234;
 };
