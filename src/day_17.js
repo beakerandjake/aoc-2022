@@ -4,7 +4,6 @@
  */
 
 import { conditionalMap, loopingIterator, forEachReverse } from './util/array.js';
-
 /**
  * Defines each rock and the order they fall in.
  * A rock is defined as an collection of rows representing the y axis (ascending).
@@ -120,27 +119,34 @@ const mergeRockIntoStoppedRocks = (rock, stoppedRocks) => {
   });
 };
 
-const dropRocks = ()
-
 /**
- * Returns the solution for level one of this puzzle.
+ * Drop rocks until the stop condition is met.
+ * Returns an array representing the state of the room.
  */
-export const levelOne = ({ lines }) => {
-  const getNextJet = loopingIterator(parseInput(lines[0]));
+const dropRocks = (input, stopConditionFn) => {
+  const getNextJet = loopingIterator(parseInput(input));
   const getNextRockToSpawn = loopingIterator(rockTemplates);
   const stoppedRocks = [];
-  let remainingRocks = 2022;
-
-  while (remainingRocks--) {
+  for (;;) {
     const newRock = moveRockUntilStops(
       spawnRock(stoppedRocks.length, getNextRockToSpawn()),
       stoppedRocks,
       getNextJet
     );
     mergeRockIntoStoppedRocks(newRock, stoppedRocks);
-  }
 
-  return stoppedRocks.length;
+    if (stopConditionFn(stoppedRocks)) {
+      return stoppedRocks;
+    }
+  }
+};
+
+/**
+ * Returns the solution for level one of this puzzle.
+ */
+export const levelOne = ({ lines }) => {
+  let dropCount = 0;
+  return dropRocks(lines[0], () => ++dropCount === 2022).length;
 };
 
 /**
@@ -164,6 +170,4 @@ const extractLoop = (stoppedRocks) => {
 /**
  * Returns the solution for level two of this puzzle.
  */
-export const levelTwo = ({ input, lines }) => {
-  return 1234;
-};
+export const levelTwo = async ({ lines }) => 1234;
