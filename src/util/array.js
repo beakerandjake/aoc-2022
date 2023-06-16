@@ -128,3 +128,16 @@ export const conditionalMap = (items, mapFn, conditionalFn = equals) => {
   }
   return mappedItems;
 };
+
+/**
+ * Iterates through the array in reverse and execute the provided function once for each element.
+ * @param {Array} items
+ * @param {Function} callbackFn
+ */
+export const forEachReverse = (items, callbackFn) => {
+  for (let index = items.length - 1; index >= 0; index--) {
+    if (callbackFn(items[index], index) === false) {
+      break;
+    }
+  }
+};
