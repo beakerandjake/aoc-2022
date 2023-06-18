@@ -141,3 +141,29 @@ export const forEachReverse = (items, callbackFn) => {
     }
   }
 };
+
+/**
+ * Converts an array to a string representation.
+ * @param {Array} items
+ * @param {Function} itemToStringFn
+ */
+export const arrayToString = (items, itemToStringFn = (x) => `${x}`) =>
+  `[${items.map(itemToStringFn).join(', ')}]`;
+
+/**
+ * Returns true if every element of the lhs array is equal to every element of the rhs array.
+ * @param {Array} lhs
+ * @param {Array} rhs
+ */
+export const arraysEqual = (lhs, rhs) => {
+  if (lhs === rhs) {
+    return true;
+  }
+  if (lhs === null || rhs === null) {
+    return false;
+  }
+  if (lhs.length !== rhs.length) {
+    return false;
+  }
+  return lhs.every((a, index) => a === rhs[index]);
+};
