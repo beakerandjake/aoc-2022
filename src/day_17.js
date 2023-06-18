@@ -3,7 +3,10 @@
  * Puzzle Description: https://adventofcode.com/2022/day/17
  */
 
-import { conditionalMap, loopingIterator, forEachReverse } from './util/array.js';
+import { writeFile } from 'node:fs/promises';
+import { conditionalMap, loopingIterator, forEachReverse, range } from './util/array.js';
+import { isBitSet } from './util/bitwise.js';
+
 /**
  * Defines each rock and the order they fall in.
  * A rock is defined as an collection of rows representing the y axis (ascending).
@@ -146,7 +149,7 @@ const dropRocks = (input, stopConditionFn) => {
  */
 export const levelOne = ({ lines }) => {
   let dropCount = 0;
-  return dropRocks(lines[0], () => ++dropCount === 2022).length;
+  return dropRocks(lines[0], () => ++dropCount === 5404).length;
 };
 
 /**
@@ -167,7 +170,82 @@ const extractLoop = (stoppedRocks) => {
   return stoppedRocks.slice(halfway);
 };
 
+const testCycle = (items, startIndex) => {
+  if (startIndex <= 1) {
+    return [];
+  }
+
+  for (let current = startIndex - 1; current >= 0; current--) {
+    if (items[current] === items[startIndex]) {
+      const length = startIndex - current;
+      if (current - length + 1 < 0) {
+        return [];
+      }
+      for (let j = 0; j < length; j++) {
+        if (items[current - j] !== items[startIndex - j]) {
+          return [];
+        }
+      }
+      return items.slice(current, startIndex);
+    }
+  }
+  return [];
+};
+
+/**
+ * Searches from the top of the stopped rocks down and looks for a repeating cycle of rocks.
+ * If a cycle is found, returns a new array containing the cycle.
+ * If no cycle is found an empty array is returned.
+ */
+const findCycle = (items) => {
+  if (items.length < 2) {
+    return [];
+  }
+
+  for (let index = items.length - 1; index >= 0; index--) {
+    const cycle = testCycle(items, index);
+    if (cycle.length > 0) {
+      return cycle;
+    }
+  }
+
+  return [];
+};
+
 /**
  * Returns the solution for level two of this puzzle.
  */
-export const levelTwo = async ({ lines }) => 1234;
+export const levelTwo = async ({ lines }) => {
+  const items = [5, 2, ...range(3), ...range(3), 6];
+  const cycle = findCycle(items);
+  console.log(`items: [${items.join(', ')}]`);
+  console.log('got a cycle!', cycle.length, 'items', cycle);
+
+  // let dropCount = 0;
+  // let cycle = [];
+  // const stoppedRocks = dropRocks(lines[0], (currentRocks) => {
+  //   if (++dropCount % 1000 === 0) {
+  //     cycle = findCycle(currentRocks);
+  //   }
+  //   return cycle.length > 0;
+  // });
+
+  // console.log('got a cycle!', cycle.length, 'items', cycle);
+
+  // // console.log('got some zeros', stoppedRocks.filter((x) => x > 127).length);
+  // await writeFile(
+  //   './test.txt',
+  //   stoppedRocks
+  //     .reverse()
+  //     .map((x) => {
+  //       const bits = [];
+  //       for (let index = 0; index <= 6; index++) {
+  //         bits.push(isBitSet(x, index) ? '#' : '.');
+  //       }
+  //       return bits.reverse().join('');
+  //     })
+  //     .join('\n')
+  // );
+
+  return 1234;
+};
