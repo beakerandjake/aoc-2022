@@ -4,7 +4,14 @@
  */
 
 import { writeFile } from 'node:fs/promises';
-import { conditionalMap, loopingIterator, forEachReverse, range } from './util/array.js';
+import {
+  conditionalMap,
+  loopingIterator,
+  forEachReverse,
+  range,
+  arrayToString,
+  arraysEqual,
+} from './util/array.js';
 import { isBitSet } from './util/bitwise.js';
 
 /**
@@ -192,21 +199,32 @@ const testCycle = (items, startIndex) => {
   return [];
 };
 
+const printArray = (items) => {
+  console.log(`[${items.join(', ')}]`);
+};
+
 /**
  * Searches from the top of the stopped rocks down and looks for a repeating cycle of rocks.
  * If a cycle is found, returns a new array containing the cycle.
  * If no cycle is found an empty array is returned.
  */
 const findCycle = (items) => {
-  if (items.length < 2) {
-    return [];
-  }
-
-  for (let index = items.length - 1; index >= 0; index--) {
-    const cycle = testCycle(items, index);
-    if (cycle.length > 0) {
-      return cycle;
+  for (let i = 0; i < items.length; i++) {
+    console.group(`search for loop at index ${i}`);
+    for (let j = i + 1; j < items.length; j++) {
+      if (items[i] === items[j]) {
+        console.log(`lhs slice from: ${i}-${j}, rhs slice from: ${j}-${j + i}`);
+        const lhs = items.slice(i, j);
+        const rhs = items.slice(j, j + (j - i));
+        console.log('lhsSlice', arrayToString(lhs));
+        console.log('rhsSlice', arrayToString(rhs));
+        if (arraysEqual(lhs, rhs)) {
+          console.log('got a loop!');
+          return lhs;
+        }
+      }
     }
+    console.groupEnd();
   }
 
   return [];
@@ -216,9 +234,15 @@ const findCycle = (items) => {
  * Returns the solution for level two of this puzzle.
  */
 export const levelTwo = async ({ lines }) => {
-  const items = [5, 2, ...range(3), ...range(3), 6];
+  console.log();
+  const items = [5, 2, 2, 4, 6];
+  console.log('items', arrayToString(items));
+  console.log(
+    'idexs',
+    arrayToString(items, (_, index) => index)
+  );
+
   const cycle = findCycle(items);
-  console.log(`items: [${items.join(', ')}]`);
   console.log('got a cycle!', cycle.length, 'items', cycle);
 
   // let dropCount = 0;
@@ -230,7 +254,7 @@ export const levelTwo = async ({ lines }) => {
   //   return cycle.length > 0;
   // });
 
-  // console.log('got a cycle!', cycle.length, 'items', cycle);
+  // console.log('got a cycle!', cycle.length, 'items', cycle.length);
 
   // // console.log('got some zeros', stoppedRocks.filter((x) => x > 127).length);
   // await writeFile(
