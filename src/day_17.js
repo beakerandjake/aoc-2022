@@ -245,25 +245,20 @@ const allItemsInCycleEqual = (items, startIndex, length) => {
  * If no cycle is found an empty array is returned.
  */
 const findCycle = (items) => {
-  const { length } = items;
-  for (let i = 0; i < length; i++) {
-    // console.group(`testing items[${i}] = ${items[i]}:`);
-    for (let j = i + 1; j <= length; j++) {
-      // console.log(`items[${j}]`);
+  // const { length } = items;
+  for (let i = 0; i < items.length; i++) {
+    // end search while number of remaining elements in array
+    // is less than number of elements in i through j.
+    const searchEnd = Math.floor((items.length - i) / 2) + i;
+    for (let j = i + 1; j < searchEnd; j++) {
       if (items[i] !== items[j]) {
         continue;
       }
       const cycleLength = j - i;
-      if (
-        cycleLength > 1 &&
-        cycleRepeats(items, i, cycleLength) &&
-        !allItemsInCycleEqual(items, i, cycleLength)
-      ) {
-        // console.groupEnd();
+      if (cycleLength > 1 && cycleRepeats(items, i, cycleLength)) {
         return { startIndex: i, items: items.slice(i, j) };
       }
     }
-    // console.groupEnd();
   }
 
   return null;
@@ -282,10 +277,10 @@ const testABunch = () => {
 
   let testCount = 0;
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 2; i++) {
     testCount++;
-    const cycle = randomArray(3000);
-    const junk = randomArray(randomInt(500)).map((x) => -(x + 1));
+    const cycle = randomArray(5000);
+    const junk = randomArray(randomInt(5000)).map((x) => -(x + 1));
     const items = [
       ...junk,
       ...cycle,
@@ -317,14 +312,16 @@ const testABunch = () => {
 };
 
 const testOne = () => {
-  const items = [0, 1, 2, 5, 7, 9, 15, 2, 2];
+  // const items = [0, 1, 2, 5, 7, 9, 15, 2, 2];
+  const z = randomArray(15000);
+  const items = [...randomArray(20000), ...z, ...z, ...z, ...z.slice(0, 40)];
 
   console.log();
-  console.log('items', arrayToString(items));
-  console.log(
-    'index',
-    arrayToString(items, (_, idx) => idx)
-  );
+  // console.log('items', arrayToString(items));
+  // console.log(
+  //   'index',
+  //   arrayToString(items, (_, idx) => idx)
+  // );
   const cycle = findCycle(items);
   // console.log('repeats', cycleRepeats(items, 2, 3));
   console.log(
@@ -343,23 +340,23 @@ const testReal = (lines) => {
   });
 
   // if (cycle) {
-  //   console.log(
-  //     'got a cycle!',
-  //     cycle.startIndex,
-  //     'items',
-  //     cycle.items.length,
-  //     'total length',
-  //     stoppedRocks.length
-  //   );
+    console.log(
+      'got a cycle!',
+      cycle.startIndex,
+      'items',
+      cycle.items.length,
+      'total length',
+      stoppedRocks.length
+    );
   // }
 };
 /**
  * Returns the solution for level two of this puzzle.
  */
 export const levelTwo = async ({ lines }) => {
-  testABunch();
+  // testABunch();
   // testOne();
-  // testReal(lines);
+  testReal(lines);
 
   // // console.log('got some zeros', stoppedRocks.filter((x) => x > 127).length);
   // await writeFile(
