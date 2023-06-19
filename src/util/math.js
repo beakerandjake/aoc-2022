@@ -19,3 +19,9 @@ export const multiply = (a, b) => a * b;
  * @param {Number} end
  */
 export const inRange = (value, start, end) => value >= start && value < end;
+
+/**
+ * Returns a random integer in range zero to max (exclusive).
+ * @param {Number} max - The max random integer value to use.
+ */
+export const randomInt = (max) => Math.floor(Math.random() * max);
