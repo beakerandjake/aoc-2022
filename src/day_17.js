@@ -189,12 +189,7 @@ const findCycle = (items) => {
     // only search while potential cycle length is smaller than remaining elements.
     const searchEnd = Math.floor((items.length - i) / 2) + i;
     for (let j = i + 1; j < searchEnd; j++) {
-      // cycle can only start if the first item repeats.
-      if (items[i] !== items[j]) {
-        continue;
-      }
-      const cycleLength = j - i;
-      if (cycleLength > 1 && cycleRepeats(items, i, cycleLength)) {
+      if (items[i] === items[j] && cycleRepeats(items, i, j - i)) {
         return { startIndex: i, items: items.slice(i, j) };
       }
     }
