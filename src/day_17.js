@@ -229,6 +229,16 @@ const cycleRepeats = (items, startIndex, length) => {
   return true;
 };
 
+const allItemsInCycleEqual = (items, startIndex, length) => {
+  const firstElement = items[startIndex];
+  for (let index = 0; index < length; index++) {
+    if (firstElement !== items[startIndex + index]) {
+      return false;
+    }
+  }
+  return true;
+};
+
 /**
  * Searches from the top of the stopped rocks down and looks for a repeating cycle of rocks.
  * If a cycle is found, returns a new array containing the cycle.
@@ -238,16 +248,17 @@ const findCycle = (items) => {
   const { length } = items;
   for (let i = 0; i < length; i++) {
     // console.group(`testing items[${i}] = ${items[i]}:`);
-    for (let j = i + 1; j < length; j++) {
+    for (let j = i + 1; j <= length; j++) {
       // console.log(`items[${j}]`);
       if (items[i] !== items[j]) {
         continue;
       }
-      if (cycleRepeats(items, i, j - i) && j - i > 1) {
-        const cycle = items.slice(i, j);
-        if (cycle.length === 1 || cycle.every((x) => cycle[0] === x)) {
-          continue;
-        }
+      const cycleLength = j - i;
+      if (
+        cycleLength > 1 &&
+        cycleRepeats(items, i, cycleLength) &&
+        !allItemsInCycleEqual(items, i, cycleLength)
+      ) {
         // console.groupEnd();
         return { startIndex: i, items: items.slice(i, j) };
       }
@@ -267,14 +278,14 @@ const itemz = [0, 1, 2, 5, 7, 9, 15, 2];
 // const itemz = [...randomArray(5), ...randItems, ...randItems, ...randItems.slice(0, 2)];
 
 const testABunch = () => {
-  // console.log();
+  console.log();
 
   let testCount = 0;
 
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 100; i++) {
     testCount++;
-    const cycle = randomArray(2500);
-    const junk = randomArray(158).map((x) => -(x + 1));
+    const cycle = randomArray(3000);
+    const junk = randomArray(randomInt(500)).map((x) => -(x + 1));
     const items = [
       ...junk,
       ...cycle,
@@ -302,7 +313,7 @@ const testABunch = () => {
     }
   }
 
-  // console.log(testCount);
+  console.log(testCount);
 };
 
 const testOne = () => {
@@ -325,7 +336,7 @@ const testReal = (lines) => {
   let dropCount = 0;
   let cycle = null;
   const stoppedRocks = dropRocks(lines[0], (currentRocks) => {
-    if (++dropCount % 10000 === 0) {
+    if (++dropCount % 1000 === 0) {
       cycle = findCycle(currentRocks);
     }
     return cycle !== null;
@@ -346,8 +357,8 @@ const testReal = (lines) => {
  * Returns the solution for level two of this puzzle.
  */
 export const levelTwo = async ({ lines }) => {
-  // testABunch();
-  testOne();
+  testABunch();
+  // testOne();
   // testReal(lines);
 
   // // console.log('got some zeros', stoppedRocks.filter((x) => x > 127).length);
