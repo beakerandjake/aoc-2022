@@ -134,15 +134,13 @@ const mergeRockIntoStoppedRocks = (rock, stoppedRocks) => {
  * Drop rocks until the stop condition is met.
  * Returns an array representing the state of the room.
  */
-const dropRocks = (input, stopConditionFn) => {
-  const getNextJet = loopingIterator(parseInput(input));
-  const getNextRockToSpawn = loopingIterator(rockTemplates);
+const dropRocks = (getNextJetFn, getNextRockFn, stopConditionFn) => {
   const stoppedRocks = [];
   for (;;) {
     const newRock = moveRockUntilStops(
-      spawnRock(stoppedRocks.length, getNextRockToSpawn()),
+      spawnRock(stoppedRocks.length, getNextRockFn()),
       stoppedRocks,
-      getNextJet
+      getNextJetFn
     );
     mergeRockIntoStoppedRocks(newRock, stoppedRocks);
 
@@ -157,24 +155,32 @@ const dropRocks = (input, stopConditionFn) => {
  */
 export const levelOne = ({ lines }) => {
   let dropCount = 0;
-  return dropRocks(lines[0], () => ++dropCount === 5404).length;
+  return dropRocks(
+    loopingIterator(parseInput(lines[0])),
+    loopingIterator(rockTemplates),
+    () => ++dropCount === 2022
+  ).length;
 };
 
-const cycleRepeats = (items, startIndex, length) => {
+/**
+ * Checks to see if the given elements from items[i -> i + cycleLength]
+ * Continually repeat until the end of the array.
+ */
+const cycleRepeats = (items, startIndex, cycleLength) => {
   // bail if cycle length is larger than than remaining items in array.
-  if (items.length - (startIndex + length) < length) {
+  if (items.length - (startIndex + cycleLength) < cycleLength) {
     return false;
   }
 
   // ensure each item in the cycle repeats until the end of the array.
   // allows incomplete cycles at the tail of the array.
-  for (let i = 0; i < length; i++) {
-    let skipIndex = startIndex + i + length;
+  for (let i = 0; i < cycleLength; i++) {
+    let skipIndex = startIndex + i + cycleLength;
     while (skipIndex < items.length) {
       if (items[i + startIndex] !== items[skipIndex]) {
         return false;
       }
-      skipIndex += length;
+      skipIndex += cycleLength;
     }
   }
   return true;
@@ -194,76 +200,17 @@ const findCycle = (items) => {
       }
     }
   }
-
   return null;
 };
 
-// const items = [5, 8, ...range(100000), ...range(100000), 0, 1];
-const randItems = range(6).map(() => randomInt(50));
+const simulateUntilCycleFound = (jetBlastIterator, rockTemplateIterator) => {};
 
-const randomArray = (count) => range(count).map(() => randomInt(50));
+/**
+ * Returns the solution for level two of this puzzle.
+ */
+export const levelTwo = async ({ lines }) => {
+  // need to get index of jet blast and rock when simulation stops.
 
-const itemz = [0, 1, 2, 5, 7, 9, 15, 2];
-// const itemz = [...randomArray(5), ...randItems, ...randItems, ...randItems.slice(0, 2)];
-
-const testABunch = () => {
-  console.log();
-
-  let testCount = 0;
-
-  for (let i = 0; i < 2; i++) {
-    testCount++;
-    const cycle = randomArray(5000);
-    const junk = randomArray(randomInt(5000)).map((x) => -(x + 1));
-    const items = [
-      ...junk,
-      ...cycle,
-      ...cycle,
-      ...cycle.slice(0, randomInt(cycle.length)),
-    ];
-    const foundCycle = findCycle(items);
-
-    if (foundCycle === null) {
-      console.log('got a null cycle');
-      break;
-    }
-
-    if (foundCycle.startIndex !== junk.length) {
-      console.log(
-        `cycle start index was: ${foundCycle.startIndex}, but junk length was: ${junk.length}`
-      );
-      console.log(`start: ${items[junk.length - 1]} end: ${items[items.length - 1]}`);
-      break;
-    }
-
-    if (foundCycle.items.length !== cycle.length) {
-      console.log('cycle length not right');
-      break;
-    }
-  }
-
-  console.log(testCount);
-};
-
-const testOne = () => {
-  // const items = [0, 1, 2, 5, 7, 9, 15, 2, 2];
-  const z = randomArray(15000);
-  const items = [...randomArray(20000), ...z, ...z, ...z, ...z.slice(0, 40)];
-
-  console.log();
-  // console.log('items', arrayToString(items));
-  // console.log(
-  //   'index',
-  //   arrayToString(items, (_, idx) => idx)
-  // );
-  const cycle = findCycle(items);
-  // console.log('repeats', cycleRepeats(items, 2, 3));
-  // console.log(
-  //   `got a cycle, start index: ${cycle?.startIndex}, length: ${cycle?.items.length}`
-  // );
-};
-
-const testReal = (lines) => {
   let dropCount = 0;
   let cycle = null;
   const stoppedRocks = dropRocks(lines[0], (currentRocks) => {
@@ -272,25 +219,6 @@ const testReal = (lines) => {
     }
     return cycle !== null;
   });
-
-  // if (cycle) {
-  console.log(
-    'got a cycle!',
-    cycle.startIndex,
-    'items',
-    cycle.items.length,
-    'total length',
-    stoppedRocks.length
-  );
-  // }
-};
-/**
- * Returns the solution for level two of this puzzle.
- */
-export const levelTwo = async ({ lines }) => {
-  // testABunch();
-  // testOne();
-  testReal(lines);
 
   // // console.log('got some zeros', stoppedRocks.filter((x) => x > 127).length);
   // await writeFile(
