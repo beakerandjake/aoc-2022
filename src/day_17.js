@@ -13,6 +13,7 @@ import {
   arraysEqual,
 } from './util/array.js';
 import { isBitSet } from './util/bitwise.js';
+import { randomInt } from './util/math.js';
 
 /**
  * Defines each rock and the order they fall in.
@@ -203,6 +204,15 @@ const printArray = (items) => {
   console.log(`[${items.join(', ')}]`);
 };
 
+const slicesEqual = (items, sliceLength, rhsStartIndex, lhsStartIndex) => {
+  for (let index = 0; index < sliceLength; index++) {
+    if (items[rhsStartIndex + index] !== items[lhsStartIndex + index]) {
+      return false;
+    }
+  }
+  return true;
+};
+
 /**
  * Searches from the top of the stopped rocks down and looks for a repeating cycle of rocks.
  * If a cycle is found, returns a new array containing the cycle.
@@ -210,40 +220,56 @@ const printArray = (items) => {
  */
 const findCycle = (items) => {
   for (let i = 0; i < items.length; i++) {
-    console.group(`search for loop at index ${i}`);
     for (let j = i + 1; j < items.length; j++) {
-      if (items[i] === items[j]) {
-        console.log(`lhs slice from: ${i}-${j}, rhs slice from: ${j}-${j + i}`);
-        const lhs = items.slice(i, j);
-        const rhs = items.slice(j, j + (j - i));
-        console.log('lhsSlice', arrayToString(lhs));
-        console.log('rhsSlice', arrayToString(rhs));
-        if (arraysEqual(lhs, rhs)) {
-          console.log('got a loop!');
-          return lhs;
-        }
+      const cycleLength = j - i;
+      if (items[i] !== items[j] || !slicesEqual(items, cycleLength, i, j)) {
+        continue;
       }
+
+      if (j + cycleLength === items.length) {
+        continue;
+      }
+
+      const itemsRemaining = items.length - (i + cycleLength * 2);
+
+      if (!slicesEqual(items, itemsRemaining, i, j + cycleLength)) {
+        continue;
+      }
+
+      return { startIndex: i, items: items.slice(i, j) };
     }
-    console.groupEnd();
   }
 
-  return [];
+  return null;
 };
+
+// const items = [5, 8, ...range(100000), ...range(100000), 0, 1];
+const randItems = range(2500).map(() => randomInt(50));
+
+const randomArray = (count) => range(count).map(() => randomInt(50));
+
+// const items = [0, 1, 2, 1, 2, 3, 1, 2, 3, 1, 2, 6, 1, 2, 3, 1, 2, 3, 1, 2, 6, 1, 2];
+const items = [
+  ...randomArray(120),
+  ...randItems,
+  ...randItems,
+  ...randItems.slice(0, 25),
+];
 
 /**
  * Returns the solution for level two of this puzzle.
  */
 export const levelTwo = async ({ lines }) => {
-  console.log();
-  const items = [5, 2, 2, 4, 6];
-  console.log('items', arrayToString(items));
-  console.log(
-    'idexs',
-    arrayToString(items, (_, index) => index)
-  );
-
+  // console.log();
+  // console.log('items', arrayToString(items));
+  // console.log(
+  //   'index',
+  //   arrayToString(items, (_, idx) => idx)
+  // );
   const cycle = findCycle(items);
-  console.log('got a cycle!', cycle.length, 'items', cycle);
+  // console.log(
+  //   `got a cycle, start index: ${cycle?.startIndex}, length: ${cycle?.items.length}`
+  // );
 
   // let dropCount = 0;
   // let cycle = [];
