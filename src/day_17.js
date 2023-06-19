@@ -200,14 +200,30 @@ const testCycle = (items, startIndex) => {
   return [];
 };
 
-const printArray = (items) => {
-  console.log(`[${items.join(', ')}]`);
-};
-
 const slicesEqual = (items, sliceLength, rhsStartIndex, lhsStartIndex) => {
   for (let index = 0; index < sliceLength; index++) {
     if (items[rhsStartIndex + index] !== items[lhsStartIndex + index]) {
       return false;
+    }
+  }
+  return true;
+};
+
+const cycleRepeats = (items, startIndex, length) => {
+  // bail if cycle length is larger than than remaining items in array.
+  if (items.length - (startIndex + length) < length) {
+    return false;
+  }
+
+  // ensure each item in the cycle repeats until the end of the array.
+  // allows incomplete cycles at the tail of the array.
+  for (let i = 0; i < length; i++) {
+    let skipIndex = startIndex + i + length;
+    while (skipIndex < items.length) {
+      if (items[i + startIndex] !== items[skipIndex]) {
+        return false;
+      }
+      skipIndex += length;
     }
   }
   return true;
@@ -219,68 +235,120 @@ const slicesEqual = (items, sliceLength, rhsStartIndex, lhsStartIndex) => {
  * If no cycle is found an empty array is returned.
  */
 const findCycle = (items) => {
-  for (let i = 0; i < items.length; i++) {
-    for (let j = i + 1; j < items.length; j++) {
-      const cycleLength = j - i;
-      if (items[i] !== items[j] || !slicesEqual(items, cycleLength, i, j)) {
+  const { length } = items;
+  for (let i = 0; i < length; i++) {
+    // console.group(`testing items[${i}] = ${items[i]}:`);
+    for (let j = i + 1; j < length; j++) {
+      // console.log(`items[${j}]`);
+      if (items[i] !== items[j]) {
         continue;
       }
-
-      if (j + cycleLength === items.length) {
-        continue;
+      if (cycleRepeats(items, i, j - i) && j - i > 1) {
+        const cycle = items.slice(i, j);
+        if (cycle.length === 1 || cycle.every((x) => cycle[0] === x)) {
+          continue;
+        }
+        // console.groupEnd();
+        return { startIndex: i, items: items.slice(i, j) };
       }
-
-      const itemsRemaining = items.length - (i + cycleLength * 2);
-
-      if (!slicesEqual(items, itemsRemaining, i, j + cycleLength)) {
-        continue;
-      }
-
-      return { startIndex: i, items: items.slice(i, j) };
     }
+    // console.groupEnd();
   }
 
   return null;
 };
 
 // const items = [5, 8, ...range(100000), ...range(100000), 0, 1];
-const randItems = range(2500).map(() => randomInt(50));
+const randItems = range(6).map(() => randomInt(50));
 
 const randomArray = (count) => range(count).map(() => randomInt(50));
 
-// const items = [0, 1, 2, 1, 2, 3, 1, 2, 3, 1, 2, 6, 1, 2, 3, 1, 2, 3, 1, 2, 6, 1, 2];
-const items = [
-  ...randomArray(120),
-  ...randItems,
-  ...randItems,
-  ...randItems.slice(0, 25),
-];
+const itemz = [0, 1, 2, 5, 7, 9, 15, 2];
+// const itemz = [...randomArray(5), ...randItems, ...randItems, ...randItems.slice(0, 2)];
 
+const testABunch = () => {
+  // console.log();
+
+  let testCount = 0;
+
+  for (let i = 0; i < 7; i++) {
+    testCount++;
+    const cycle = randomArray(2500);
+    const junk = randomArray(158).map((x) => -(x + 1));
+    const items = [
+      ...junk,
+      ...cycle,
+      ...cycle,
+      ...cycle.slice(0, randomInt(cycle.length)),
+    ];
+    const foundCycle = findCycle(items);
+
+    if (foundCycle === null) {
+      console.log('got a null cycle');
+      break;
+    }
+
+    if (foundCycle.startIndex !== junk.length) {
+      console.log(
+        `cycle start index was: ${foundCycle.startIndex}, but junk length was: ${junk.length}`
+      );
+      console.log(`start: ${items[junk.length - 1]} end: ${items[items.length - 1]}`);
+      break;
+    }
+
+    if (foundCycle.items.length !== cycle.length) {
+      console.log('cycle length not right');
+      break;
+    }
+  }
+
+  // console.log(testCount);
+};
+
+const testOne = () => {
+  const items = [0, 1, 2, 5, 7, 9, 15, 2, 2];
+
+  console.log();
+  console.log('items', arrayToString(items));
+  console.log(
+    'index',
+    arrayToString(items, (_, idx) => idx)
+  );
+  const cycle = findCycle(items);
+  // console.log('repeats', cycleRepeats(items, 2, 3));
+  console.log(
+    `got a cycle, start index: ${cycle?.startIndex}, length: ${cycle?.items.length}`
+  );
+};
+
+const testReal = (lines) => {
+  let dropCount = 0;
+  let cycle = null;
+  const stoppedRocks = dropRocks(lines[0], (currentRocks) => {
+    if (++dropCount % 10000 === 0) {
+      cycle = findCycle(currentRocks);
+    }
+    return cycle !== null;
+  });
+
+  // if (cycle) {
+  //   console.log(
+  //     'got a cycle!',
+  //     cycle.startIndex,
+  //     'items',
+  //     cycle.items.length,
+  //     'total length',
+  //     stoppedRocks.length
+  //   );
+  // }
+};
 /**
  * Returns the solution for level two of this puzzle.
  */
 export const levelTwo = async ({ lines }) => {
-  // console.log();
-  // console.log('items', arrayToString(items));
-  // console.log(
-  //   'index',
-  //   arrayToString(items, (_, idx) => idx)
-  // );
-  const cycle = findCycle(items);
-  // console.log(
-  //   `got a cycle, start index: ${cycle?.startIndex}, length: ${cycle?.items.length}`
-  // );
-
-  // let dropCount = 0;
-  // let cycle = [];
-  // const stoppedRocks = dropRocks(lines[0], (currentRocks) => {
-  //   if (++dropCount % 1000 === 0) {
-  //     cycle = findCycle(currentRocks);
-  //   }
-  //   return cycle.length > 0;
-  // });
-
-  // console.log('got a cycle!', cycle.length, 'items', cycle.length);
+  // testABunch();
+  testOne();
+  // testReal(lines);
 
   // // console.log('got some zeros', stoppedRocks.filter((x) => x > 127).length);
   // await writeFile(
