@@ -160,55 +160,6 @@ export const levelOne = ({ lines }) => {
   return dropRocks(lines[0], () => ++dropCount === 5404).length;
 };
 
-/**
- * Checks to see if the stopped rocks have formed a pattern.
- * If a pattern is found a new array is returned containing the pattern.
- * Otherwise an empty array is returned.
- */
-const extractLoop = (stoppedRocks) => {
-  if (stoppedRocks.length % 2 !== 0) {
-    return [];
-  }
-  const halfway = stoppedRocks.length / 2;
-  for (let index = 0; index < halfway; index++) {
-    if (stoppedRocks[index] !== stoppedRocks[halfway + index]) {
-      return [];
-    }
-  }
-  return stoppedRocks.slice(halfway);
-};
-
-const testCycle = (items, startIndex) => {
-  if (startIndex <= 1) {
-    return [];
-  }
-
-  for (let current = startIndex - 1; current >= 0; current--) {
-    if (items[current] === items[startIndex]) {
-      const length = startIndex - current;
-      if (current - length + 1 < 0) {
-        return [];
-      }
-      for (let j = 0; j < length; j++) {
-        if (items[current - j] !== items[startIndex - j]) {
-          return [];
-        }
-      }
-      return items.slice(current, startIndex);
-    }
-  }
-  return [];
-};
-
-const slicesEqual = (items, sliceLength, rhsStartIndex, lhsStartIndex) => {
-  for (let index = 0; index < sliceLength; index++) {
-    if (items[rhsStartIndex + index] !== items[lhsStartIndex + index]) {
-      return false;
-    }
-  }
-  return true;
-};
-
 const cycleRepeats = (items, startIndex, length) => {
   // bail if cycle length is larger than than remaining items in array.
   if (items.length - (startIndex + length) < length) {
@@ -229,28 +180,16 @@ const cycleRepeats = (items, startIndex, length) => {
   return true;
 };
 
-const allItemsInCycleEqual = (items, startIndex, length) => {
-  const firstElement = items[startIndex];
-  for (let index = 0; index < length; index++) {
-    if (firstElement !== items[startIndex + index]) {
-      return false;
-    }
-  }
-  return true;
-};
-
 /**
- * Searches from the top of the stopped rocks down and looks for a repeating cycle of rocks.
- * If a cycle is found, returns a new array containing the cycle.
- * If no cycle is found an empty array is returned.
+ * Search the stopped rocks and detect if a repeating cycle of rocks has formed.
+ * If no cycle is found, null is returned.
  */
 const findCycle = (items) => {
-  // const { length } = items;
   for (let i = 0; i < items.length; i++) {
-    // end search while number of remaining elements in array
-    // is less than number of elements in i through j.
+    // only search while potential cycle length is smaller than remaining elements.
     const searchEnd = Math.floor((items.length - i) / 2) + i;
     for (let j = i + 1; j < searchEnd; j++) {
+      // cycle can only start if the first item repeats.
       if (items[i] !== items[j]) {
         continue;
       }
@@ -324,9 +263,9 @@ const testOne = () => {
   // );
   const cycle = findCycle(items);
   // console.log('repeats', cycleRepeats(items, 2, 3));
-  console.log(
-    `got a cycle, start index: ${cycle?.startIndex}, length: ${cycle?.items.length}`
-  );
+  // console.log(
+  //   `got a cycle, start index: ${cycle?.startIndex}, length: ${cycle?.items.length}`
+  // );
 };
 
 const testReal = (lines) => {
@@ -340,14 +279,14 @@ const testReal = (lines) => {
   });
 
   // if (cycle) {
-    console.log(
-      'got a cycle!',
-      cycle.startIndex,
-      'items',
-      cycle.items.length,
-      'total length',
-      stoppedRocks.length
-    );
+  console.log(
+    'got a cycle!',
+    cycle.startIndex,
+    'items',
+    cycle.items.length,
+    'total length',
+    stoppedRocks.length
+  );
   // }
 };
 /**
