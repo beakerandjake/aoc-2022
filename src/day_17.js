@@ -187,7 +187,10 @@ export const levelTwo = (() => {
       const searchEnd = Math.floor((world.length - i) / 2) + i;
       for (let j = i + 1; j < searchEnd; j++) {
         if (world[i] === world[j] && cycleRepeats(world, i, j - i)) {
-          return { worldStartIndex: i, height: j - i };
+          return {
+            startHeight: i + 1,
+            endHeight: j + 1,
+          };
         }
       }
     }
@@ -197,21 +200,19 @@ export const levelTwo = (() => {
   /**
    * Calculates and returns information about the repeating cycle the world settled into.
    */
-  const calculateCycleInformation = (cycle, heightHistory) => {
-    const startHeight = cycle.worldStartIndex + 1;
-    const startRockCount = heightHistory.findIndex((height) => height >= startHeight);
-    const endHeight = startHeight + cycle.height;
-    const endRockCount = heightHistory.findIndex((height) => height >= endHeight);
+  const calculateCycleInformation = ({ startHeight, endHeight }, heightHistory) => {
+    const startRockIndex = heightHistory.findIndex((height) => height >= startHeight);
+    const endRockIndex = heightHistory.findIndex((height) => height >= endHeight);
     const heightOffsets = [];
-    for (let rockIndex = startRockCount; rockIndex <= endRockCount; rockIndex++) {
+    for (let rockIndex = startRockIndex; rockIndex <= endRockIndex; rockIndex++) {
       heightOffsets.push(heightHistory[rockIndex] - startHeight);
     }
     return {
-      predecessorRockCount: startRockCount,
-      rockCount: endRockCount - startRockCount,
+      predecessorRockCount: startRockIndex + 1,
+      rockCount: endRockIndex - startRockIndex,
       startHeight,
       heightOffsets,
-      totalHeight: cycle.height,
+      totalHeight: endHeight - startHeight,
     };
   };
 
@@ -224,7 +225,7 @@ export const levelTwo = (() => {
     let cycle = null;
 
     dropRocks(input, (world) => {
-      heightHistory.push(world.length - 1);
+      heightHistory.push(world.length);
       // check for a cycle every 1000 rocks.
       if (heightHistory.length % 1000 === 0) {
         cycle = findCycle(world);
