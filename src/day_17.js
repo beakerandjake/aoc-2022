@@ -207,6 +207,10 @@ export const levelTwo = (() => {
     return toReturn.join('');
   };
 
+  const writeWorldToFile = async (world) => {
+    await writeArrayToFile(world.map(rowToString).reverse(), './world.txt');
+  };
+
   const writeHistoryToFile = async (history) => {
     const pad = (x) => String(x).padStart(5, ' ');
     const toWrite = history.map(
@@ -219,6 +223,18 @@ export const levelTwo = (() => {
     writeArrayToFile(toWrite.reverse(), './history.txt');
   };
 
+  const writeCycleToFile = async (cycle) => {
+    await writeArrayToFile(cycle.map(rowToString).reverse(), './cycle.txt');
+  };
+
+  const dropNRocksAndPrint = async (input, n) => {
+    const jetIterator = loopingIterator(parseInput(input));
+    const rockIterator = loopingIterator(rockTemplates);
+    let rockCount = 0;
+    const world = dropRocks(jetIterator, rockIterator, () => ++rockCount === n);
+    await writeWorldToFile(world);
+  };
+
   const calculateCycleInformation = async (cycle, history) => {
     const worldStartIndex = cycle.startIndex;
     const historyStartIndex = history.findIndex(
@@ -229,16 +245,22 @@ export const levelTwo = (() => {
       ({ topOfWorldIndex }) => topOfWorldIndex >= worldEndIndex
     );
 
-    const startHeight = history[historyStartIndex].topOfWorldIndex + 1;
+    const startHeight = history[historyStartIndex].topOfWorldIndex;
 
     const heightOffsets = [];
     for (let index = historyStartIndex; index <= historyEndIndex; index++) {
-      heightOffsets.push(history[index].topOfWorldIndex + 1 - startHeight);
+      heightOffsets.push(history[index].topOfWorldIndex - startHeight);
     }
 
+    // console.log('test', historyEndIndex - historyStartIndex);
+
+    // console.log(
+    //   `world start index: ${cycle.startIndex}, cycle length: ${cycle.items.length}`
+    // );
+
     return {
-      predecessorRockCount: cycle.startIndex + 1,
-      rockCount: heightOffsets.length,
+      predecessorRockCount: historyStartIndex,
+      rockCount: historyEndIndex - historyStartIndex,
       startHeight,
       heightOffsets,
       totalHeight: heightOffsets[heightOffsets.length - 1],
@@ -246,11 +268,12 @@ export const levelTwo = (() => {
   };
 
   const testIt = async (input) => {
+    console.log();
     const jetIterator = loopingIterator(parseInput(input));
     const rockIterator = loopingIterator(rockTemplates);
     const history = [];
     let cycle = null;
-    dropRocks(jetIterator, rockIterator, (world) => {
+    const finalWorld = dropRocks(jetIterator, rockIterator, (world) => {
       history.push({
         rockIndex: rockIterator.lastIndexReturned,
         jetIndex: jetIterator.lastIndexReturned,
@@ -265,6 +288,10 @@ export const levelTwo = (() => {
       return cycle !== null;
     });
 
+    // await writeWorldToFile(finalWorld);
+    // await writeHistoryToFile(history);
+    // await writeCycleToFile(cycle.items);
+
     return calculateCycleInformation(cycle, history);
   };
 
@@ -274,20 +301,19 @@ export const levelTwo = (() => {
     const numberOfCycles = Math.floor(numberOfRocks / cycleInformation.rockCount);
     const incompleteCycles = numberOfRocks % cycleInformation.rockCount;
     const potentialHeight =
-      cycleInformation.startHeight + numberOfCycles * cycleInformation.totalHeight;
-    console.log('cycle info', cycleInformation);
-    console.log('number of cycles', numberOfCycles);
-    console.log('test height', potentialHeight);
-    console.log(
-      `incomplete count ${incompleteCycles}, additional height: ${
-        cycleInformation.heightOffsets[incompleteCycles] + potentialHeight
-      }`
-    );
-    // await writeArrayToFile(world.reverse().map(rowToString), './world.txt');
+      cycleInformation.startHeight +
+      numberOfCycles * cycleInformation.totalHeight +
+      cycleInformation.heightOffsets[incompleteCycles];
+    // console.log('cycle info', cycleInformation);
+    // console.log('number of cycles', numberOfCycles);
+    // console.log('test height', potentialHeight);
+    // console.log(
+    //   `incomplete count ${incompleteCycles}, additional height: ${
+    //     cycleInformation.heightOffsets[incompleteCycles] + potentialHeight
+    //   }`
+    // );
+    // console.log('correct', potentialHeight === 1514285714288);
 
-    //1472222222213
-    //1514285714288
-
-    return 1234;
+    return potentialHeight;
   };
 })();
