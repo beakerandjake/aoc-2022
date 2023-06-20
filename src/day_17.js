@@ -2,14 +2,7 @@
  * Contains solutions for Day 17
  * Puzzle Description: https://adventofcode.com/2022/day/17
  */
-import {
-  conditionalMap,
-  forEachReverse,
-  arrayToString,
-  loopingIterator,
-} from './util/array.js';
-import { writeArrayToFile } from './util/io.js';
-import { isBitSet } from './util/bitwise.js';
+import { conditionalMap, forEachReverse, loopingIterator } from './util/array.js';
 
 /**
  * Defines each rock and the order they fall in.
@@ -125,8 +118,6 @@ const mergeRockIntoWorld = (rock, world) => {
     }
   });
 };
-
-const iteratorItem = (iteratorFn) => () => iteratorFn().item;
 
 /**
  * Drop rocks until the stop condition is met.
