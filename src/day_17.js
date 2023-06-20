@@ -241,11 +241,11 @@ export const levelTwo = (() => {
     const cycle = dropUntilCycle(lines[0]);
     const numberOfRocks = 1_000_000_000_000 - cycle.predecessorRockCount;
     const numberOfCycles = Math.floor(numberOfRocks / cycle.rockCount);
-    const incompleteCycles = numberOfRocks % cycle.rockCount;
+    const remainingRocks = numberOfRocks % cycle.rockCount;
     return (
       cycle.startHeight +
       numberOfCycles * cycle.totalHeight +
-      cycle.heightOffsets[incompleteCycles]
+      cycle.heightOffsets[remainingRocks]
     );
   };
 })();
