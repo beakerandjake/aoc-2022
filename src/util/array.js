@@ -94,15 +94,18 @@ export const range = (size, start = 0) =>
  * Expects an immutable array of items whose length does not change.
  * @param {Array} items
  */
-export const loopingIterator = (items) => {
+export const loopingIterator = (items, startingIndex = 0) => {
   const { length } = items;
-  let index = -1;
-  return () => {
+  let index = startingIndex;
+  const iterator = () => {
+    const toReturn = items[index];
+    iterator.lastIndexReturned = index;
     if (++index === length) {
       index = 0;
     }
-    return items[index];
+    return toReturn;
   };
+  return iterator;
 };
 
 /**
