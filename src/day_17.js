@@ -183,74 +183,66 @@ export const levelTwo = (() => {
       const searchEnd = Math.floor((world.length - i) / 2) + i;
       for (let j = i + 1; j < searchEnd; j++) {
         if (world[i] === world[j] && cycleRepeats(world, i, j - i)) {
-          return { startIndex: i, items: world.slice(i, j) };
+          return { worldStartIndex: i, height: j - i };
         }
       }
     }
     return null;
   };
 
-  const calculateCycleInformation = (cycle, heightHistory) => {
-    const worldStartIndex = cycle.startIndex;
-    const historyStartIndex = heightHistory.findIndex(
-      (height) => height >= worldStartIndex
-    );
-    const worldEndIndex = worldStartIndex + cycle.items.length;
-    const historyEndIndex = heightHistory.findIndex((height) => height >= worldEndIndex);
-
-    const startHeight = heightHistory[historyStartIndex];
-
+  /**
+   * Calculates and returns information about the repeating cycle the world settled into.
+   */
+  const calculateCycleInformation = (cycle, rockMaxHeights) => {
+    const startHeight = cycle.worldStartIndex + 1;
+    const startRockCount = rockMaxHeights.findIndex((height) => height >= startHeight);
+    const endHeight = startHeight + cycle.height;
+    const endRockCount = rockMaxHeights.findIndex((height) => height >= endHeight);
     const heightOffsets = [];
-    for (let index = historyStartIndex; index <= historyEndIndex; index++) {
-      heightOffsets.push(heightHistory[index] - startHeight);
+    for (let rockIndex = startRockCount; rockIndex <= endRockCount; rockIndex++) {
+      heightOffsets.push(rockMaxHeights[rockIndex] - startHeight);
     }
-
     return {
-      predecessorRockCount: historyStartIndex,
-      rockCount: historyEndIndex - historyStartIndex,
+      predecessorRockCount: startRockCount,
+      rockCount: endRockCount - startRockCount,
       startHeight,
       heightOffsets,
-      totalHeight: heightOffsets[heightOffsets.length - 1],
+      totalHeight: cycle.height,
     };
   };
 
-  const testIt = (input) => {
+  /**
+   * Continually drops rocks until the world settles into a repeating cycle.
+   * Returns information about the cycle.
+   */
+  const dropRocksUntilCycleAppears = (input) => {
     const jetIterator = loopingIterator(parseInput(input));
     const rockIterator = loopingIterator(rockTemplates);
-    const rockHeightHistory = [];
+    const rockMaxHeights = [];
     let cycle = null;
-    dropRocks(jetIterator, rockIterator, (world) => {
-      rockHeightHistory.push(world.length - 1);
 
-      if (rockHeightHistory.length % 1000 === 0) {
+    dropRocks(jetIterator, rockIterator, (world) => {
+      rockMaxHeights.push(world.length - 1);
+      // check for a cycle every 1000 rocks.
+      if (rockMaxHeights.length % 1000 === 0) {
         cycle = findCycle(world);
       }
-
+      // stop dropping when a cycle appears.
       return cycle !== null;
     });
 
-    return calculateCycleInformation(cycle, rockHeightHistory);
+    return calculateCycleInformation(cycle, rockMaxHeights);
   };
 
   return ({ lines }) => {
-    const cycleInformation = testIt(lines[0]);
+    const cycleInformation = dropRocksUntilCycleAppears(lines[0]);
     const numberOfRocks = 1_000_000_000_000 - cycleInformation.predecessorRockCount;
     const numberOfCycles = Math.floor(numberOfRocks / cycleInformation.rockCount);
     const incompleteCycles = numberOfRocks % cycleInformation.rockCount;
-    const potentialHeight =
+    return (
       cycleInformation.startHeight +
       numberOfCycles * cycleInformation.totalHeight +
-      cycleInformation.heightOffsets[incompleteCycles];
-    // console.log('cycle info', cycleInformation);
-    // console.log('number of cycles', numberOfCycles);
-    // console.log('test height', potentialHeight);
-    // console.log(
-    //   `incomplete count ${incompleteCycles}, additional height: ${
-    //     cycleInformation.heightOffsets[incompleteCycles] + potentialHeight
-    //   }`
-    // );
-    // console.log('correct', potentialHeight === 1514285714288);
-
-    return potentialHeight;
+      cycleInformation.heightOffsets[incompleteCycles]
+    );
   };
 })();
