@@ -2,18 +2,7 @@
  * Contains solutions for Day 17
  * Puzzle Description: https://adventofcode.com/2022/day/17
  */
-
-import { writeFile } from 'node:fs/promises';
-import {
-  conditionalMap,
-  loopingIterator,
-  forEachReverse,
-  range,
-  arrayToString,
-  arraysEqual,
-} from './util/array.js';
-import { isBitSet } from './util/bitwise.js';
-import { randomInt } from './util/math.js';
+import { conditionalMap, loopingIterator, forEachReverse } from './util/array.js';
 
 /**
  * Defines each rock and the order they fall in.
@@ -79,23 +68,23 @@ const rowsCollide = (lhs, rhs = 0) => (lhs & rhs) !== 0;
  * Returns a new rock representing the original rock after a jet of hot gas pushes the rock one unit.
  * If the movement would cause any part of the rock to move into the walls, floor, or a stopped rock the original rock is returned.
  */
-const pushRock = (rock, stoppedRocks, jetFn) => {
-  const newPoints = conditionalMap(rock.rows, (row, index) => {
+const pushRock = (rock, world, jetFn) => {
+  const newRows = conditionalMap(rock.rows, (row, index) => {
     const pushed = jetFn(row);
-    return rowsCollide(pushed, stoppedRocks[rock.y - index]) ? row : pushed;
+    return rowsCollide(pushed, world[rock.y - index]) ? row : pushed;
   });
-  return newPoints !== rock.rows ? { ...rock, rows: newPoints } : rock;
+  return newRows !== rock.rows ? { ...rock, rows: newRows } : rock;
 };
 
 /**
  * Returns a new rock representing the original rock moved down one unit.
  * If the movement would cause any part of the rock to move into floor, or a stopped rock the original rock is returned.
  */
-const dropRock = (rock, stoppedRocks) => {
+const dropRock = (rock, world) => {
   const newY = rock.y - 1;
   const canDrop = rock.rows.every((row, index) => {
     const rowY = newY - index;
-    return rowY >= 0 && !rowsCollide(row, stoppedRocks[rowY]);
+    return rowY >= 0 && !rowsCollide(row, world[rowY]);
   });
   return canDrop ? { ...rock, y: newY } : rock;
 };
@@ -104,12 +93,12 @@ const dropRock = (rock, stoppedRocks) => {
  * Returns a new rock representing the original rock after it has come to rest
  * from alternating between pushing the rock with jets and falling the rock one unit.
  */
-const moveRockUntilStops = (rock, stoppedRocks, getNextJetBlast) => {
+const moveRockUntilStops = (rock, world, getNextJetBlast) => {
   let previous = null;
   let current = rock;
   while (current !== previous) {
-    previous = pushRock(current, stoppedRocks, getNextJetBlast());
-    current = dropRock(previous, stoppedRocks);
+    previous = pushRock(current, world, getNextJetBlast());
+    current = dropRock(previous, world);
   }
   return current;
 };
@@ -118,14 +107,14 @@ const moveRockUntilStops = (rock, stoppedRocks, getNextJetBlast) => {
  * Merge the newly stopped rock merged into the existing stopped rocks array.
  * This method mutates the stopped rocks array.
  */
-const mergeRockIntoStoppedRocks = (rock, stoppedRocks) => {
+const mergeRockIntoWorld = (rock, world) => {
   forEachReverse(rock.rows, (row, index) => {
     const rowY = rock.y - index;
-    if (rowY >= stoppedRocks.length) {
-      stoppedRocks.push(row);
+    if (rowY >= world.length) {
+      world.push(row);
     } else {
       // eslint-disable-next-line no-param-reassign
-      stoppedRocks[rowY] |= row;
+      world[rowY] |= row;
     }
   });
 };
@@ -135,17 +124,13 @@ const mergeRockIntoStoppedRocks = (rock, stoppedRocks) => {
  * Returns an array representing the state of the room.
  */
 const dropRocks = (getNextJetFn, getNextRockFn, stopConditionFn) => {
-  const stoppedRocks = [];
+  const world = [];
   for (;;) {
-    const newRock = moveRockUntilStops(
-      spawnRock(stoppedRocks.length, getNextRockFn()),
-      stoppedRocks,
-      getNextJetFn
-    );
-    mergeRockIntoStoppedRocks(newRock, stoppedRocks);
-
-    if (stopConditionFn(stoppedRocks)) {
-      return stoppedRocks;
+    const rock = spawnRock(world.length, getNextRockFn());
+    const stopped = moveRockUntilStops(rock, world, getNextJetFn);
+    mergeRockIntoWorld(stopped, world);
+    if (stopConditionFn(world)) {
+      return world;
     }
   }
 };
@@ -203,37 +188,30 @@ const findCycle = (items) => {
   return null;
 };
 
-const simulateUntilCycleFound = (jetBlastIterator, rockTemplateIterator) => {};
+const simulateUntilCycleFound = (jetBlastIterator, rockTemplateIterator) => {
+  let dropCount = 0;
+  let cycle = null;
+  const stoppedRocks = dropRocks(
+    jetBlastIterator,
+    rockTemplateIterator,
+    (currentRocks) => {
+      if (++dropCount % 1000 === 0) {
+        cycle = findCycle(currentRocks);
+      }
+      return cycle !== null;
+    }
+  );
+  return { cycle: cycle.items, heightBeforeCycle: cycle.startIndex - 1 };
+};
 
 /**
  * Returns the solution for level two of this puzzle.
  */
 export const levelTwo = async ({ lines }) => {
   // need to get index of jet blast and rock when simulation stops.
-
-  let dropCount = 0;
-  let cycle = null;
-  const stoppedRocks = dropRocks(lines[0], (currentRocks) => {
-    if (++dropCount % 1000 === 0) {
-      cycle = findCycle(currentRocks);
-    }
-    return cycle !== null;
-  });
-
-  // // console.log('got some zeros', stoppedRocks.filter((x) => x > 127).length);
-  // await writeFile(
-  //   './test.txt',
-  //   stoppedRocks
-  //     .reverse()
-  //     .map((x) => {
-  //       const bits = [];
-  //       for (let index = 0; index <= 6; index++) {
-  //         bits.push(isBitSet(x, index) ? '#' : '.');
-  //       }
-  //       return bits.reverse().join('');
-  //     })
-  //     .join('\n')
-  // );
-
+  const tempJetIterator = loopingIterator(parseInput(lines[0]));
+  const tempRockIterator = loopingIterator(rockTemplates);
+  const cycle = simulateUntilCycleFound(tempJetIterator, tempRockIterator);
+  console.log('got a cycle', cycle.items.length);
   return 1234;
 };
