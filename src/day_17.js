@@ -2,7 +2,12 @@
  * Contains solutions for Day 17
  * Puzzle Description: https://adventofcode.com/2022/day/17
  */
-import { conditionalMap, loopingIterator, forEachReverse } from './util/array.js';
+import {
+  conditionalMap,
+  forEachReverse,
+  arrayToString,
+  loopingIterator,
+} from './util/array.js';
 
 /**
  * Defines each rock and the order they fall in.
@@ -119,6 +124,8 @@ const mergeRockIntoWorld = (rock, world) => {
   });
 };
 
+const iteratorItem = (iteratorFn) => () => iteratorFn().item;
+
 /**
  * Drop rocks until the stop condition is met.
  * Returns an array representing the state of the room.
@@ -148,70 +155,88 @@ export const levelOne = ({ lines }) => {
 };
 
 /**
- * Checks to see if the given elements from items[i -> i + cycleLength]
- * Continually repeat until the end of the array.
- */
-const cycleRepeats = (items, startIndex, cycleLength) => {
-  // bail if cycle length is larger than than remaining items in array.
-  if (items.length - (startIndex + cycleLength) < cycleLength) {
-    return false;
-  }
-
-  // ensure each item in the cycle repeats until the end of the array.
-  // allows incomplete cycles at the tail of the array.
-  for (let i = 0; i < cycleLength; i++) {
-    let skipIndex = startIndex + i + cycleLength;
-    while (skipIndex < items.length) {
-      if (items[i + startIndex] !== items[skipIndex]) {
-        return false;
-      }
-      skipIndex += cycleLength;
-    }
-  }
-  return true;
-};
-
-/**
- * Search the stopped rocks and detect if a repeating cycle of rocks has formed.
- * If no cycle is found, null is returned.
- */
-const findCycle = (items) => {
-  for (let i = 0; i < items.length; i++) {
-    // only search while potential cycle length is smaller than remaining elements.
-    const searchEnd = Math.floor((items.length - i) / 2) + i;
-    for (let j = i + 1; j < searchEnd; j++) {
-      if (items[i] === items[j] && cycleRepeats(items, i, j - i)) {
-        return { startIndex: i, items: items.slice(i, j) };
-      }
-    }
-  }
-  return null;
-};
-
-const simulateUntilCycleFound = (jetBlastIterator, rockTemplateIterator) => {
-  let dropCount = 0;
-  let cycle = null;
-  const stoppedRocks = dropRocks(
-    jetBlastIterator,
-    rockTemplateIterator,
-    (currentRocks) => {
-      if (++dropCount % 1000 === 0) {
-        cycle = findCycle(currentRocks);
-      }
-      return cycle !== null;
-    }
-  );
-  return { cycle: cycle.items, heightBeforeCycle: cycle.startIndex - 1 };
-};
-
-/**
  * Returns the solution for level two of this puzzle.
  */
-export const levelTwo = async ({ lines }) => {
-  // need to get index of jet blast and rock when simulation stops.
-  const tempJetIterator = loopingIterator(parseInput(lines[0]));
-  const tempRockIterator = loopingIterator(rockTemplates);
-  const cycle = simulateUntilCycleFound(tempJetIterator, tempRockIterator);
-  console.log('got a cycle', cycle.items.length);
-  return 1234;
-};
+export const levelTwo = (() => {
+  /**
+   * Checks to see if the cycle of rock patterns repeats through the end of the world.
+   */
+  const cycleRepeats = (world, startIndex, cycleLength) => {
+    // bail if cycle length is larger than than remaining items in array.
+    if (world.length - (startIndex + cycleLength) < cycleLength) {
+      return false;
+    }
+    // ensure each item in the cycle repeats until the end of the array.
+    // allow incomplete cycles at the tail of the array.
+    for (let i = 0; i < cycleLength; i++) {
+      let skipIndex = startIndex + i + cycleLength;
+      while (skipIndex < world.length) {
+        if (world[i + startIndex] !== world[skipIndex]) {
+          return false;
+        }
+        skipIndex += cycleLength;
+      }
+    }
+    return true;
+  };
+
+  /**
+   * Search the world and detect if a repeating cycle of rocks has formed.
+   * Returns null if no cycle is found
+   */
+  const findCycle = (world) => {
+    for (let i = 0; i < world.length; i++) {
+      // only search while potential cycle length is smaller than remaining elements.
+      const searchEnd = Math.floor((world.length - i) / 2) + i;
+      for (let j = i + 1; j < searchEnd; j++) {
+        if (world[i] === world[j] && cycleRepeats(world, i, j - i)) {
+          return { startIndex: i, items: world.slice(i, j) };
+        }
+      }
+    }
+    return null;
+  };
+
+  const testIt = (input) => {
+    const jetIterator = loopingIterator(parseInput(input));
+    const rockIterator = loopingIterator(rockTemplates);
+    const history = [];
+    const stoppedRocks = dropRocks(jetIterator, rockIterator, (world) => {
+      history.push({
+        rockIndex: rockIterator.lastIndexReturned,
+        jetIndex: jetIterator.lastIndexReturned,
+        topOfWorld: world[world.length - 1],
+        topOfWorldIndex: world[world.length - 1],
+      });
+
+      if (history.length === 2022) {
+        return true;
+      }
+      // if (++dropCount % 1000 === 0) {
+      //   cycle = findCycle(currentRocks);
+      // }
+      // return cycle !== null;
+    });
+  };
+
+  const simulateUntilCycleFound = (jetBlastIterator, rockTemplateIterator) => {
+    let dropCount = 0;
+    let cycle = null;
+    const stoppedRocks = dropRocks(
+      jetBlastIterator,
+      rockTemplateIterator,
+      (currentRocks) => {
+        if (++dropCount % 1000 === 0) {
+          cycle = findCycle(currentRocks);
+        }
+        return cycle !== null;
+      }
+    );
+    return { cycle: cycle.items, heightBeforeCycle: cycle.startIndex - 1 };
+  };
+
+  return ({ lines }) => {
+    testIt(lines[0]);
+    return 1234;
+  };
+})();
