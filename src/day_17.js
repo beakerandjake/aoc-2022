@@ -8,6 +8,8 @@ import {
   arrayToString,
   loopingIterator,
 } from './util/array.js';
+import { writeArrayToFile } from './util/io.js';
+import { isBitSet } from './util/bitwise.js';
 
 /**
  * Defines each rock and the order they fall in.
@@ -197,46 +199,56 @@ export const levelTwo = (() => {
     return null;
   };
 
-  const testIt = (input) => {
+  const rowToString = (row) => {
+    const toReturn = [];
+    for (let index = 0; index <= 6; index++) {
+      toReturn.push(isBitSet(row, 6 - index) ? '#' : '.');
+    }
+    return toReturn.join('');
+  };
+
+  const writeHistoryToFile = async (history) => {
+    const pad = (x) => String(x).padStart(5, ' ');
+    const toWrite = history.map(
+      ({ rockIndex, jetIndex, topOfWorld, topOfWorldIndex }, index) =>
+        `${pad(index)} - rock: ${pad(rockIndex)}, jet: ${pad(jetIndex)}, topIndex: ${pad(
+          topOfWorldIndex
+        )}, world: ${rowToString(topOfWorld)}`
+    );
+
+    writeArrayToFile(toWrite.reverse(), './history.txt');
+  };
+
+  const testIt = async (input) => {
     const jetIterator = loopingIterator(parseInput(input));
     const rockIterator = loopingIterator(rockTemplates);
     const history = [];
-    const stoppedRocks = dropRocks(jetIterator, rockIterator, (world) => {
+    let cycle = null;
+    const toReturn = dropRocks(jetIterator, rockIterator, (world) => {
       history.push({
         rockIndex: rockIterator.lastIndexReturned,
         jetIndex: jetIterator.lastIndexReturned,
         topOfWorld: world[world.length - 1],
-        topOfWorldIndex: world[world.length - 1],
+        topOfWorldIndex: world.length - 1,
       });
 
-      if (history.length === 2022) {
-        return true;
-      }
-      // if (++dropCount % 1000 === 0) {
-      //   cycle = findCycle(currentRocks);
+      // if (history.length % 1000 === 0) {
+      cycle = findCycle(world);
       // }
-      // return cycle !== null;
-    });
-  };
 
-  const simulateUntilCycleFound = (jetBlastIterator, rockTemplateIterator) => {
-    let dropCount = 0;
-    let cycle = null;
-    const stoppedRocks = dropRocks(
-      jetBlastIterator,
-      rockTemplateIterator,
-      (currentRocks) => {
-        if (++dropCount % 1000 === 0) {
-          cycle = findCycle(currentRocks);
-        }
         return cycle !== null;
-      }
-    );
-    return { cycle: cycle.items, heightBeforeCycle: cycle.startIndex - 1 };
+    });
+    // console.log(
+    //   `cycle start index: ${cycle.startIndex}, length: ${cycle.items.length}, world length: ${toReturn.length}`
+    // );
+    // await writeArrayToFile(cycle.items.reverse().map(rowToString), 'cycle.txt');
+    await writeHistoryToFile(history);
+    return { world: toReturn, history, cycle };
   };
 
-  return ({ lines }) => {
-    testIt(lines[0]);
+  return async ({ lines }) => {
+    const { world, history, cycle } = await testIt(lines[0]);
+    // await writeArrayToFile(world.reverse().map(rowToString), './world.txt');
     return 1234;
   };
 })();
