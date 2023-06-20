@@ -197,14 +197,14 @@ export const levelTwo = (() => {
   /**
    * Calculates and returns information about the repeating cycle the world settled into.
    */
-  const calculateCycleInformation = (cycle, rockMaxHeights) => {
+  const calculateCycleInformation = (cycle, heightHistory) => {
     const startHeight = cycle.worldStartIndex + 1;
-    const startRockCount = rockMaxHeights.findIndex((height) => height >= startHeight);
+    const startRockCount = heightHistory.findIndex((height) => height >= startHeight);
     const endHeight = startHeight + cycle.height;
-    const endRockCount = rockMaxHeights.findIndex((height) => height >= endHeight);
+    const endRockCount = heightHistory.findIndex((height) => height >= endHeight);
     const heightOffsets = [];
     for (let rockIndex = startRockCount; rockIndex <= endRockCount; rockIndex++) {
-      heightOffsets.push(rockMaxHeights[rockIndex] - startHeight);
+      heightOffsets.push(heightHistory[rockIndex] - startHeight);
     }
     return {
       predecessorRockCount: startRockCount,
@@ -220,20 +220,20 @@ export const levelTwo = (() => {
    * Returns information about the cycle.
    */
   const dropUntilCycle = (input) => {
-    const rockMaxHeights = [];
+    const heightHistory = [];
     let cycle = null;
 
     dropRocks(input, (world) => {
-      rockMaxHeights.push(world.length - 1);
+      heightHistory.push(world.length - 1);
       // check for a cycle every 1000 rocks.
-      if (rockMaxHeights.length % 1000 === 0) {
+      if (heightHistory.length % 1000 === 0) {
         cycle = findCycle(world);
       }
       // continue dropping if cycle is not found.
       return cycle === null;
     });
 
-    return calculateCycleInformation(cycle, rockMaxHeights);
+    return calculateCycleInformation(cycle, heightHistory);
   };
 
   return ({ lines }) => {
