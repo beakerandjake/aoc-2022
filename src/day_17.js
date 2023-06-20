@@ -123,14 +123,17 @@ const mergeRockIntoWorld = (rock, world) => {
  * Drop rocks until the stop condition is met.
  * Returns an array representing the state of the room.
  */
-const dropRocks = (getNextJetFn, getNextRockFn, stopConditionFn) => {
+const dropRocks = (input, rockStoppedCallback) => {
+  const rockIterator = loopingIterator(rockTemplates);
+  const jetIterator = loopingIterator(parseInput(input));
   const world = [];
   for (;;) {
-    const rock = spawnRock(world.length, getNextRockFn());
-    const stopped = moveRockUntilStops(rock, world, getNextJetFn);
+    const rock = spawnRock(world.length, rockIterator());
+    const stopped = moveRockUntilStops(rock, world, jetIterator);
     mergeRockIntoWorld(stopped, world);
-    if (stopConditionFn(world)) {
-      return world;
+    // simulate until callback explicitly returns false.
+    if (rockStoppedCallback(world) === false) {
+      break;
     }
   }
 };
@@ -140,11 +143,12 @@ const dropRocks = (getNextJetFn, getNextRockFn, stopConditionFn) => {
  */
 export const levelOne = ({ lines }) => {
   let dropCount = 0;
-  return dropRocks(
-    loopingIterator(parseInput(lines[0])),
-    loopingIterator(rockTemplates),
-    () => ++dropCount === 2022
-  ).length;
+  let height = 0;
+  dropRocks(lines[0], (world) => {
+    height = world.length;
+    return ++dropCount !== 2022;
+  });
+  return height;
 };
 
 /**
@@ -215,34 +219,32 @@ export const levelTwo = (() => {
    * Continually drops rocks until the world settles into a repeating cycle.
    * Returns information about the cycle.
    */
-  const dropRocksUntilCycleAppears = (input) => {
-    const jetIterator = loopingIterator(parseInput(input));
-    const rockIterator = loopingIterator(rockTemplates);
+  const dropUntilCycle = (input) => {
     const rockMaxHeights = [];
     let cycle = null;
 
-    dropRocks(jetIterator, rockIterator, (world) => {
+    dropRocks(input, (world) => {
       rockMaxHeights.push(world.length - 1);
       // check for a cycle every 1000 rocks.
       if (rockMaxHeights.length % 1000 === 0) {
         cycle = findCycle(world);
       }
-      // stop dropping when a cycle appears.
-      return cycle !== null;
+      // continue dropping if cycle is not found.
+      return cycle === null;
     });
 
     return calculateCycleInformation(cycle, rockMaxHeights);
   };
 
   return ({ lines }) => {
-    const cycleInformation = dropRocksUntilCycleAppears(lines[0]);
-    const numberOfRocks = 1_000_000_000_000 - cycleInformation.predecessorRockCount;
-    const numberOfCycles = Math.floor(numberOfRocks / cycleInformation.rockCount);
-    const incompleteCycles = numberOfRocks % cycleInformation.rockCount;
+    const cycle = dropUntilCycle(lines[0]);
+    const numberOfRocks = 1_000_000_000_000 - cycle.predecessorRockCount;
+    const numberOfCycles = Math.floor(numberOfRocks / cycle.rockCount);
+    const incompleteCycles = numberOfRocks % cycle.rockCount;
     return (
-      cycleInformation.startHeight +
-      numberOfCycles * cycleInformation.totalHeight +
-      cycleInformation.heightOffsets[incompleteCycles]
+      cycle.startHeight +
+      numberOfCycles * cycle.totalHeight +
+      cycle.heightOffsets[incompleteCycles]
     );
   };
 })();
