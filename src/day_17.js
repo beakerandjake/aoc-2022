@@ -199,64 +199,20 @@ export const levelTwo = (() => {
     return null;
   };
 
-  const rowToString = (row) => {
-    const toReturn = [];
-    for (let index = 0; index <= 6; index++) {
-      toReturn.push(isBitSet(row, 6 - index) ? '#' : '.');
-    }
-    return toReturn.join('');
-  };
-
-  const writeWorldToFile = async (world) => {
-    await writeArrayToFile(world.map(rowToString).reverse(), './world.txt');
-  };
-
-  const writeHistoryToFile = async (history) => {
-    const pad = (x) => String(x).padStart(5, ' ');
-    const toWrite = history.map(
-      ({ rockIndex, jetIndex, topOfWorld, topOfWorldIndex }, index) =>
-        `${pad(index)} - rock: ${pad(rockIndex)}, jet: ${pad(jetIndex)}, topIndex: ${pad(
-          topOfWorldIndex
-        )}, world: ${rowToString(topOfWorld)}`
-    );
-
-    writeArrayToFile(toWrite.reverse(), './history.txt');
-  };
-
-  const writeCycleToFile = async (cycle) => {
-    await writeArrayToFile(cycle.map(rowToString).reverse(), './cycle.txt');
-  };
-
-  const dropNRocksAndPrint = async (input, n) => {
-    const jetIterator = loopingIterator(parseInput(input));
-    const rockIterator = loopingIterator(rockTemplates);
-    let rockCount = 0;
-    const world = dropRocks(jetIterator, rockIterator, () => ++rockCount === n);
-    await writeWorldToFile(world);
-  };
-
-  const calculateCycleInformation = async (cycle, history) => {
+  const calculateCycleInformation = (cycle, heightHistory) => {
     const worldStartIndex = cycle.startIndex;
-    const historyStartIndex = history.findIndex(
-      ({ topOfWorldIndex }) => topOfWorldIndex >= worldStartIndex
+    const historyStartIndex = heightHistory.findIndex(
+      (height) => height >= worldStartIndex
     );
     const worldEndIndex = worldStartIndex + cycle.items.length;
-    const historyEndIndex = history.findIndex(
-      ({ topOfWorldIndex }) => topOfWorldIndex >= worldEndIndex
-    );
+    const historyEndIndex = heightHistory.findIndex((height) => height >= worldEndIndex);
 
-    const startHeight = history[historyStartIndex].topOfWorldIndex;
+    const startHeight = heightHistory[historyStartIndex];
 
     const heightOffsets = [];
     for (let index = historyStartIndex; index <= historyEndIndex; index++) {
-      heightOffsets.push(history[index].topOfWorldIndex - startHeight);
+      heightOffsets.push(heightHistory[index] - startHeight);
     }
-
-    // console.log('test', historyEndIndex - historyStartIndex);
-
-    // console.log(
-    //   `world start index: ${cycle.startIndex}, cycle length: ${cycle.items.length}`
-    // );
 
     return {
       predecessorRockCount: historyStartIndex,
@@ -267,36 +223,26 @@ export const levelTwo = (() => {
     };
   };
 
-  const testIt = async (input) => {
-    console.log();
+  const testIt = (input) => {
     const jetIterator = loopingIterator(parseInput(input));
     const rockIterator = loopingIterator(rockTemplates);
-    const history = [];
+    const rockHeightHistory = [];
     let cycle = null;
-    const finalWorld = dropRocks(jetIterator, rockIterator, (world) => {
-      history.push({
-        rockIndex: rockIterator.lastIndexReturned,
-        jetIndex: jetIterator.lastIndexReturned,
-        topOfWorld: world[world.length - 1],
-        topOfWorldIndex: world.length - 1,
-      });
+    dropRocks(jetIterator, rockIterator, (world) => {
+      rockHeightHistory.push(world.length - 1);
 
-      if (history.length % 1000 === 0) {
+      if (rockHeightHistory.length % 1000 === 0) {
         cycle = findCycle(world);
       }
 
       return cycle !== null;
     });
 
-    // await writeWorldToFile(finalWorld);
-    // await writeHistoryToFile(history);
-    // await writeCycleToFile(cycle.items);
-
-    return calculateCycleInformation(cycle, history);
+    return calculateCycleInformation(cycle, rockHeightHistory);
   };
 
-  return async ({ lines }) => {
-    const cycleInformation = await testIt(lines[0]);
+  return ({ lines }) => {
+    const cycleInformation = testIt(lines[0]);
     const numberOfRocks = 1_000_000_000_000 - cycleInformation.predecessorRockCount;
     const numberOfCycles = Math.floor(numberOfRocks / cycleInformation.rockCount);
     const incompleteCycles = numberOfRocks % cycleInformation.rockCount;
