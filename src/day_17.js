@@ -219,12 +219,38 @@ export const levelTwo = (() => {
     writeArrayToFile(toWrite.reverse(), './history.txt');
   };
 
+  const calculateCycleInformation = async (cycle, history) => {
+    const worldStartIndex = cycle.startIndex;
+    const historyStartIndex = history.findIndex(
+      ({ topOfWorldIndex }) => topOfWorldIndex >= worldStartIndex
+    );
+    const worldEndIndex = worldStartIndex + cycle.items.length;
+    const historyEndIndex = history.findIndex(
+      ({ topOfWorldIndex }) => topOfWorldIndex >= worldEndIndex
+    );
+
+    const startHeight = history[historyStartIndex].topOfWorldIndex + 1;
+
+    const heightOffsets = [];
+    for (let index = historyStartIndex; index <= historyEndIndex; index++) {
+      heightOffsets.push(history[index].topOfWorldIndex + 1 - startHeight);
+    }
+
+    return {
+      predecessorRockCount: cycle.startIndex + 1,
+      rockCount: heightOffsets.length,
+      startHeight,
+      heightOffsets,
+      totalHeight: heightOffsets[heightOffsets.length - 1],
+    };
+  };
+
   const testIt = async (input) => {
     const jetIterator = loopingIterator(parseInput(input));
     const rockIterator = loopingIterator(rockTemplates);
     const history = [];
     let cycle = null;
-    const toReturn = dropRocks(jetIterator, rockIterator, (world) => {
+    dropRocks(jetIterator, rockIterator, (world) => {
       history.push({
         rockIndex: rockIterator.lastIndexReturned,
         jetIndex: jetIterator.lastIndexReturned,
@@ -232,23 +258,36 @@ export const levelTwo = (() => {
         topOfWorldIndex: world.length - 1,
       });
 
-      // if (history.length % 1000 === 0) {
-      cycle = findCycle(world);
-      // }
+      if (history.length % 1000 === 0) {
+        cycle = findCycle(world);
+      }
 
-        return cycle !== null;
+      return cycle !== null;
     });
-    // console.log(
-    //   `cycle start index: ${cycle.startIndex}, length: ${cycle.items.length}, world length: ${toReturn.length}`
-    // );
-    // await writeArrayToFile(cycle.items.reverse().map(rowToString), 'cycle.txt');
-    await writeHistoryToFile(history);
-    return { world: toReturn, history, cycle };
+
+    return calculateCycleInformation(cycle, history);
   };
 
   return async ({ lines }) => {
-    const { world, history, cycle } = await testIt(lines[0]);
+    const cycleInformation = await testIt(lines[0]);
+    const numberOfRocks = 1_000_000_000_000 - cycleInformation.predecessorRockCount;
+    const numberOfCycles = Math.floor(numberOfRocks / cycleInformation.rockCount);
+    const incompleteCycles = numberOfRocks % cycleInformation.rockCount;
+    const potentialHeight =
+      cycleInformation.startHeight + numberOfCycles * cycleInformation.totalHeight;
+    console.log('cycle info', cycleInformation);
+    console.log('number of cycles', numberOfCycles);
+    console.log('test height', potentialHeight);
+    console.log(
+      `incomplete count ${incompleteCycles}, additional height: ${
+        cycleInformation.heightOffsets[incompleteCycles] + potentialHeight
+      }`
+    );
     // await writeArrayToFile(world.reverse().map(rowToString), './world.txt');
+
+    //1472222222213
+    //1514285714288
+
     return 1234;
   };
 })();
