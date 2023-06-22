@@ -4,11 +4,6 @@
  */
 import { toNumber } from './util/string.js';
 
-const ORE = 0;
-const CLAY = 1;
-const OBSIDIAN = 2;
-const GEODE = 3;
-
 /**
  * Regex to capture all numbers in a string.
  */
@@ -19,18 +14,64 @@ const digitRegex = /(\d+)/g;
  */
 const parseLine = (line) => {
   const matches = line.match(digitRegex).map(toNumber);
-  return [
-    [matches[1], 0, 0], // Ore robot
-    [matches[2], 0, 0], // Clay robot
-    [matches[3], matches[4], 0], // Obsidian robot
-    [matches[5], 0, matches[6]], // Geode robot
-  ];
+  return {
+    id: matches[0],
+    robots: [
+      [matches[1], 0, 0], // Ore
+      [matches[2], 0, 0], // Clay
+      [matches[3], matches[4], 0], // Obsidian
+      [matches[5], 0, matches[6]], // Geode
+    ],
+  };
 };
 
 /**
  * Parse a blueprint from each line of the input.
  */
 const parseLines = (lines) => lines.map(parseLine);
+
+/**
+ * Returns the element in the ore position.
+ */
+const ore = (items) => items[0];
+
+/**
+ * Returns the element in the clay position.
+ */
+const clay = (items) => items[1];
+
+/**
+ * Returns the element in the obsidian position.
+ */
+const obsidian = (items) => items[2];
+
+/**
+ * Returns the element in the geode position.
+ */
+const geode = (items) => items[3];
+
+const resourcesToString = (arr) =>
+  `o: ${ore(arr)}, c: ${clay(arr)}, ob: ${obsidian(arr)}, g: ${geode(arr)}`;
+
+const getTotalResources = (minutes, resources, robots) =>
+  resources.map((x, idx) => x + robots[idx] * minutes);
+
+/**
+ * Are there enough resources to build the robot?
+ */
+const canBuildRobot = (resources, robotBlueprint) =>
+  robotBlueprint.every((cost, index) => cost <= resources[index]);
+
+/**
+ * Return the remaining resources after building the robot.
+ */
+const buildRobot = (resources, blueprint) => {
+  const toReturn = [...resources];
+  blueprint.forEach((cost, resourceIndex) => {
+    toReturn[resourceIndex] -= cost;
+  });
+  return toReturn;
+};
 
 /**
  * Returns the solution for level one of this puzzle.
@@ -40,8 +81,25 @@ const parseLines = (lines) => lines.map(parseLine);
  * @returns {Number|String}
  */
 export const levelOne = ({ input, lines }) => {
-  const blueprints = parseLines(lines);
-  console.log(blueprints);
+  console.log();
+  const blueprint = parseLine(lines[0]);
+  const minutes = 24;
+  const resources = [4, 14, 16, 0];
+  const robots = [1, 0, 0, 0];
+
+  // at a given step, have x choices of what to do next, do nothing always an option.
+  // one option for each robot you can build at that point in time.
+
+  blueprint.robots.forEach((spec, idx) => {
+    console.log(`can build blueprint[${idx}] = ${canBuildRobot(resources, spec)}`);
+  });
+
+  console.log('starting resources', resourcesToString(resources));
+  console.log('blueprint:        ', resourcesToString(blueprint.robots));
+  const resourcesAfterBuildRobot = buildRobot(resources, geode(blueprint.robots));
+  console.log('resources after   ', resourcesToString(resourcesAfterBuildRobot));
+
+  // const finalResources = getTotalResources(minutes, resources, robots);
   return 1234;
 };
 
