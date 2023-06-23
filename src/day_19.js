@@ -2,6 +2,7 @@
  * Contains solutions for Day 19
  * Puzzle Description: https://adventofcode.com/2022/day/19
  */
+import { updateAt } from './util/array.js';
 import { toNumber } from './util/string.js';
 
 /**
@@ -59,14 +60,20 @@ const getTotalResources = (minutes, resources, robots) =>
 /**
  * Are there enough resources to build the robot?
  */
-const canBuildRobot = (resources, robotBlueprint) =>
-  robotBlueprint.every((cost, index) => cost <= resources[index]);
+const canAffordRobot = (resources, buildCost) =>
+  buildCost.every((resource, resourceIndex) => resource <= resources[resourceIndex]);
 
 /**
- * Return the remaining resources after building the robot.
+ * Returns a new array representing the robots after adding a new robot.
  */
-const buildRobot = (resources, blueprint) =>
-  resources.map((current, index) => current - blueprint[index]);
+const addNewRobot = (robots, typeIndex) =>
+  updateAt(robots, typeIndex, robots[typeIndex] + 1);
+
+/**
+ * Returns a new array representing the remaining resources after building the robot.
+ */
+const buildRobot = (resources, buildCost) =>
+  resources.map((current, resourceIndex) => current - buildCost[resourceIndex]);
 
 /**
  * Returns a new array representing the new resources after each robot has collected its resource.
@@ -74,11 +81,28 @@ const buildRobot = (resources, blueprint) =>
 const gather = (resources, robots) =>
   resources.map((current, index) => current + robots[index]);
 
-// const
+/**
+ * Returns a new array of state changes which would be caused by building each affordable robot.
+ */
+const getBuildChoices = (resources, robots, buildCosts) =>
+  buildCosts.reduce((acc, buildCost, robotTypeIndex) => {
+    if (canAffordRobot(resources, buildCost)) {
+      acc.push({
+        resources: buildRobot(resources, buildCost),
+        robots: addNewRobot(robots, robotTypeIndex),
+      });
+    }
+    return acc;
+  }, []);
 
-const test = (resources, robots, blueprint) => {
+const test = (resources, robots, buildCosts) => {
   // check to see if can build robot.
-  const choices = [{ resources: gather(resources, robots), robots }];
+  const gathered = gather(resources, robots);
+  const afterBuilds = getBuildChoices(resources, robots, buildCosts).map((state) => ({
+    ...state,
+    resources: gather(state.resources, robots),
+  }));
+  const choices = [{ resources: gathered, robots }, ...afterBuilds];
 };
 
 /**
@@ -96,9 +120,16 @@ export const levelOne = ({ input, lines }) => {
   const robots = [1, 0, 0, 0];
 
   console.log('starting resources', resourcesToString(resources));
-  console.log('blueprint:        ', resourcesToString(blueprint.robots));
-  const resourcesAfterBuildRobot = buildRobot(resources, geode(blueprint.robots));
-  console.log('resources after   ', resourcesToString(resourcesAfterBuildRobot));
+  const newStates = getBuildChoices(resources, robots, blueprint.robots);
+  newStates.forEach((state, index) => {
+    console.group(`state: ${index}`);
+    console.log('resources: ', resourcesToString(state.resources));
+    console.log('robots   : ', resourcesToString(state.robots));
+    console.groupEnd();
+  });
+  // console.log('blueprint:        ', resourcesToString(blueprint.robots));
+  // const resourcesAfterBuildRobot = buildRobot(resources, geode(blueprint.robots));
+  // console.log('resources after   ', resourcesToString(resourcesAfterBuildRobot));
 
   return 1234;
 };
