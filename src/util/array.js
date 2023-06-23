@@ -170,3 +170,15 @@ export const arraysEqual = (lhs, rhs) => {
   }
   return lhs.every((a, index) => a === rhs[index]);
 };
+
+/**
+ * Returns a new array with the element at the index replaced by the value.
+ * @param {Array} array
+ * @param {Number} index
+ * @param {Any} value
+ */
+export const updateAt = (array, index, value) => {
+  const toReturn = [...array];
+  toReturn[index] = value;
+  return toReturn;
+};
