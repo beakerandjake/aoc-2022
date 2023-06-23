@@ -17,10 +17,10 @@ const parseLine = (line) => {
   return {
     id: matches[0],
     robots: [
-      [matches[1], 0, 0], // Ore
-      [matches[2], 0, 0], // Clay
-      [matches[3], matches[4], 0], // Obsidian
-      [matches[5], 0, matches[6]], // Geode
+      [matches[1], 0, 0, 0], // Ore
+      [matches[2], 0, 0, 0], // Clay
+      [matches[3], matches[4], 0, 0], // Obsidian
+      [matches[5], 0, matches[6], 0], // Geode
     ],
   };
 };
@@ -65,12 +65,20 @@ const canBuildRobot = (resources, robotBlueprint) =>
 /**
  * Return the remaining resources after building the robot.
  */
-const buildRobot = (resources, blueprint) => {
-  const toReturn = [...resources];
-  blueprint.forEach((cost, resourceIndex) => {
-    toReturn[resourceIndex] -= cost;
-  });
-  return toReturn;
+const buildRobot = (resources, blueprint) =>
+  resources.map((current, index) => current - blueprint[index]);
+
+/**
+ * Returns a new array representing the new resources after each robot has collected its resource.
+ */
+const gather = (resources, robots) =>
+  resources.map((current, index) => current + robots[index]);
+
+// const
+
+const test = (resources, robots, blueprint) => {
+  // check to see if can build robot.
+  const choices = [{ resources: gather(resources, robots), robots }];
 };
 
 /**
@@ -84,22 +92,14 @@ export const levelOne = ({ input, lines }) => {
   console.log();
   const blueprint = parseLine(lines[0]);
   const minutes = 24;
-  const resources = [4, 14, 16, 0];
+  const resources = [20, 20, 20, 20];
   const robots = [1, 0, 0, 0];
-
-  // at a given step, have x choices of what to do next, do nothing always an option.
-  // one option for each robot you can build at that point in time.
-
-  blueprint.robots.forEach((spec, idx) => {
-    console.log(`can build blueprint[${idx}] = ${canBuildRobot(resources, spec)}`);
-  });
 
   console.log('starting resources', resourcesToString(resources));
   console.log('blueprint:        ', resourcesToString(blueprint.robots));
   const resourcesAfterBuildRobot = buildRobot(resources, geode(blueprint.robots));
   console.log('resources after   ', resourcesToString(resourcesAfterBuildRobot));
 
-  // const finalResources = getTotalResources(minutes, resources, robots);
   return 1234;
 };
 
