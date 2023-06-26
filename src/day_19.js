@@ -3,6 +3,7 @@
  * Puzzle Description: https://adventofcode.com/2022/day/19
  */
 import { updateAt } from './util/array.js';
+import { writeToFile } from './util/io.js';
 import { toNumber } from './util/string.js';
 
 /**
@@ -110,23 +111,100 @@ const getBuildOptions = (resources, robots, buildCosts) => {
   ];
 };
 
-const test = (minutes, state, buildCosts) => {
-  if (minutes <= 0) {
-    return { state, children: [] };
+const buildDecisionTree = (timeRemaining, resources, robots, buildCosts) => {
+  const newNode = { timeRemaining, resources, robots, children: [] };
+
+  if (timeRemaining === 0) {
+    return newNode;
   }
-  const choices = getBuildOptions(state.resources, state.robots, buildCosts);
-  return { state, children: choices.map((x) => test(minutes - 1, x, buildCosts)) };
+
+  const newTime = timeRemaining - 1;
+  const newResources = add(resources, gather(robots));
+  const buildNothingOption = buildDecisionTree(newTime, newResources, robots, buildCosts);
+  const buildRobotOptions = getAffordableBuildOptions(resources, buildCosts).map((x) =>
+    buildDecisionTree(
+      newTime,
+      subtract(newResources, x.buildCost),
+      add(robots, x.robots),
+      buildCosts
+    )
+  );
+  newNode.children = [buildNothingOption, ...buildRobotOptions];
+
+  return newNode;
 };
 
-const traverse = (tree) => {
-  console.group('visit');
-  console.log('resources', resourcesToString(tree.state.resources));
-  console.log('robots   ', resourcesToString(tree.state.robots));
-  console.log('children ', tree.children.length);
-  console.groupEnd();
-  for (let index = 0; index < tree.children.length; index++) {
-    traverse(tree.children[index]);
+const getLeafNodes = (tree) => {
+  if (tree.children.length === 0) {
+    return [tree];
   }
+
+  return tree.children.flatMap(getLeafNodes);
+};
+
+const sortLeafNodes = (leafs) =>
+  leafs.sort((a, b) => {
+    const aGeode = geode(a.resources);
+    const aGeodeRobot = geode(a.robots);
+    const bGeode = geode(b.resources);
+    const bGeodeRobot = geode(b.robots);
+
+    if (aGeode > bGeode) {
+      return -1;
+    }
+    if (aGeode < bGeode) {
+      return 1;
+    }
+
+    if (aGeodeRobot > bGeodeRobot) {
+      return -1;
+    }
+
+    if (aGeodeRobot < bGeodeRobot) {
+      return 1;
+    }
+
+    for (let index = 2; index >= 0; index--) {
+      const aResource = a.resources[index];
+      const aRobot = a.robots[index];
+      const bResource = b.resources[index];
+      const bRobot = b.robots[index];
+
+      if (aRobot > bRobot) {
+        return -1;
+      }
+
+      if (aRobot < bRobot) {
+        return 1;
+      }
+
+      if (aResource > bResource) {
+        return -1;
+      }
+
+      if (aResource < bResource) {
+        return 1;
+      }
+    }
+
+    return 0;
+  });
+
+const maxGeodes = (collectionTime, buildCosts, chunkSize = 3) => {
+  let minutesRemaining = collectionTime;
+  let resources = [0, 0, 0, 0];
+  let robots = [1, 0, 0, 0];
+
+  while (minutesRemaining > 0) {
+    console.log(`simulate: ${minutesRemaining}`);
+    const decisionTree = buildDecisionTree(chunkSize, resources, robots, buildCosts);
+    const bestDecision = sortLeafNodes(getLeafNodes(decisionTree))[0];
+    resources = bestDecision.resources;
+    robots = bestDecision.robots;
+    minutesRemaining -= chunkSize;
+  }
+
+  return { resources, robots };
 };
 
 /**
@@ -136,26 +214,32 @@ const traverse = (tree) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = ({ input, lines }) => {
+export const levelOne = async ({ input, lines }) => {
   console.log();
   const blueprint = parseLine(lines[0]);
-  const minutes = 24;
-  const resources = [0, 0, 0, 0];
-  const robots = [1, 0, 0, 0];
+  // const result = maxGeodes(24, blueprint.robots);
+  // console.log(`resources: ${resourcesToString(result.resources)}`);
+  // console.log(`robots   : ${resourcesToString(result.robots)}`);
 
-  const result = test(10, { resources, robots }, blueprint.robots);
-  traverse(result);
-  // console.log(result);
+  // const minutesLookahead = 3;
+  // let time = 0;
+  // let resources = [0, 0, 0, 0];
+  // let robots = [1, 0, 0, 0];
+  // while (time < 24) {
+  //   const tree = buildDecisionTree(minutesLookahead, resources, robots, blueprint.robots);
+  //   const best = sortLeafNodes(getLeafNodes(tree))[0];
+  //   resources = best.resources;
+  //   robots = best.robots;
+  //   time += minutesLookahead;
+  // }
 
-  // console.log('blueprint', resourcesToString(blueprint.robots));
-  // console.log('starting resources', resourcesToString(resources));
-  // const z = getBuildOptions(resources, robots, blueprint.robots);
-  // z.forEach((x, index) => {
-  //   console.group(`state: ${index}`);
-  //   console.log('resources: ', resourcesToString(x.resources));
-  //   console.log('robots   : ', resourcesToString(x.robots));
-  //   console.groupEnd();
-  // });
+  // console.log(`resources: ${resourcesToString(resources)}`);
+  // console.log(`robots   : ${resourcesToString(robots)}`);
+
+  const tree = buildDecisionTree(6, [1,7,1,0], [1,4,1,0], blueprint.robots);
+  const best = sortLeafNodes(getLeafNodes(tree))[0];
+  // await writeToFile(JSON.stringify(tree), './tree.json');
+  await writeToFile(JSON.stringify(best), './leaves.json');
 
   return 1234;
 };
