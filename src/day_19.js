@@ -54,55 +54,79 @@ const geode = (items) => items[3];
 const resourcesToString = (arr) =>
   `o: ${ore(arr)}, c: ${clay(arr)}, ob: ${obsidian(arr)}, g: ${geode(arr)}`;
 
-const getTotalResources = (minutes, resources, robots) =>
-  resources.map((x, idx) => x + robots[idx] * minutes);
+/**
+ * Returns a new resource array containing the lhs resource array plus the rhs resource array.
+ */
+const add = (lhs, rhs) => lhs.map((x, index) => x + rhs[index]);
+
+/**
+ * Returns a new resource array containing the lhs resource array minus the rhs resource array.
+ */
+const subtract = (lhs, rhs) => lhs.map((x, index) => x - rhs[index]);
+
+/**
+ * Returns an array containing the resources gathered by the robots in a minute.
+ */
+const gather = (robots) => [...robots];
 
 /**
  * Are there enough resources to build the robot?
  */
 const canAffordRobot = (resources, buildCost) =>
-  buildCost.every((resource, resourceIndex) => resource <= resources[resourceIndex]);
+  buildCost.every((resource, index) => resource <= resources[index]);
 
 /**
  * Returns a new array representing the robots after adding a new robot.
  */
-const addNewRobot = (robots, typeIndex) =>
+const buildNewRobot = (robots, typeIndex) =>
   updateAt(robots, typeIndex, robots[typeIndex] + 1);
 
 /**
- * Returns a new array representing the remaining resources after building the robot.
+ * Returns a new array containing the changes which would occur if each affordable robot was built.
  */
-const buildRobot = (resources, buildCost) =>
-  resources.map((current, resourceIndex) => current - buildCost[resourceIndex]);
-
-/**
- * Returns a new array representing the new resources after each robot has collected its resource.
- */
-const gather = (resources, robots) =>
-  resources.map((current, index) => current + robots[index]);
-
-/**
- * Returns a new array of state changes which would be caused by building each affordable robot.
- */
-const getBuildChoices = (resources, robots, buildCosts) =>
-  buildCosts.reduce((acc, buildCost, robotTypeIndex) => {
+const getAffordableBuildOptions = (resources, buildCosts) =>
+  buildCosts.reduce((acc, buildCost, resourceIndex) => {
     if (canAffordRobot(resources, buildCost)) {
       acc.push({
-        resources: buildRobot(resources, buildCost),
-        robots: addNewRobot(robots, robotTypeIndex),
+        buildCost,
+        robots: buildNewRobot([0, 0, 0, 0], resourceIndex),
       });
     }
     return acc;
   }, []);
 
-const test = (resources, robots, buildCosts) => {
-  // check to see if can build robot.
-  const gathered = gather(resources, robots);
-  const afterBuilds = getBuildChoices(resources, robots, buildCosts).map((state) => ({
-    ...state,
-    resources: gather(state.resources, robots),
-  }));
-  const choices = [{ resources: gathered, robots }, ...afterBuilds];
+/**
+ * Returns an array containing the next state for each potential build choice which could be taken this minute.
+ */
+const getBuildOptions = (resources, robots, buildCosts) => {
+  const gatheredThisTurn = add(resources, gather(robots));
+  const buildOptions = getAffordableBuildOptions(resources, buildCosts);
+  return [
+    { resources: gatheredThisTurn, robots },
+    ...buildOptions.map((x) => ({
+      resources: subtract(gatheredThisTurn, x.buildCost),
+      robots: add(robots, x.robots),
+    })),
+  ];
+};
+
+const test = (minutes, state, buildCosts) => {
+  if (minutes <= 0) {
+    return { state, children: [] };
+  }
+  const choices = getBuildOptions(state.resources, state.robots, buildCosts);
+  return { state, children: choices.map((x) => test(minutes - 1, x, buildCosts)) };
+};
+
+const traverse = (tree) => {
+  console.group('visit');
+  console.log('resources', resourcesToString(tree.state.resources));
+  console.log('robots   ', resourcesToString(tree.state.robots));
+  console.log('children ', tree.children.length);
+  console.groupEnd();
+  for (let index = 0; index < tree.children.length; index++) {
+    traverse(tree.children[index]);
+  }
 };
 
 /**
@@ -116,20 +140,22 @@ export const levelOne = ({ input, lines }) => {
   console.log();
   const blueprint = parseLine(lines[0]);
   const minutes = 24;
-  const resources = [20, 20, 20, 20];
+  const resources = [0, 0, 0, 0];
   const robots = [1, 0, 0, 0];
 
-  console.log('starting resources', resourcesToString(resources));
-  const newStates = getBuildChoices(resources, robots, blueprint.robots);
-  newStates.forEach((state, index) => {
-    console.group(`state: ${index}`);
-    console.log('resources: ', resourcesToString(state.resources));
-    console.log('robots   : ', resourcesToString(state.robots));
-    console.groupEnd();
-  });
-  // console.log('blueprint:        ', resourcesToString(blueprint.robots));
-  // const resourcesAfterBuildRobot = buildRobot(resources, geode(blueprint.robots));
-  // console.log('resources after   ', resourcesToString(resourcesAfterBuildRobot));
+  const result = test(10, { resources, robots }, blueprint.robots);
+  traverse(result);
+  // console.log(result);
+
+  // console.log('blueprint', resourcesToString(blueprint.robots));
+  // console.log('starting resources', resourcesToString(resources));
+  // const z = getBuildOptions(resources, robots, blueprint.robots);
+  // z.forEach((x, index) => {
+  //   console.group(`state: ${index}`);
+  //   console.log('resources: ', resourcesToString(x.resources));
+  //   console.log('robots   : ', resourcesToString(x.robots));
+  //   console.groupEnd();
+  // });
 
   return 1234;
 };
