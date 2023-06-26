@@ -9,3 +9,10 @@ import { EOL } from 'node:os';
  */
 export const writeArrayToFile = async (array, fileName, separator = EOL) =>
   writeFile(fileName, array.join(separator));
+
+/**
+ * Write the content to the file.
+ * @param {String} contents - The content to write to the file.
+ * @param {String} fileName - The path to save the file to.
+ */
+export const writeToFile = async (contents, fileName) => writeFile(fileName, contents);
