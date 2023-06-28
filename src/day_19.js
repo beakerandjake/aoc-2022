@@ -111,27 +111,33 @@ const getBuildOptions = (resources, robots, buildCosts) => {
   ];
 };
 
-const buildDecisionTree = (timeRemaining, resources, robots, buildCosts) => {
-  const newNode = { timeRemaining, resources, robots, children: [] };
+const createNode = (minute, resources, robots) => ({
+  minute,
+  resources,
+  robots,
+  children: [],
+});
 
-  if (timeRemaining === 0) {
-    return newNode;
+const test = (minute, endMinute, resources, robots, costs) => {
+  if (minute === endMinute) {
+    return createNode(minute, resources, robots);
   }
-
-  const newTime = timeRemaining - 1;
-  const newResources = add(resources, gather(robots));
-  const buildNothingOption = buildDecisionTree(newTime, newResources, robots, buildCosts);
-  const buildRobotOptions = getAffordableBuildOptions(resources, buildCosts).map((x) =>
-    buildDecisionTree(
-      newTime,
-      subtract(newResources, x.buildCost),
-      add(robots, x.robots),
-      buildCosts
-    )
-  );
-  newNode.children = [buildNothingOption, ...buildRobotOptions];
-
-  return newNode;
+  const node = createNode(minute, resources, robots);
+  node.children = [
+    // build nothing
+    test(minute + 1, endMinute, add(resources, robots), robots, costs),
+    // build robots
+    ...getAffordableBuildOptions(resources, costs).map((x) =>
+      test(
+        minute + 1,
+        endMinute,
+        add(subtract(resources, x.buildCost), robots),
+        add(robots, x.robots),
+        costs
+      )
+    ),
+  ];
+  return node;
 };
 
 const getLeafNodes = (tree) => {
@@ -144,68 +150,35 @@ const getLeafNodes = (tree) => {
 
 const sortLeafNodes = (leafs) =>
   leafs.sort((a, b) => {
-    const aGeode = geode(a.resources);
-    const aGeodeRobot = geode(a.robots);
-    const bGeode = geode(b.resources);
-    const bGeodeRobot = geode(b.robots);
-
-    if (aGeode > bGeode) {
+    if (geode(a.resources) > geode(b.resources)) {
       return -1;
     }
-    if (aGeode < bGeode) {
+    if (geode(a.resources) < geode(b.resources)) {
       return 1;
     }
 
-    if (aGeodeRobot > bGeodeRobot) {
-      return -1;
-    }
-
-    if (aGeodeRobot < bGeodeRobot) {
-      return 1;
-    }
-
-    for (let index = 2; index >= 0; index--) {
-      const aResource = a.resources[index];
-      const aRobot = a.robots[index];
-      const bResource = b.resources[index];
-      const bRobot = b.robots[index];
-
-      if (aRobot > bRobot) {
+    // compare robots first
+    for (let index = 3; index >= 0; index--) {
+      if (a.robots[index] > b.robots[index]) {
         return -1;
       }
-
-      if (aRobot < bRobot) {
+      if (a.robots[index] < b.robots[index]) {
         return 1;
       }
+    }
 
-      if (aResource > bResource) {
+    // compare resources next
+    for (let index = 2; index >= 0; index--) {
+      if (a.resources[index] > b.resources[index]) {
         return -1;
       }
-
-      if (aResource < bResource) {
+      if (a.resources[index] < b.resources[index]) {
         return 1;
       }
     }
 
     return 0;
   });
-
-const maxGeodes = (collectionTime, buildCosts, chunkSize = 3) => {
-  let minutesRemaining = collectionTime;
-  let resources = [0, 0, 0, 0];
-  let robots = [1, 0, 0, 0];
-
-  while (minutesRemaining > 0) {
-    console.log(`simulate: ${minutesRemaining}`);
-    const decisionTree = buildDecisionTree(chunkSize, resources, robots, buildCosts);
-    const bestDecision = sortLeafNodes(getLeafNodes(decisionTree))[0];
-    resources = bestDecision.resources;
-    robots = bestDecision.robots;
-    minutesRemaining -= chunkSize;
-  }
-
-  return { resources, robots };
-};
 
 /**
  * Returns the solution for level one of this puzzle.
@@ -217,30 +190,11 @@ const maxGeodes = (collectionTime, buildCosts, chunkSize = 3) => {
 export const levelOne = async ({ input, lines }) => {
   console.log();
   const blueprint = parseLine(lines[0]);
-  // const result = maxGeodes(24, blueprint.robots);
-  // console.log(`resources: ${resourcesToString(result.resources)}`);
-  // console.log(`robots   : ${resourcesToString(result.robots)}`);
 
-  // const minutesLookahead = 3;
-  // let time = 0;
-  // let resources = [0, 0, 0, 0];
-  // let robots = [1, 0, 0, 0];
-  // while (time < 24) {
-  //   const tree = buildDecisionTree(minutesLookahead, resources, robots, blueprint.robots);
-  //   const best = sortLeafNodes(getLeafNodes(tree))[0];
-  //   resources = best.resources;
-  //   robots = best.robots;
-  //   time += minutesLookahead;
-  // }
-
-  // console.log(`resources: ${resourcesToString(resources)}`);
-  // console.log(`robots   : ${resourcesToString(robots)}`);
-
-  const tree = buildDecisionTree(6, [1,7,1,0], [1,4,1,0], blueprint.robots);
-  const best = sortLeafNodes(getLeafNodes(tree))[0];
-  // await writeToFile(JSON.stringify(tree), './tree.json');
-  await writeToFile(JSON.stringify(best), './leaves.json');
-
+  const tree = test(1, 13, [0, 0, 0, 0], [1, 0, 0, 0], blueprint.robots);
+  await writeToFile(JSON.stringify(tree), './tree.json');
+  const leaves = sortLeafNodes(getLeafNodes(tree));
+  await writeToFile(JSON.stringify(leaves), './leaves.json');
   return 1234;
 };
 
