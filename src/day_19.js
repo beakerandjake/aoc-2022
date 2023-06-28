@@ -111,26 +111,25 @@ const getBuildOptions = (resources, robots, buildCosts) => {
   ];
 };
 
-const createNode = (minute, resources, robots) => ({
-  minute,
+const createNode = (height, resources, robots) => ({
+  height,
   resources,
   robots,
   children: [],
 });
 
-const test = (minute, endMinute, resources, robots, costs) => {
-  if (minute === endMinute) {
-    return createNode(minute, resources, robots);
+const test = (height, resources, robots, costs) => {
+  if (height === 0) {
+    return createNode(height, resources, robots);
   }
-  const node = createNode(minute, resources, robots);
+  const node = createNode(height, resources, robots);
   node.children = [
     // build nothing
-    test(minute + 1, endMinute, add(resources, robots), robots, costs),
+    test(height - 1, add(resources, robots), robots, costs),
     // build robots
     ...getAffordableBuildOptions(resources, costs).map((x) =>
       test(
-        minute + 1,
-        endMinute,
+        height - 1,
         add(subtract(resources, x.buildCost), robots),
         add(robots, x.robots),
         costs
@@ -180,6 +179,30 @@ const sortLeafNodes = (leafs) =>
     return 0;
   });
 
+const simulate = (minutes, costs) => {
+  let remaining = 24;
+  let resources = [0, 0, 0, 0];
+  let robots = [1, 0, 0, 0];
+  while (remaining > 0) {
+    const minutesToSimulate = remaining >= 3 ? 3 : remaining;
+    const bestPath = sortLeafNodes(
+      getLeafNodes(test(minutesToSimulate, resources, robots, costs))
+    )[0];
+
+    resources = bestPath.resources;
+    robots = bestPath.robots;
+
+    console.group(`minutes: ${25 - remaining} - ${24 - remaining + minutesToSimulate}`);
+    console.log(`resources: ${resourcesToString(resources)}`);
+    console.log(`robots   : ${resourcesToString(robots)}`);
+    console.groupEnd();
+
+    remaining -= minutesToSimulate;
+  }
+
+  return { resources, robots };
+};
+
 /**
  * Returns the solution for level one of this puzzle.
  * @param {Object} args - Provides both raw and split input.
@@ -191,10 +214,14 @@ export const levelOne = async ({ input, lines }) => {
   console.log();
   const blueprint = parseLine(lines[0]);
 
-  const tree = test(1, 13, [0, 0, 0, 0], [1, 0, 0, 0], blueprint.robots);
-  await writeToFile(JSON.stringify(tree), './tree.json');
-  const leaves = sortLeafNodes(getLeafNodes(tree));
-  await writeToFile(JSON.stringify(leaves), './leaves.json');
+  const { resources, robots } = simulate(24, blueprint.robots);
+  console.log(`resources: ${resourcesToString(resources)}`);
+  console.log(`robots   : ${resourcesToString(robots)}`);
+
+  // const tree = test(1, 13, [0, 0, 0, 0], [1, 0, 0, 0], blueprint.robots);
+  // await writeToFile(JSON.stringify(tree), './tree.json');
+  // const leaves = sortLeafNodes(getLeafNodes(tree));
+  // await writeToFile(JSON.stringify(leaves), './leaves.json');
   return 1234;
 };
 
