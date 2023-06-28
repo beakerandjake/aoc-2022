@@ -2,7 +2,7 @@
  * Contains solutions for Day 19
  * Puzzle Description: https://adventofcode.com/2022/day/19
  */
-import { updateAt } from './util/array.js';
+import { sum, updateAt } from './util/array.js';
 import { writeToFile } from './util/io.js';
 import { toNumber } from './util/string.js';
 
@@ -111,44 +111,107 @@ const getBuildOptions = (resources, robots, buildCosts) => {
   ];
 };
 
-const createNode = (height, resources, robots) => ({
-  height,
-  resources,
-  robots,
-  children: [],
-});
+/**
+ * Returns the minimum amount of resources necessary to build each robot.
+ */
+const minCost = (costs) =>
+  costs.reduce((acc, x, index) => {
+    acc.push(index <= 1 ? x : add(acc[index - 1], x));
+    return acc;
+  }, []);
 
-const test = (height, resources, robots, costs) => {
-  if (height === 0) {
-    return createNode(height, resources, robots);
-  }
-  const node = createNode(height, resources, robots);
-  node.children = [
-    // build nothing
-    test(height - 1, add(resources, robots), robots, costs),
-    // build robots
-    ...getAffordableBuildOptions(resources, costs).map((x) =>
-      test(
-        height - 1,
-        add(subtract(resources, x.buildCost), robots),
-        add(robots, x.robots),
-        costs
-      )
-    ),
-  ];
-  return node;
-};
-
-const getLeafNodes = (tree) => {
-  if (tree.children.length === 0) {
-    return [tree];
+const getDesiredRobot = (robots) => {
+  for (let index = 0; index < robots.length; index++) {
+    if (robots[index] === 0) {
+      return index;
+    }
   }
 
-  return tree.children.flatMap(getLeafNodes);
+  return robots.length - 1;
 };
 
-const sortLeafNodes = (leafs) =>
-  leafs.sort((a, b) => {
+const getBuildChoices = (resources, robots, costs) => [
+  { resources: add(resources, robots), robots },
+  ...getAffordableBuildOptions(resources, costs).map((choice) => ({
+    resources: add(subtract(resources, choice.buildCost), robots),
+    robots: add(robots, choice.robots),
+  })),
+];
+
+const indexOfSmallest = (array) => {
+  if (array.length === 0) {
+    return -1;
+  }
+  let smallestIndex = 0;
+  let smallest = array[smallestIndex];
+
+  for (let index = 1; index < array.length; index++) {
+    if (array[index] < smallest) {
+      smallestIndex = index;
+      smallest = array[index];
+    }
+  }
+
+  return smallestIndex;
+};
+
+const turnsToBuildRobot = ({ resources, robots }, desiredRobotCost) =>
+  Math.max(
+    ...resources.map((resource, index) => {
+      const cost = desiredRobotCost[index];
+      if (resource > cost || cost === 0) {
+        return 1;
+      }
+      return Math.ceil((cost - resource) / robots[index]) + 1;
+    })
+  );
+
+const bestBuildChoice = (
+  currentState,
+  buildChoices,
+  desiredRobotType,
+  desiredRobotCost,
+  minutesRemaining
+) => {
+  if (buildChoices.length === 1) {
+    return buildChoices[0];
+  }
+
+  // see if any choices build the desired robot.
+
+  const choiceThatBuildsRobot = buildChoices.findIndex(
+    (choice) => choice.robots[desiredRobotType] > currentState.robots[desiredRobotType]
+  );
+
+  if (choiceThatBuildsRobot !== -1) {
+    return buildChoices[choiceThatBuildsRobot];
+  }
+
+  let bestChoiceIndex = 0;
+  let bestTurnsToBuildRobot = turnsToBuildRobot(
+    buildChoices[bestChoiceIndex],
+    desiredRobotCost
+  );
+  let bestRobotCount = sum(buildChoices[bestChoiceIndex].robots);
+
+  for (let index = 1; index < buildChoices.length; index++) {
+    const turns = turnsToBuildRobot(buildChoices[index], desiredRobotCost);
+    const numRobots = sum(buildChoices[index].robots);
+    if (
+      turns < bestTurnsToBuildRobot ||
+      (turns === bestTurnsToBuildRobot && numRobots > bestRobotCount)
+    ) {
+      bestChoiceIndex = index;
+      bestTurnsToBuildRobot = turns;
+      bestRobotCount = numRobots;
+    }
+  }
+
+  return buildChoices[bestChoiceIndex];
+};
+
+const sortChoices = (choices) =>
+  [...choices].sort((a, b) => {
     if (geode(a.resources) > geode(b.resources)) {
       return -1;
     }
@@ -156,8 +219,14 @@ const sortLeafNodes = (leafs) =>
       return 1;
     }
 
-    // compare robots first
-    for (let index = 3; index >= 0; index--) {
+    if (geode(a.robots) > geode(b.robots)) {
+      return -1;
+    }
+    if (geode(a.robots) < geode(b.robots)) {
+      return 1;
+    }
+
+    for (let index = 0; index < 4; index++) {
       if (a.robots[index] > b.robots[index]) {
         return -1;
       }
@@ -166,41 +235,60 @@ const sortLeafNodes = (leafs) =>
       }
     }
 
-    // compare resources next
-    for (let index = 2; index >= 0; index--) {
-      if (a.resources[index] > b.resources[index]) {
-        return -1;
-      }
-      if (a.resources[index] < b.resources[index]) {
-        return 1;
-      }
-    }
-
     return 0;
   });
 
-const simulate = (minutes, costs) => {
-  let remaining = 24;
-  let resources = [0, 0, 0, 0];
-  let robots = [1, 0, 0, 0];
-  while (remaining > 0) {
-    const minutesToSimulate = remaining >= 3 ? 3 : remaining;
-    const bestPath = sortLeafNodes(
-      getLeafNodes(test(minutesToSimulate, resources, robots, costs))
-    )[0];
-
-    resources = bestPath.resources;
-    robots = bestPath.robots;
-
-    console.group(`minutes: ${25 - remaining} - ${24 - remaining + minutesToSimulate}`);
-    console.log(`resources: ${resourcesToString(resources)}`);
-    console.log(`robots   : ${resourcesToString(robots)}`);
-    console.groupEnd();
-
-    remaining -= minutesToSimulate;
+const turnsNeeded = (resourceCount, robotCount, targetResources, minutesRemaining) => {
+  if (resourceCount >= targetResources) {
+    return 1;
+  }
+  const needed = targetResources - resourceCount;
+  if (needed < robotCount) {
+    return 1;
   }
 
-  return { resources, robots };
+  return Math.ceil(needed / robotCount);
+};
+
+const simulate = (minutes, costs) => {
+  const minCosts = minCost(costs);
+  let currentMinute = 0;
+  let resources = [0, 0, 0, 0];
+  let robots = [1, 0, 0, 0];
+
+  while (currentMinute !== minutes) {
+    console.group(`minute ${currentMinute + 1}:`);
+    console.log(`start resources: ${resourcesToString(resources)}`);
+    console.log(`start robots   : ${resourcesToString(robots)}`);
+
+    const desiredRobot = getDesiredRobot(robots);
+    console.log(`most desired robot: ${desiredRobot}`);
+    console.log(`most desired robot total cost: ${minCosts[desiredRobot]}`);
+    console.log(`most desired robot actual cost: ${costs[desiredRobot]}`);
+
+    const buildOptions = getBuildChoices(resources, robots, costs);
+
+    console.group('build options:');
+    console.log(buildOptions);
+    console.groupEnd();
+
+    const choice = bestBuildChoice(
+      { resources, robots },
+      buildOptions,
+      desiredRobot,
+      minCosts[desiredRobot],
+      24 - currentMinute
+    );
+
+    console.log(`new robots    : ${resourcesToString(choice.robots)}`);
+    console.log(`new resources : ${resourcesToString(choice.resources)}`);
+
+    resources = choice.resources;
+    robots = choice.robots;
+
+    console.groupEnd();
+    currentMinute += 1;
+  }
 };
 
 /**
@@ -214,9 +302,7 @@ export const levelOne = async ({ input, lines }) => {
   console.log();
   const blueprint = parseLine(lines[0]);
 
-  const { resources, robots } = simulate(24, blueprint.robots);
-  console.log(`resources: ${resourcesToString(resources)}`);
-  console.log(`robots   : ${resourcesToString(robots)}`);
+  simulate(24, blueprint.robots);
 
   // const tree = test(1, 13, [0, 0, 0, 0], [1, 0, 0, 0], blueprint.robots);
   // await writeToFile(JSON.stringify(tree), './tree.json');
