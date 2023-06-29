@@ -492,7 +492,7 @@ const treeBased = (() => {
     return tree.children.flatMap(getPossibleOutcomes);
   };
 
-  const solve = async (costs) => {
+  const solve = (costs) => {
     const simulator = configureSimulator(costs);
     const resources = [0, 0, 0, 0];
     const robots = [1, 0, 0, 0];
@@ -633,7 +633,7 @@ const treeBased = (() => {
   //   const sorted = sortLeafNodes(leafs);
   // };
 
-  return async (minutes, costs) => solve(costs);
+  return (costs) => solve(costs);
 })();
 
 /**
@@ -643,10 +643,9 @@ const treeBased = (() => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = async ({ input, lines }) => {
-  const blueprint = parseLine(lines[0]);
-  const result = await treeBased(24, blueprint.robots);
-  return result;
+export const levelOne = ({ lines }) => {
+  const blueprints = parseLines(lines);
+  return sum(blueprints.map((blueprint) => blueprint.id * treeBased(blueprint.robots)));
 };
 
 /**
