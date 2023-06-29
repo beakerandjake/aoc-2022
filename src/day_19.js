@@ -378,7 +378,7 @@ const treeBased = (() => {
       return 0;
     });
 
-  const sortLeavesByRobots = (leaves) =>
+  const sortLeavesByRobots = (leaves, minutes) =>
     [...leaves].sort((a, b) => {
       for (let i = 3; i >= 0; i--) {
         if (a.robots[i] > b.robots[i]) {
@@ -391,7 +391,45 @@ const treeBased = (() => {
       return 0;
     });
 
-  const sortLeaves = sortLeavesByRobots;
+  const sortByRobotAndResources = (leaves) =>
+    [...leaves].sort((a, b) => {
+      for (let i = 3; i >= 0; i--) {
+        if (a.robots[i] > b.robots[i]) {
+          return -1;
+        }
+        if (a.robots[i] < b.robots[i]) {
+          return 1;
+        }
+        if (a.resources[i] > b.resources[i]) {
+          return -1;
+        }
+        if (a.resources[i] < b.resources[i]) {
+          return 1;
+        }
+      }
+      return 0;
+    });
+
+  const sortByFuture = (leaves, minutes) =>
+    [...leaves].sort((a, b) => {
+      const aFuture = add(
+        a.resources,
+        a.robots.map((x) => x * minutes)
+      );
+      const bFuture = add(
+        b.resources,
+        b.robots.map((x) => x * minutes)
+      );
+      if (aFuture > bFuture) {
+        return -1;
+      }
+      if (aFuture < bFuture) {
+        return 1;
+      }
+      return 0;
+    });
+
+  const sortLeaves = sortByFuture;
 
   const configureSimulator = (costs) => {
     const simulate = (minutes, resources, robots) => {
@@ -433,15 +471,14 @@ const treeBased = (() => {
 
   const solve = async (costs) => {
     const simulator = configureSimulator(costs);
-
+    const resources = [0, 0, 0, 0];
+    const robots = [1, 0, 0, 0];
     // const tree = simulator(12, [0, 0, 0, 0], [1, 0, 0, 0]);
     // await writeToFile(JSON.stringify(tree), './scratch/tree.json');
     // const leaves = sortLeaves(getPossibleOutcomes(tree));
     // await writeToFile(JSON.stringify(leaves), './scratch/leaves.json');
 
-    const a = sortLeaves(
-      getPossibleOutcomes(simulator(6, [0, 0, 0, 0], [1, 0, 0, 0]))
-    )[0];
+    const a = sortLeaves(getPossibleOutcomes(simulator(6, resources, robots)))[0];
     // console.log('1-6', a);
     const b = sortLeaves(getPossibleOutcomes(simulator(6, a.resources, a.robots)))[0];
     // console.log('6-12', b);
