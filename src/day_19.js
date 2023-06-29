@@ -294,45 +294,36 @@ const minuteByMinute = (() => {
 })();
 
 const treeBased = (() => {
-  const createNode = (minute, resources, robots) => ({
-    minute,
-    resources,
-    robots,
-    children: [],
-  });
+  // const getLeaves = (depth, resources, robots, costs, leaves = []) => {
+  //   if (depth === 0) {
+  //     return [...leaves, { resources, robots }];
+  //   }
 
-  const decisionTree = (minutes, resources, robots, costs) => {
-    if (minutes === 0) {
-      return createNode(minutes, resources, robots);
-    }
-    const node = createNode(minutes, resources, robots);
-    node.children = [
-      // build nothing
-      decisionTree(minutes - 1, add(resources, robots), robots, costs),
-      // build robots
-      ...getAffordableBuildOptions(resources, costs).map((x) =>
-        decisionTree(
-          minutes - 1,
-          add(subtract(resources, x.buildCost), robots),
-          add(robots, x.robots),
-          costs
-        )
-      ),
-    ];
-    return node;
-  };
+  //   const buildNothing = getLeaves(
+  //     depth - 1,
+  //     add(resources, robots),
+  //     robots,
+  //     costs,
+  //     leaves
+  //   );
 
-  const getLeafNodes = (tree) => {
-    if (tree.children.length === 0) {
-      return [tree];
-    }
+  //   const buildRobots = getAffordableBuildOptions(resources, costs).flatMap((x) =>
+  //     getLeaves(
+  //       depth - 1,
+  //       add(subtract(resources, x.buildCost), robots),
+  //       add(robots, x.robots),
+  //       costs,
+  //       leaves
+  //     )
+  //   );
 
-    return tree.children.flatMap(getLeafNodes);
-  };
+  //   return [...leaves, ...buildNothing, ...buildRobots];
+  // };
 
-  const sortLeafNodes = (leafs) => {
-    const toReturn = [...leafs];
-    toReturn.sort((a, b) => {
+  const smartSortLeaves = (leaves) =>
+    [...leaves].sort((a, b) => {
+      // more geodes always wins.
+
       if (geode(a.resources) > geode(b.resources)) {
         return -1;
       }
@@ -340,15 +331,18 @@ const treeBased = (() => {
         return 1;
       }
 
-      // if (geode(a.robots) > geode(b.robots)) {
-      //   return -1;
-      // }
-      // if (geode(a.robots) < geode(b.robots)) {
-      //   return 1;
-      // }`
+      // more geode robots better.
 
-      // compare robots first
-      for (let index = 3; index >= 0; index--) {
+      if (geode(a.robots) > geode(b.robots)) {
+        return -1;
+      }
+      if (geode(a.robots) < geode(b.robots)) {
+        return 1;
+      }
+
+      // compare non geode robots.
+
+      for (let index = 2; index >= 0; index--) {
         if (a.robots[index] > b.robots[index]) {
           return -1;
         }
@@ -357,7 +351,8 @@ const treeBased = (() => {
         }
       }
 
-      // compare resources next
+      // compare non geode resources
+
       for (let index = 2; index >= 0; index--) {
         if (a.resources[index] > b.resources[index]) {
           return -1;
@@ -369,19 +364,181 @@ const treeBased = (() => {
 
       return 0;
     });
-    return toReturn;
+
+  const sortLeavesByResources = (leaves) =>
+    [...leaves].sort((a, b) => {
+      for (let i = 3; i >= 0; i--) {
+        if (a.resources[i] > b.resources[i]) {
+          return -1;
+        }
+        if (a.resources[i] < b.resources[i]) {
+          return 1;
+        }
+      }
+      return 0;
+    });
+
+  const sortLeavesByRobots = (leaves) =>
+    [...leaves].sort((a, b) => {
+      for (let i = 3; i >= 0; i--) {
+        if (a.robots[i] > b.robots[i]) {
+          return -1;
+        }
+        if (a.robots[i] < b.robots[i]) {
+          return 1;
+        }
+      }
+      return 0;
+    });
+
+  const sortLeaves = sortLeavesByRobots;
+
+  const configureSimulator = (costs) => {
+    const simulate = (minutes, resources, robots) => {
+      const node = {
+        resources,
+        robots,
+        children: [],
+      };
+
+      if (minutes === 0) {
+        return node;
+      }
+
+      node.children = [
+        // build nothing
+        simulate(minutes - 1, add(resources, robots), robots),
+        // build robots
+        ...getAffordableBuildOptions(resources, costs).map((option) =>
+          simulate(
+            minutes - 1,
+            add(subtract(resources, option.buildCost), robots),
+            add(robots, option.robots)
+          )
+        ),
+      ];
+
+      return node;
+    };
+
+    return simulate;
   };
 
-  const bestPaths = (leafs) => {
-    const sorted = sortLeafNodes(leafs);
+  const getPossibleOutcomes = (tree) => {
+    if (tree.children.length === 0) {
+      return [tree];
+    }
+    return tree.children.flatMap(getPossibleOutcomes);
   };
 
-  return async (minutes, costs) => {
-    const tree = decisionTree(3, [0, 0, 0, 0], [1, 0, 0, 0], costs);
-    await writeToFile(JSON.stringify(tree), `./tree.json`);
-    const leaves = sortLeafNodes(getLeafNodes(tree));
-    await writeToFile(JSON.stringify(leaves), `./leaves.json`);
+  const solve = async (costs) => {
+    const simulator = configureSimulator(costs);
+
+    // const tree = simulator(12, [0, 0, 0, 0], [1, 0, 0, 0]);
+    // await writeToFile(JSON.stringify(tree), './scratch/tree.json');
+    // const leaves = sortLeaves(getPossibleOutcomes(tree));
+    // await writeToFile(JSON.stringify(leaves), './scratch/leaves.json');
+
+    const a = sortLeaves(
+      getPossibleOutcomes(simulator(6, [0, 0, 0, 0], [1, 0, 0, 0]))
+    )[0];
+    // console.log('1-6', a);
+    const b = sortLeaves(getPossibleOutcomes(simulator(6, a.resources, a.robots)))[0];
+    // console.log('6-12', b);
+    const c = sortLeaves(getPossibleOutcomes(simulator(6, b.resources, b.robots)))[0];
+    // console.log('12-18', c);
+    const d = sortLeaves(getPossibleOutcomes(simulator(6, c.resources, c.robots)))[0];
+    // console.log('18-24', d);
+
+    return geode(d.resources);
+    // const tree2 = simulator(6, [2, 4, 0, 0], [1, 2, 0, 0]);
+    // await writeToFile(JSON.stringify(tree2), './scratch/tree2.json');
+    // const leaves2 = sortLeaves(getPossibleOutcomes(tree2));
+    // await writeToFile(JSON.stringify(leaves2), './scratch/leaves2.json');
+
+    // const a = getLeaves(4, [0, 0, 0, 0], [1, 0, 0, 0], costs);
+    // await writeToFile(JSON.stringify(a), `./leaves_1-4.json`);
+
+    // const b = getLeaves(1, [1, 0, 0, 0], [2, 0, 0, 0], costs);
+    // await writeToFile(JSON.stringify(b), `./leaves_4-5.json`);
   };
+
+  // const decisionTree = (minutes, resources, robots, costs) => {
+  //   if (minutes === 0) {
+  //     return createNode(minutes, resources, robots);
+  //   }
+  //   const node = createNode(minutes, resources, robots);
+  //   node.children = [
+  //     // build nothing
+  //     decisionTree(minutes - 1, add(resources, robots), robots, costs),
+  //     // build robots
+  //     ...getAffordableBuildOptions(resources, costs).map((x) =>
+  //       decisionTree(
+  //         minutes - 1,
+  //         add(subtract(resources, x.buildCost), robots),
+  //         add(robots, x.robots),
+  //         costs
+  //       )
+  //     ),
+  //   ];
+  //   return node;
+  // };
+
+  // const getLeafNodes = (tree) => {
+  //   if (tree.children.length === 0) {
+  //     return [tree];
+  //   }
+
+  //   return tree.children.flatMap(getLeafNodes);
+  // };
+
+  // const sortLeafNodes = (leafs) => {
+  //   const toReturn = [...leafs];
+  //   toReturn.sort((a, b) => {
+  //     if (geode(a.resources) > geode(b.resources)) {
+  //       return -1;
+  //     }
+  //     if (geode(a.resources) < geode(b.resources)) {
+  //       return 1;
+  //     }
+
+  //     // if (geode(a.robots) > geode(b.robots)) {
+  //     //   return -1;
+  //     // }
+  //     // if (geode(a.robots) < geode(b.robots)) {
+  //     //   return 1;
+  //     // }`
+
+  //     // compare robots first
+  //     for (let index = 3; index >= 0; index--) {
+  //       if (a.robots[index] > b.robots[index]) {
+  //         return -1;
+  //       }
+  //       if (a.robots[index] < b.robots[index]) {
+  //         return 1;
+  //       }
+  //     }
+
+  //     // compare resources next
+  //     for (let index = 2; index >= 0; index--) {
+  //       if (a.resources[index] > b.resources[index]) {
+  //         return -1;
+  //       }
+  //       if (a.resources[index] < b.resources[index]) {
+  //         return 1;
+  //       }
+  //     }
+
+  //     return 0;
+  //   });
+  //   return toReturn;
+  // };
+
+  // const bestPaths = (leafs) => {
+  //   const sorted = sortLeafNodes(leafs);
+  // };
+
+  return async (minutes, costs) => solve(costs);
 })();
 
 /**
@@ -391,18 +548,10 @@ const treeBased = (() => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = async ({ input, lines }) => {
-  console.log();
+export const levelOne = ({ input, lines }) => {
   const blueprint = parseLine(lines[0]);
-  const result = await treeBased(24, blueprint.robots);
-  console.log('geodes', result);
-  // minuteByMinute(24, blueprint.robots);
-
-  // const tree = test(1, 13, [0, 0, 0, 0], [1, 0, 0, 0], blueprint.robots);
-  // await writeToFile(JSON.stringify(tree), './tree.json');
-  // const leaves = sortLeafNodes(getLeafNodes(tree));
-  // await writeToFile(JSON.stringify(leaves), './leaves.json');
-  return 1234;
+  const result = treeBased(24, blueprint.robots);
+  return result;
 };
 
 /**
