@@ -2,7 +2,7 @@
  * Contains solutions for Day 19
  * Puzzle Description: https://adventofcode.com/2022/day/19
  */
-import { sum, updateAt } from './util/array.js';
+import { arraysEqual, sum, updateAt } from './util/array.js';
 import { writeToFile } from './util/io.js';
 import { toNumber } from './util/string.js';
 
@@ -429,7 +429,7 @@ const treeBased = (() => {
       return 0;
     });
 
-  const sortLeaves = sortByFuture;
+  const sortLeaves = smartSortLeaves;
 
   const configureSimulator = (costs) => {
     const simulate = (minutes, resources, robots) => {
@@ -462,6 +462,29 @@ const treeBased = (() => {
     return simulate;
   };
 
+  const compareResources = (lhs, rhs) => {
+    for (let index = 3; index >= 0; index--) {
+      if (lhs[index] > rhs[index]) {
+        return -1;
+      }
+      if (lhs[index] < rhs[index]) {
+        return 1;
+      }
+    }
+    return 0;
+  };
+
+  const filterMostPromisingChoices = (choices) => {
+    let mostRobots = [1, 0, 0, 0];
+    for (let index = 0; index < choices.length; index++) {
+      if (compareResources(choices[index].robots, mostRobots) < 0) {
+        mostRobots = choices[index].robots;
+      }
+    }
+
+    return choices.filter((choice) => arraysEqual(choice.robots, mostRobots));
+  };
+
   const getPossibleOutcomes = (tree) => {
     if (tree.children.length === 0) {
       return [tree];
@@ -473,21 +496,56 @@ const treeBased = (() => {
     const simulator = configureSimulator(costs);
     const resources = [0, 0, 0, 0];
     const robots = [1, 0, 0, 0];
-    // const tree = simulator(12, [0, 0, 0, 0], [1, 0, 0, 0]);
-    // await writeToFile(JSON.stringify(tree), './scratch/tree.json');
-    // const leaves = sortLeaves(getPossibleOutcomes(tree));
-    // await writeToFile(JSON.stringify(leaves), './scratch/leaves.json');
 
-    const a = sortLeaves(getPossibleOutcomes(simulator(6, resources, robots)))[0];
+    const startChoices = getPossibleOutcomes(simulator(6, resources, robots));
+    // await writeToFile(JSON.stringify(startChoices), './scratch/choices.json');
+
+    const mostPromising = filterMostPromisingChoices(startChoices);
+    // await writeToFile(JSON.stringify(mostPromising), './scratch/promising.json');
+
+    // 6-12
+    const a = mostPromising.flatMap((choice) =>
+      filterMostPromisingChoices(
+        getPossibleOutcomes(simulator(6, choice.resources, choice.robots))
+      )
+    );
+    // await writeToFile(JSON.stringify(a), './scratch/a.json');
+
+    // 12-18
+    const b = a.flatMap((choice) =>
+      filterMostPromisingChoices(
+        getPossibleOutcomes(simulator(6, choice.resources, choice.robots))
+      )
+    );
+    // await writeToFile(JSON.stringify(b), './scratch/b.json');
+
+    // 18-24
+    const c = b.flatMap((choice) =>
+      filterMostPromisingChoices(
+        getPossibleOutcomes(simulator(6, choice.resources, choice.robots))
+      )
+    );
+    // await writeToFile(JSON.stringify(c), './scratch/c.json');
+
+    return geode(sortLeavesByResources(c)[0].resources);
+
+    // // 18 - 24
+    // const d = c.flatMap((choice) =>
+    //   filterMostPromisingChoices(
+    //     getPossibleOutcomes(simulator(6, choice.resources, choice.robots))
+    //   )
+    // );
+    // await writeToFile(JSON.stringify(d), './scratch/d.json');
+
+    // const a = sortLeaves(getPossibleOutcomes(simulator(6, resources, robots)))[0];
     // console.log('1-6', a);
-    const b = sortLeaves(getPossibleOutcomes(simulator(6, a.resources, a.robots)))[0];
+    // const b = sortLeaves(getPossibleOutcomes(simulator(6, a.resources, a.robots)))[0];
     // console.log('6-12', b);
-    const c = sortLeaves(getPossibleOutcomes(simulator(6, b.resources, b.robots)))[0];
+    // const c = sortLeaves(getPossibleOutcomes(simulator(6, b.resources, b.robots)))[0];
     // console.log('12-18', c);
-    const d = sortLeaves(getPossibleOutcomes(simulator(6, c.resources, c.robots)))[0];
+    // const d = sortLeaves(getPossibleOutcomes(simulator(6, c.resources, c.robots)))[0];
     // console.log('18-24', d);
 
-    return geode(d.resources);
     // const tree2 = simulator(6, [2, 4, 0, 0], [1, 2, 0, 0]);
     // await writeToFile(JSON.stringify(tree2), './scratch/tree2.json');
     // const leaves2 = sortLeaves(getPossibleOutcomes(tree2));
@@ -585,9 +643,9 @@ const treeBased = (() => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = ({ input, lines }) => {
+export const levelOne = async ({ input, lines }) => {
   const blueprint = parseLine(lines[0]);
-  const result = treeBased(24, blueprint.robots);
+  const result = await treeBased(24, blueprint.robots);
   return result;
 };
 
