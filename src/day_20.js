@@ -6,8 +6,6 @@ import { toNumber } from './util/string.js';
 
 const parseInput = (lines) => lines.map(toNumber);
 
-const decrypt = (encrypted, mixed) => mixed.map((x) => encrypted[x]);
-
 const wrapIndex = (index, length) => (index + length) % length;
 
 const move = (array, index, times, direction) => {
@@ -29,7 +27,28 @@ const moveRight = (array, index, times) => move(array, index, times, 1);
 
 const moveLeft = (array, index, times) => move(array, index, times, -1);
 
-const coordinate = (encrypted, mixed) => {
+const mix = (encrypted, mixed) => {
+  let toReturn = [...mixed];
+
+  for (let index = 0; index < encrypted.length; index++) {
+    const number = encrypted[index];
+    const mixedIndex = toReturn.indexOf(index);
+    const numberOfMoves = Math.abs(number) % (toReturn.length - 1);
+
+    if (number === 0 || numberOfMoves === 0) {
+      continue;
+    }
+
+    toReturn =
+      number > 0
+        ? moveRight(toReturn, mixedIndex, numberOfMoves)
+        : moveLeft(toReturn, mixedIndex, numberOfMoves);
+  }
+
+  return toReturn;
+};
+
+const groveCoordinate = (encrypted, mixed) => {
   const zeroIndex = mixed.indexOf(encrypted.indexOf(0));
   const a = encrypted[mixed[(zeroIndex + 1000) % mixed.length]];
   const b = encrypted[mixed[(zeroIndex + 2000) % mixed.length]];
@@ -42,33 +61,20 @@ const coordinate = (encrypted, mixed) => {
  */
 export const levelOne = ({ lines }) => {
   const encrypted = parseInput(lines);
-  let mixed = encrypted.map((_, index) => index);
-
-  for (let index = 0; index < encrypted.length; index++) {
-    const number = encrypted[index];
-    const mixedIndex = mixed.indexOf(index);
-    const numberOfMoves = Math.abs(number) % (mixed.length - 1);
-
-    if (number === 0 || numberOfMoves === 0) {
-      continue;
-    }
-
-    mixed =
-      number > 0
-        ? moveRight(mixed, mixedIndex, numberOfMoves)
-        : moveLeft(mixed, mixedIndex, numberOfMoves);
-  }
-
-  return coordinate(encrypted, mixed);
+  const mixed = encrypted.map((_, i) => i);
+  const result = mix(encrypted, mixed);
+  return groveCoordinate(encrypted, result);
 };
 
 /**
  * Returns the solution for level two of this puzzle.
- * @param {Object} args - Provides both raw and split input.
- * @param {String} args.input - The original, unparsed input string.
- * @param {String[]} args.lines - Array containing each line of the input string.
- * @returns {Number|String}
  */
 export const levelTwo = ({ input, lines }) => {
-  // your code here
+  const encrypted = parseInput(lines).map((x) => x * 811589153);
+  let mixed = encrypted.map((_, i) => i);
+  let mixCount = 10;
+  while (mixCount--) {
+    mixed = mix(encrypted, mixed);
+  }
+  return groveCoordinate(encrypted, mixed);
 };
