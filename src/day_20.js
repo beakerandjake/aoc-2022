@@ -3,7 +3,6 @@
  * Puzzle Description: https://adventofcode.com/2022/day/20
  */
 import { toNumber } from './util/string.js';
-import { arrayToString, swap } from './util/array.js';
 
 const parseInput = (lines) => lines.map(toNumber);
 
@@ -11,11 +10,12 @@ const decrypt = (encrypted, mixed) => mixed.map((x) => encrypted[x]);
 
 const wrapIndex = (index, length) => ((index % length) + length) % length;
 
-const move = (array, index, destIndex, direction) => {
+const move = (array, index, times, direction) => {
   const toReturn = [...array];
+  let remaining = times;
   let a = index;
   let b = wrapIndex(index + direction, toReturn.length);
-  while (a !== destIndex) {
+  while (remaining--) {
     const temp = toReturn[a];
     toReturn[a] = toReturn[b];
     toReturn[b] = temp;
@@ -25,9 +25,9 @@ const move = (array, index, destIndex, direction) => {
   return toReturn;
 };
 
-const moveRight = (array, index, destIndex) => move(array, index, destIndex, 1);
+const moveRight = (array, index, times) => move(array, index, times, 1);
 
-const moveLeft = (array, index, destIndex) => move(array, index, destIndex, -1);
+const moveLeft = (array, index, times) => move(array, index, times, -1);
 
 const coordinate = (encrypted, mixed) => {
   const zeroIndex = mixed.indexOf(encrypted.indexOf(0));
@@ -47,14 +47,16 @@ export const levelOne = ({ lines }) => {
   for (let index = 0; index < encrypted.length; index++) {
     const number = encrypted[index];
     const mixedIndex = mixed.indexOf(index);
-    const destIndex = wrapIndex(mixedIndex + number, mixed.length);
-    if (number === 0 || mixedIndex === destIndex) {
+    const numberOfMoves = Math.abs(number) % (mixed.length - 1);
+
+    if (number === 0 || numberOfMoves === 0) {
       continue;
     }
+
     mixed =
       number > 0
-        ? moveRight(mixed, mixedIndex, destIndex)
-        : moveLeft(mixed, mixedIndex, destIndex);
+        ? moveRight(mixed, mixedIndex, numberOfMoves)
+        : moveLeft(mixed, mixedIndex, numberOfMoves);
   }
 
   return coordinate(encrypted, mixed);
