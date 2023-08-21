@@ -26,34 +26,21 @@ const decrypt = (encrypted, mixed) =>
 
 const wrapIndex = (index, length) => ((index % length) + length) % length;
 
-const swapRight = (array, startIndex, endIndex) =>
-  array.map((x) => {
-    if (x < startIndex || x > endIndex) {
-      return x;
-    }
-    if (x === startIndex) {
-      return endIndex;
-    }
-    return x - 1;
-  });
-
-const swapLeft = (array, startIndex, endIndex) => {
-  const toReturn = [...array];
-  for (let index = startIndex - 1; index >= endIndex; index--) {
-    toReturn[index] += 1;
-  }
-  toReturn[startIndex] = endIndex;
-  return toReturn;
-};
-
 const moveNumber = (array, startIndex, endIndex) => {
   if (startIndex === endIndex) {
     return array;
   }
+  const direction = startIndex > endIndex ? 1 : -1;
+  return array.map((index) => {
+    if (index < startIndex || index > endIndex) {
+      return index;
+    }
+    if (index === startIndex) {
+      return endIndex;
+    }
 
-  return startIndex < endIndex
-    ? swapRight(array, startIndex, endIndex)
-    : swapLeft(array, startIndex, endIndex);
+    return index + direction;
+  });
 };
 
 /**
@@ -67,19 +54,27 @@ export const levelOne = ({ lines }) => {
 
   console.log('original:', arrayToString(encrypted));
 
+  // wrap around in either direction causing issue with shifting, off by one. 
+  // overcomplicating it? instead of reversing direction on wrap around
+  // if negative always left shift until at target, positive always right shift
+
   for (let index = 0; index < length; index++) {
     const number = encrypted[index];
     console.group(`number: ${number}`);
     const currentIndex = mixed[index];
     const destIndex = wrapIndex(currentIndex + number, length);
     console.log(`startIndex: ${currentIndex}, destIndex: ${destIndex}`);
+    console.log(`before: ${arrayToString(decrypt(encrypted, mixed))}`);
     mixed = moveNumber(mixed, currentIndex, destIndex);
     console.log(`mixed: ${arrayToString(mixed)}`);
     console.log(`decrp: ${arrayToString(decrypt(encrypted, mixed))}`);
     console.groupEnd();
   }
-
-  return 10;
+  const indexOfZero = mixed.findIndex((x) => x === 0);
+  const a = mixed[(indexOfZero + 1000) % length];
+  const b = mixed[(indexOfZero + 2000) % length];
+  const c = mixed[(indexOfZero + 3000) % length];
+  return a + b + c;
 };
 
 /**
