@@ -41,26 +41,22 @@ const coordinate = (encrypted, mixed) => {
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
-  // console.log();
   const encrypted = parseInput(lines);
   let mixed = encrypted.map((_, index) => index);
-  // console.log(`orig: ${arrayToString(encrypted)}`);
 
   for (let index = 0; index < encrypted.length; index++) {
     const number = encrypted[index];
-    if (number === 0) {
+    const mixedIndex = mixed.indexOf(index);
+    const destIndex = wrapIndex(mixedIndex + number, mixed.length);
+    if (number === 0 || mixedIndex === destIndex) {
       continue;
     }
-    const mixedIndex = mixed.indexOf(index);
-    const destIndex = wrapIndex(mixedIndex + number, encrypted.length);
     mixed =
       number > 0
         ? moveRight(mixed, mixedIndex, destIndex)
         : moveLeft(mixed, mixedIndex, destIndex);
   }
 
-  // console.log(`mix : ${arrayToString(decrypt(encrypted, mixed))}`);
-  // console.log(`rev : ${arrayToString(decrypt(encrypted, mixed.reverse()))}`);
   return coordinate(encrypted, mixed);
 };
 
