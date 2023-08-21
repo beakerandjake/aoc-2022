@@ -3,52 +3,37 @@
  * Puzzle Description: https://adventofcode.com/2022/day/20
  */
 import { toNumber } from './util/string.js';
-import { arrayToString } from './util/array.js';
-
-// rollover from start, swap forward
-// rollover from end, swap backward
-// backward with no rollover, swap backward
-// forward with no rollover, swap forward
-
-// use secondary array, index in lines up to original array index, value is current index
-
-// fn to calculate new index with rollover
-
-// find index of zero
+import { arrayToString, swap } from './util/array.js';
 
 const parseInput = (lines) => lines.map(toNumber);
 
-const decrypt = (encrypted, mixed) =>
-  encrypted.reduce((acc, value, index) => {
-    acc[mixed[index]] = value;
-    return acc;
-  }, []);
+const decrypt = (encrypted, mixed) => mixed.map((x) => encrypted[x]);
 
 const wrapIndex = (index, length) => ((index % length) + length) % length;
 
-const moveRight = (array, startIndex, endIndex) => {
-  const toReturn = array.map((index) =>
-    index > startIndex || index <= endIndex ? wrapIndex(index - 1, array.length) : index
-  );
-  toReturn[startIndex] = endIndex;
+const move = (array, index, destIndex, direction) => {
+  const toReturn = [...array];
+  let a = index;
+  let b = wrapIndex(index + direction, toReturn.length);
+  while (a !== destIndex) {
+    const temp = toReturn[a];
+    toReturn[a] = toReturn[b];
+    toReturn[b] = temp;
+    a = b;
+    b = wrapIndex(b + direction, toReturn.length);
+  }
   return toReturn;
 };
 
-const moveLeft = (array, startIndex, endIndex) => {};
+const moveRight = (array, index, destIndex) => move(array, index, destIndex, 1);
 
-const moveNumber = (array, startIndex, endIndex) => {
-  if (startIndex === endIndex) {
-    return array;
-  }
+const moveLeft = (array, index, destIndex) => move(array, index, destIndex, -1);
 
-  return [];
-};
-
-const findCoordinates = (mixed) => {
-  const indexOfZero = mixed.findIndex((x) => x === 0);
-  const a = mixed[(indexOfZero + 1000) % mixed.length];
-  const b = mixed[(indexOfZero + 2000) % mixed.length];
-  const c = mixed[(indexOfZero + 3000) % mixed.length];
+const coordinate = (encrypted, mixed) => {
+  const zeroIndex = mixed.indexOf(encrypted.indexOf(0));
+  const a = encrypted[mixed[(zeroIndex + 1000) % mixed.length]];
+  const b = encrypted[mixed[(zeroIndex + 2000) % mixed.length]];
+  const c = encrypted[mixed[(zeroIndex + 3000) % mixed.length]];
   return a + b + c;
 };
 
@@ -56,38 +41,27 @@ const findCoordinates = (mixed) => {
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
-  console.log();
-  const encrypted = [1, 2, 3, -2, -3, 0, 4];
-  let mixed = encrypted.map((_, index) => index);
-  mixed = moveRight(mixed, 2, wrapIndex(2 + 3, mixed.length));
-  console.log(`before: ${arrayToString(encrypted)}`);
-  console.log(`after: ${arrayToString(decrypt(encrypted, mixed))}`);
-  return 10;
-
   // console.log();
-  // const encrypted = parseInput(lines);
-  // let mixed = encrypted.map((_, index) => index);
+  const encrypted = parseInput(lines);
+  let mixed = encrypted.map((_, index) => index);
+  // console.log(`orig: ${arrayToString(encrypted)}`);
 
-  // console.log('original:', arrayToString(encrypted));
+  for (let index = 0; index < encrypted.length; index++) {
+    const number = encrypted[index];
+    if (number === 0) {
+      continue;
+    }
+    const mixedIndex = mixed.indexOf(index);
+    const destIndex = wrapIndex(mixedIndex + number, encrypted.length);
+    mixed =
+      number > 0
+        ? moveRight(mixed, mixedIndex, destIndex)
+        : moveLeft(mixed, mixedIndex, destIndex);
+  }
 
-  // // wrap around in either direction causing issue with shifting, off by one.
-  // // overcomplicating it? instead of reversing direction on wrap around
-  // // if negative always left shift until at target, positive always right shift
-
-  // for (let index = 0; index < mixed.length; index++) {
-  //   const number = encrypted[index];
-  //   console.group(`number: ${number}`);
-  //   const currentIndex = mixed[index];
-  //   const destIndex = wrapIndex(currentIndex + number, mixed.length);
-  //   console.log(`startIndex: ${currentIndex}, destIndex: ${destIndex}`);
-  //   console.log(`before: ${arrayToString(decrypt(encrypted, mixed))}`);
-  //   mixed = moveNumber(mixed, currentIndex, destIndex);
-  //   console.log(`mixed: ${arrayToString(mixed)}`);
-  //   console.log(`decrp: ${arrayToString(decrypt(encrypted, mixed))}`);
-  //   console.groupEnd();
-  // }
-
-  // return findCoordinates(mixed);
+  // console.log(`mix : ${arrayToString(decrypt(encrypted, mixed))}`);
+  // console.log(`rev : ${arrayToString(decrypt(encrypted, mixed.reverse()))}`);
+  return coordinate(encrypted, mixed);
 };
 
 /**
