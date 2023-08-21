@@ -18,16 +18,67 @@ import { arrayToString } from './util/array.js';
 
 const parseInput = (lines) => lines.map(toNumber);
 
+const decrypt = (encrypted, mixed) =>
+  encrypted.reduce((acc, value, index) => {
+    acc[mixed[index]] = value;
+    return acc;
+  }, []);
+
+const wrapIndex = (index, length) => ((index % length) + length) % length;
+
+const swapRight = (array, startIndex, endIndex) =>
+  array.map((x) => {
+    if (x < startIndex || x > endIndex) {
+      return x;
+    }
+    if (x === startIndex) {
+      return endIndex;
+    }
+    return x - 1;
+  });
+
+const swapLeft = (array, startIndex, endIndex) => {
+  const toReturn = [...array];
+  for (let index = startIndex - 1; index >= endIndex; index--) {
+    toReturn[index] += 1;
+  }
+  toReturn[startIndex] = endIndex;
+  return toReturn;
+};
+
+const moveNumber = (array, startIndex, endIndex) => {
+  if (startIndex === endIndex) {
+    return array;
+  }
+
+  return startIndex < endIndex
+    ? swapRight(array, startIndex, endIndex)
+    : swapLeft(array, startIndex, endIndex);
+};
+
 /**
  * Returns the solution for level one of this puzzle.
- * @param {Object} args - Provides both raw and split input.
- * @param {String} args.input - The original, unparsed input string.
- * @param {String[]} args.lines - Array containing each line of the input string.
- * @returns {Number|String}
  */
 export const levelOne = ({ lines }) => {
+  console.log();
   const encrypted = parseInput(lines);
-  console.log(arrayToString(encrypted));
+  const { length } = encrypted;
+  let mixed = encrypted.map((_, index) => index);
+
+  console.log('original:', arrayToString(encrypted));
+
+  for (let index = 0; index < length; index++) {
+    const number = encrypted[index];
+    console.group(`number: ${number}`);
+    const currentIndex = mixed[index];
+    const destIndex = wrapIndex(currentIndex + number, length);
+    console.log(`startIndex: ${currentIndex}, destIndex: ${destIndex}`);
+    mixed = moveNumber(mixed, currentIndex, destIndex);
+    console.log(`mixed: ${arrayToString(mixed)}`);
+    console.log(`decrp: ${arrayToString(decrypt(encrypted, mixed))}`);
+    console.groupEnd();
+  }
+
   return 10;
 };
 
