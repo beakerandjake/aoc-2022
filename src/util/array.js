@@ -182,3 +182,20 @@ export const updateAt = (array, index, value) => {
   toReturn[index] = value;
   return toReturn;
 };
+
+/**
+ * Returns a new array with the values of the lhs and rhs indexes swapped.
+ * @param {Array} array
+ * @param {Number} lhsIndex
+ * @param {Number} rhsIndex
+ */
+export const swap = (array, lhsIndex, rhsIndex) =>
+  array.map((value, index) => {
+    if (index === lhsIndex) {
+      return array[rhsIndex];
+    }
+    if (index === rhsIndex) {
+      return array[lhsIndex];
+    }
+    return value;
+  });
