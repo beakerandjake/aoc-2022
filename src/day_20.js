@@ -8,7 +8,7 @@ const parseInput = (lines) => lines.map(toNumber);
 
 const decrypt = (encrypted, mixed) => mixed.map((x) => encrypted[x]);
 
-const wrapIndex = (index, length) => ((index % length) + length) % length;
+const wrapIndex = (index, length) => (index + length) % length;
 
 const move = (array, index, times, direction) => {
   const toReturn = [...array];
