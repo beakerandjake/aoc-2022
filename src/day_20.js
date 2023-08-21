@@ -26,6 +26,16 @@ const decrypt = (encrypted, mixed) =>
 
 const wrapIndex = (index, length) => ((index % length) + length) % length;
 
+const moveRight = (array, startIndex, endIndex) => {
+  const toReturn = array.map((index) =>
+    index > startIndex || index <= endIndex ? wrapIndex(index - 1, array.length) : index
+  );
+  toReturn[startIndex] = endIndex;
+  return toReturn;
+};
+
+const moveLeft = (array, startIndex, endIndex) => {};
+
 const moveNumber = (array, startIndex, endIndex) => {
   if (startIndex === endIndex) {
     return array;
@@ -47,30 +57,37 @@ const findCoordinates = (mixed) => {
  */
 export const levelOne = ({ lines }) => {
   console.log();
-  const encrypted = parseInput(lines);
-  const { length } = encrypted;
+  const encrypted = [1, 2, 3, -2, -3, 0, 4];
   let mixed = encrypted.map((_, index) => index);
+  mixed = moveRight(mixed, 2, wrapIndex(2 + 3, mixed.length));
+  console.log(`before: ${arrayToString(encrypted)}`);
+  console.log(`after: ${arrayToString(decrypt(encrypted, mixed))}`);
+  return 10;
 
-  console.log('original:', arrayToString(encrypted));
+  // console.log();
+  // const encrypted = parseInput(lines);
+  // let mixed = encrypted.map((_, index) => index);
 
-  // wrap around in either direction causing issue with shifting, off by one.
-  // overcomplicating it? instead of reversing direction on wrap around
-  // if negative always left shift until at target, positive always right shift
+  // console.log('original:', arrayToString(encrypted));
 
-  for (let index = 0; index < length; index++) {
-    const number = encrypted[index];
-    console.group(`number: ${number}`);
-    const currentIndex = mixed[index];
-    const destIndex = wrapIndex(currentIndex + number, length);
-    console.log(`startIndex: ${currentIndex}, destIndex: ${destIndex}`);
-    console.log(`before: ${arrayToString(decrypt(encrypted, mixed))}`);
-    mixed = moveNumber(mixed, currentIndex, destIndex);
-    console.log(`mixed: ${arrayToString(mixed)}`);
-    console.log(`decrp: ${arrayToString(decrypt(encrypted, mixed))}`);
-    console.groupEnd();
-  }
+  // // wrap around in either direction causing issue with shifting, off by one.
+  // // overcomplicating it? instead of reversing direction on wrap around
+  // // if negative always left shift until at target, positive always right shift
 
-  return findCoordinates(mixed);
+  // for (let index = 0; index < mixed.length; index++) {
+  //   const number = encrypted[index];
+  //   console.group(`number: ${number}`);
+  //   const currentIndex = mixed[index];
+  //   const destIndex = wrapIndex(currentIndex + number, mixed.length);
+  //   console.log(`startIndex: ${currentIndex}, destIndex: ${destIndex}`);
+  //   console.log(`before: ${arrayToString(decrypt(encrypted, mixed))}`);
+  //   mixed = moveNumber(mixed, currentIndex, destIndex);
+  //   console.log(`mixed: ${arrayToString(mixed)}`);
+  //   console.log(`decrp: ${arrayToString(decrypt(encrypted, mixed))}`);
+  //   console.groupEnd();
+  // }
+
+  // return findCoordinates(mixed);
 };
 
 /**
