@@ -30,17 +30,16 @@ const moveNumber = (array, startIndex, endIndex) => {
   if (startIndex === endIndex) {
     return array;
   }
-  const direction = startIndex > endIndex ? 1 : -1;
-  return array.map((index) => {
-    if (index < startIndex || index > endIndex) {
-      return index;
-    }
-    if (index === startIndex) {
-      return endIndex;
-    }
 
-    return index + direction;
-  });
+  return [];
+};
+
+const findCoordinates = (mixed) => {
+  const indexOfZero = mixed.findIndex((x) => x === 0);
+  const a = mixed[(indexOfZero + 1000) % mixed.length];
+  const b = mixed[(indexOfZero + 2000) % mixed.length];
+  const c = mixed[(indexOfZero + 3000) % mixed.length];
+  return a + b + c;
 };
 
 /**
@@ -54,7 +53,7 @@ export const levelOne = ({ lines }) => {
 
   console.log('original:', arrayToString(encrypted));
 
-  // wrap around in either direction causing issue with shifting, off by one. 
+  // wrap around in either direction causing issue with shifting, off by one.
   // overcomplicating it? instead of reversing direction on wrap around
   // if negative always left shift until at target, positive always right shift
 
@@ -70,11 +69,8 @@ export const levelOne = ({ lines }) => {
     console.log(`decrp: ${arrayToString(decrypt(encrypted, mixed))}`);
     console.groupEnd();
   }
-  const indexOfZero = mixed.findIndex((x) => x === 0);
-  const a = mixed[(indexOfZero + 1000) % length];
-  const b = mixed[(indexOfZero + 2000) % length];
-  const c = mixed[(indexOfZero + 3000) % length];
-  return a + b + c;
+
+  return findCoordinates(mixed);
 };
 
 /**
