@@ -14,72 +14,53 @@ class Node {
   }
 }
 
-const parseNodeName = (line, start) => line.slice(start, start + 4);
-
-const parseLeafNode = (line) => ({
-  value: toNumber(line.slice(6)),
-});
-
-const parseOperator = (operator) => {
-  if (operator === '+') {
-    return add;
-  }
-  if (operator === '-') {
-    return subtract;
-  }
-  if (operator === '*') {
-    return multiply;
-  }
-  if (operator === '/') {
-    return divide;
-  }
-  throw new Error(`unknown operator: ${operator}`);
+const operatorKeys = {
+  '+': add,
+  '-': subtract,
+  '*': multiply,
+  '/': divide,
 };
 
-const parseInnerNode = (line) => ({
-  value: parseOperator(line[11]),
-  lhs: parseNodeName(line, 6),
-  rhs: parseNodeName(line, 13),
+const nodeName = (line, start) => line.slice(start, start + 4);
+
+const leafNode = (line) => ({
+  value: toNumber(line.slice(6)),
+  lhs: undefined,
+  rhs: undefined,
 });
 
-const parseLines = (lines) =>
+const innerNode = (line) => ({
+  value: operatorKeys[line[11]],
+  lhs: nodeName(line, 6),
+  rhs: nodeName(line, 13),
+});
+
+const nodeLookup = (lines) =>
   lines.reduce((acc, line) => {
-    acc[parseNodeName(line, 0)] =
-      line.length === 17 ? parseInnerNode(line) : parseLeafNode(line);
+    acc[nodeName(line, 0)] = line.length === 17 ? innerNode(line) : leafNode(line);
     return acc;
   }, {});
 
-const buildExpressionTree = (nodeKey, nodeLookup) => {
-  const nodeData = nodeLookup[nodeKey];
+const expressionTree = (key, lookup) =>
+  lookup[key]
+    ? new Node(
+        key,
+        lookup[key].value,
+        expressionTree(lookup[key].lhs, lookup),
+        expressionTree(lookup[key].rhs, lookup)
+      )
+    : undefined;
 
-  if (!nodeData) {
-    return undefined;
-  }
-
-  return new Node(
-    nodeKey,
-    nodeData.value,
-    buildExpressionTree(nodeData.lhs, nodeLookup),
-    buildExpressionTree(nodeData.rhs, nodeLookup)
-  );
-};
-
-const evaluate = (node) => {
-  if (!node.lhs && !node.rhs) {
-    return node.value;
-  }
-
-  return node.value(evaluate(node.lhs), evaluate(node.rhs));
-};
+const evaluate = (node) =>
+  !node.lhs && !node.rhs
+    ? node.value
+    : node.value(evaluate(node.lhs), evaluate(node.rhs));
 
 /**
  * Returns the solution for level one of this puzzle.
  */
-export const levelOne = ({ lines }) => {
-  const nodeLookup = parseLines(lines);
-  const expressionTree = buildExpressionTree('root', nodeLookup);
-  return evaluate(expressionTree);
-};
+export const levelOne = ({ lines }) =>
+  evaluate(expressionTree('root', nodeLookup(lines)));
 
 /**
  * Returns the solution for level two of this puzzle.
