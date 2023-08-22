@@ -1,16 +1,30 @@
 /**
- * Returns the result of the lhs added to the rhs.
+ * Returns the result of a added to b.
  * @param {Number} a
  * @param {Number} b
  */
 export const add = (a, b) => a + b;
 
 /**
- * Returns the result of the lhs multiplied by the rhs.
+ * Returns the result of a multiplied by b.
  * @param {Number} a
  * @param {Number} b
  */
 export const multiply = (a, b) => a * b;
+
+/**
+ * Returns the result of a subtracted by b.
+ * @param {Number} a
+ * @param {Number} b
+ */
+export const subtract = (a, b) => a - b;
+
+/**
+ * Returns the result of a divided by b.
+ * @param {Number} a
+ * @param {Number} b
+ */
+export const divide = (a, b) => a / b;
 
 /**
  * Checks if value is between start and up to, but not including end.

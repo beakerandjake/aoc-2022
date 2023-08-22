@@ -17,3 +17,9 @@ export const lowercaseAlphabet = () =>
  * @param {RegExp} regex
  */
 export const firstCapture = (str, regex) => str.match(regex)[1];
+
+/**
+ * Returns true if the string is a single digit character
+ * @param {String} char
+ */
+export const isDigitCharacter = (char) => /^\d$/.test(char);
