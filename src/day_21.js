@@ -83,7 +83,7 @@ export const levelTwo = (() => {
   };
 
   // map of functions to solve for LHS of equation: lhs OP rhs = value
-  const solveLhsLookup = {
+  const solveForLhsLookup = {
     '+': (rhs, value) => subtract(value, rhs),
     '-': (rhs, value) => add(value, rhs),
     '*': (rhs, value) => divide(value, rhs),
@@ -91,29 +91,38 @@ export const levelTwo = (() => {
   };
 
   // map of functions to solve for RHS of equation: lhs OP rhs = value
-  const solveRhsLookup = {
+  const solveForRhsLookup = {
     '+': (lhs, value) => subtract(value, lhs),
     '-': (lhs, value) => subtract(lhs, value),
     '*': (lhs, value) => divide(value, lhs),
     '/': (lhs, value) => divide(lhs, value),
   };
 
-  const solve = (tree, value, ancestors) => {
-    const humanBranch = ancestors.has(tree.lhs.key) ? tree.lhs : tree.rhs;
+  /**
+   * Examines the nodes children and determines which child is the ancestor of a target node.
+   * Returns an array with ancestor branch at index zero, and non ancestor branch at index one.
+   */
+  const sortChildrenByIsAncestor = (node, ancestors) =>
+    ancestors.has(node.lhs.key) ? [node.lhs, node.rhs] : [node.rhs, node.lhs];
+
+  /**
+   * Returns the value the node must have in order for the tree to evaluate to the target value.
+   */
+  const solve = (tree, nodeKey, nodeAncestors, targetValue) => {
+    const [unknownBranch, knownBranch] = sortChildrenByIsAncestor(tree, nodeAncestors);
     const newValue =
-      humanBranch === tree.lhs
-        ? solveLhsLookup[tree.value](evaluate(tree.rhs), value)
-        : solveRhsLookup[tree.value](evaluate(tree.lhs), value);
-    return humanBranch.key === 'humn'
+      unknownBranch === tree.lhs
+        ? solveForLhsLookup[tree.value](evaluate(knownBranch), targetValue)
+        : solveForRhsLookup[tree.value](evaluate(knownBranch), targetValue);
+    return unknownBranch.key === nodeKey
       ? newValue
-      : solve(humanBranch, newValue, ancestors);
+      : solve(unknownBranch, nodeKey, nodeAncestors, newValue);
   };
 
   return ({ lines }) => {
     const tree = expressionTree('root', nodeLookup(lines));
     const ancestors = getAncestors(tree, 'humn');
-    const humanBranch = ancestors.has(tree.lhs.key) ? tree.lhs : tree.rhs;
-    const targetBranch = humanBranch === tree.lhs ? tree.rhs : tree.lhs;
-    return solve(humanBranch, evaluate(targetBranch), ancestors);
+    const [humanBranch, nonHumanBranch] = sortChildrenByIsAncestor(tree, ancestors);
+    return solve(humanBranch, 'humn', ancestors, evaluate(nonHumanBranch));
   };
 })();
