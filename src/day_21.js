@@ -30,7 +30,7 @@ const leafNode = (line) => ({
 });
 
 const innerNode = (line) => ({
-  value: operatorKeys[line[11]],
+  value: line[11],
   lhs: nodeName(line, 6),
   rhs: nodeName(line, 13),
 });
@@ -54,7 +54,7 @@ const expressionTree = (key, lookup) =>
 const evaluate = (node) =>
   !node.lhs && !node.rhs
     ? node.value
-    : node.value(evaluate(node.lhs), evaluate(node.rhs));
+    : operatorKeys[node.value](evaluate(node.lhs), evaluate(node.rhs));
 
 /**
  * Returns the solution for level one of this puzzle.
