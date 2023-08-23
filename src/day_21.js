@@ -65,6 +65,50 @@ export const levelOne = ({ lines }) =>
 /**
  * Returns the solution for level two of this puzzle.
  */
-export const levelTwo = ({ input, lines }) => {
-  // your code here
-};
+export const levelTwo = (() => {
+  const find = (key, tree) => {
+    if (!tree) {
+      return undefined;
+    }
+    if (tree.key === key) {
+      return tree;
+    }
+    return find(key, tree.lhs) || find(key, tree.rhs);
+  };
+
+  const inverseOperator = (operator) => {
+    if (operator === add) {
+      return subtract;
+    }
+    if (operator === subtract) {
+      return add;
+    }
+    if (operator === multiply) {
+      return divide;
+    }
+    if (operator === divide) {
+      return multiply;
+    }
+    throw new Error(`unknown operator: ${operator}`);
+  };
+
+  const solve = (tree, value) => {
+    const op = inverseOperator(tree.value);
+    const humanBranch = find('humn', tree.lhs) ? tree.lhs : tree.rhs;
+    const nonHumanBranch = humanBranch === tree.lhs ? tree.rhs : tree.lhs;
+    const newValue = op(value, evaluate(nonHumanBranch));
+    return humanBranch.key === 'humn' ? newValue : solve(humanBranch, newValue);
+  };
+
+  return ({ lines }) => {
+    const tree = expressionTree('root', nodeLookup(lines));
+    const humanBranch = find('humn', tree.lhs) ? tree.lhs : tree.rhs;
+    const targetBranch = humanBranch === tree.lhs ? tree.rhs : tree.lhs;
+    const target = evaluate(targetBranch);
+    const human = evaluate(humanBranch);
+    console.log();
+    console.log('target:', target);
+    console.log('human:', human);
+    return solve(humanBranch, target);
+  };
+})();
