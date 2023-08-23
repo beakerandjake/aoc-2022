@@ -66,14 +66,20 @@ export const levelOne = ({ lines }) =>
  * Returns the solution for level two of this puzzle.
  */
 export const levelTwo = (() => {
-  const find = (key, tree) => {
-    if (!tree) {
-      return undefined;
-    }
-    if (tree.key === key) {
-      return tree;
-    }
-    return find(key, tree.lhs) || find(key, tree.rhs);
+  const getAncestors = (tree, key) => {
+    const ancestors = new Set();
+    const search = (node) => {
+      if (!node) {
+        return false;
+      }
+      if (node.key === key || search(node.lhs) || search(node.rhs)) {
+        ancestors.add(node.key);
+        return true;
+      }
+      return false;
+    };
+    search(tree);
+    return ancestors;
   };
 
   const solveLhsLookup = {
@@ -82,7 +88,7 @@ export const levelTwo = (() => {
     '*': (rhs, equals) => divide(equals, rhs),
     '/': (rhs, equals) => multiply(equals, rhs),
   };
-  
+
   const solveRhsLookup = {
     '+': (lhs, equals) => subtract(equals, lhs),
     '-': (lhs, equals) => subtract(lhs, equals),
@@ -90,20 +96,23 @@ export const levelTwo = (() => {
     '/': (lhs, equals) => divide(lhs, equals),
   };
 
-  const solve = (tree, value) => {
-    const humanBranch = find('humn', tree.lhs) ? tree.lhs : tree.rhs;
+  const solve = (tree, value, ancestors) => {
+    const humanBranch = ancestors.has(tree.lhs.key) ? tree.lhs : tree.rhs;
     const newValue =
       humanBranch === tree.lhs
         ? solveLhsLookup[tree.value](evaluate(tree.rhs), value)
         : solveRhsLookup[tree.value](evaluate(tree.lhs), value);
-    return humanBranch.key === 'humn' ? newValue : solve(humanBranch, newValue);
+    return humanBranch.key === 'humn'
+      ? newValue
+      : solve(humanBranch, newValue, ancestors);
   };
 
   return ({ lines }) => {
     const tree = expressionTree('root', nodeLookup(lines));
-    const humanBranch = find('humn', tree.lhs) ? tree.lhs : tree.rhs;
+    const ancestors = getAncestors(tree, 'humn');
+    const humanBranch = ancestors.has(tree.lhs.key) ? tree.lhs : tree.rhs;
     const targetBranch = humanBranch === tree.lhs ? tree.rhs : tree.lhs;
     const target = evaluate(targetBranch);
-    return solve(humanBranch, target);
+    return solve(humanBranch, target, ancestors);
   };
 })();
