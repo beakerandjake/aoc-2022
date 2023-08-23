@@ -14,7 +14,7 @@ class Node {
   }
 }
 
-const operatorKeys = {
+const operatorLookup = {
   '+': add,
   '-': subtract,
   '*': multiply,
@@ -54,7 +54,7 @@ const expressionTree = (key, lookup) =>
 const evaluate = (node) =>
   !node.lhs && !node.rhs
     ? node.value
-    : operatorKeys[node.value](evaluate(node.lhs), evaluate(node.rhs));
+    : operatorLookup[node.value](evaluate(node.lhs), evaluate(node.rhs));
 
 /**
  * Returns the solution for level one of this puzzle.
@@ -76,44 +76,26 @@ export const levelTwo = (() => {
     return find(key, tree.lhs) || find(key, tree.rhs);
   };
 
-  const solveLhs = (operator, rhs, equals) => {
-    if (operator === add) {
-      return subtract(equals, rhs);
-    }
-    if (operator === subtract) {
-      return add(equals, rhs);
-    }
-    if (operator === multiply) {
-      return divide(equals, rhs);
-    }
-    if (operator === divide) {
-      return multiply(equals, rhs);
-    }
-    throw new Error('unknown operator');
+  const solveLhsLookup = {
+    '+': (rhs, equals) => subtract(equals, rhs),
+    '-': (rhs, equals) => add(equals, rhs),
+    '*': (rhs, equals) => divide(equals, rhs),
+    '/': (rhs, equals) => multiply(equals, rhs),
   };
-
-  const solveRhs = (operator, lhs, equals) => {
-    if (operator === add) {
-      return subtract(equals, lhs);
-    }
-    if (operator === subtract) {
-      return subtract(lhs, equals);
-    }
-    if (operator === multiply) {
-      return divide(equals, lhs);
-    }
-    if (operator === divide) {
-      return divide(lhs, equals);
-    }
-    throw new Error('unknown operator');
+  
+  const solveRhsLookup = {
+    '+': (lhs, equals) => subtract(equals, lhs),
+    '-': (lhs, equals) => subtract(lhs, equals),
+    '*': (lhs, equals) => divide(equals, lhs),
+    '/': (lhs, equals) => divide(lhs, equals),
   };
 
   const solve = (tree, value) => {
     const humanBranch = find('humn', tree.lhs) ? tree.lhs : tree.rhs;
     const newValue =
       humanBranch === tree.lhs
-        ? solveLhs(tree.value, evaluate(tree.rhs), value)
-        : solveRhs(tree.value, evaluate(tree.lhs), value);
+        ? solveLhsLookup[tree.value](evaluate(tree.rhs), value)
+        : solveRhsLookup[tree.value](evaluate(tree.lhs), value);
     return humanBranch.key === 'humn' ? newValue : solve(humanBranch, newValue);
   };
 
