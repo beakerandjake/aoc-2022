@@ -76,27 +76,44 @@ export const levelTwo = (() => {
     return find(key, tree.lhs) || find(key, tree.rhs);
   };
 
-  const inverseOperator = (operator) => {
+  const solveLhs = (operator, rhs, equals) => {
     if (operator === add) {
-      return subtract;
+      return subtract(equals, rhs);
     }
     if (operator === subtract) {
-      return add;
+      return add(equals, rhs);
     }
     if (operator === multiply) {
-      return divide;
+      return divide(equals, rhs);
     }
     if (operator === divide) {
-      return multiply;
+      return multiply(equals, rhs);
     }
-    throw new Error(`unknown operator: ${operator}`);
+    throw new Error('unknown operator');
+  };
+
+  const solveRhs = (operator, lhs, equals) => {
+    if (operator === add) {
+      return subtract(equals, lhs);
+    }
+    if (operator === subtract) {
+      return subtract(lhs, equals);
+    }
+    if (operator === multiply) {
+      return divide(equals, lhs);
+    }
+    if (operator === divide) {
+      return divide(lhs, equals);
+    }
+    throw new Error('unknown operator');
   };
 
   const solve = (tree, value) => {
-    const op = inverseOperator(tree.value);
     const humanBranch = find('humn', tree.lhs) ? tree.lhs : tree.rhs;
-    const nonHumanBranch = humanBranch === tree.lhs ? tree.rhs : tree.lhs;
-    const newValue = op(value, evaluate(nonHumanBranch));
+    const newValue =
+      humanBranch === tree.lhs
+        ? solveLhs(tree.value, evaluate(tree.rhs), value)
+        : solveRhs(tree.value, evaluate(tree.lhs), value);
     return humanBranch.key === 'humn' ? newValue : solve(humanBranch, newValue);
   };
 
@@ -105,10 +122,6 @@ export const levelTwo = (() => {
     const humanBranch = find('humn', tree.lhs) ? tree.lhs : tree.rhs;
     const targetBranch = humanBranch === tree.lhs ? tree.rhs : tree.lhs;
     const target = evaluate(targetBranch);
-    const human = evaluate(humanBranch);
-    console.log();
-    console.log('target:', target);
-    console.log('human:', human);
     return solve(humanBranch, target);
   };
 })();
