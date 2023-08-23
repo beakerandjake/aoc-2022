@@ -82,18 +82,20 @@ export const levelTwo = (() => {
     return ancestors;
   };
 
+  // map of functions to solve for LHS of equation: lhs OP rhs = value
   const solveLhsLookup = {
-    '+': (rhs, equals) => subtract(equals, rhs),
-    '-': (rhs, equals) => add(equals, rhs),
-    '*': (rhs, equals) => divide(equals, rhs),
-    '/': (rhs, equals) => multiply(equals, rhs),
+    '+': (rhs, value) => subtract(value, rhs),
+    '-': (rhs, value) => add(value, rhs),
+    '*': (rhs, value) => divide(value, rhs),
+    '/': (rhs, value) => multiply(value, rhs),
   };
 
+  // map of functions to solve for RHS of equation: lhs OP rhs = value
   const solveRhsLookup = {
-    '+': (lhs, equals) => subtract(equals, lhs),
-    '-': (lhs, equals) => subtract(lhs, equals),
-    '*': (lhs, equals) => divide(equals, lhs),
-    '/': (lhs, equals) => divide(lhs, equals),
+    '+': (lhs, value) => subtract(value, lhs),
+    '-': (lhs, value) => subtract(lhs, value),
+    '*': (lhs, value) => divide(value, lhs),
+    '/': (lhs, value) => divide(lhs, value),
   };
 
   const solve = (tree, value, ancestors) => {
@@ -112,7 +114,6 @@ export const levelTwo = (() => {
     const ancestors = getAncestors(tree, 'humn');
     const humanBranch = ancestors.has(tree.lhs.key) ? tree.lhs : tree.rhs;
     const targetBranch = humanBranch === tree.lhs ? tree.rhs : tree.lhs;
-    const target = evaluate(targetBranch);
-    return solve(humanBranch, target, ancestors);
+    return solve(humanBranch, evaluate(targetBranch), ancestors);
   };
 })();
