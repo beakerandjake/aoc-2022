@@ -28,11 +28,6 @@ const operatorLookup = {
 };
 
 /**
- * Parse the input line and return the nodes key.
- */
-const parseNodeKey = (line, start) => line.slice(start, start + 4);
-
-/**
  * Parse the input line corresponding to a leaf node of a tree.
  */
 const parseLeafNode = (line) => ({
@@ -46,8 +41,8 @@ const parseLeafNode = (line) => ({
  */
 const parseInnerNode = (line) => ({
   value: line[11],
-  lhs: parseNodeKey(line, 6),
-  rhs: parseNodeKey(line, 13),
+  lhs: line.slice(6, 10),
+  rhs: line.slice(13, 17),
 });
 
 /**
@@ -55,7 +50,7 @@ const parseInnerNode = (line) => ({
  */
 const nodeLookup = (lines) =>
   lines.reduce((acc, line) => {
-    acc[parseNodeKey(line, 0)] =
+    acc[line.slice(0, 4)] =
       line.length === 17 ? parseInnerNode(line) : parseLeafNode(line);
     return acc;
   }, {});
@@ -64,15 +59,18 @@ const nodeLookup = (lines) =>
  * Returns an expression tree built from the node lookup.
  * The root node of the tree will be the node in the lookup matching the key.
  */
-const expressionTree = (key, lookup) =>
-  lookup[key]
-    ? new Node(
-        key,
-        lookup[key].value,
-        expressionTree(lookup[key].lhs, lookup),
-        expressionTree(lookup[key].rhs, lookup)
-      )
-    : undefined;
+const expressionTree = (key, lookup) => {
+  const data = lookup[key];
+  if (!data) {
+    return undefined;
+  }
+  return new Node(
+    key,
+    data.value,
+    expressionTree(data.lhs, lookup),
+    expressionTree(data.rhs, lookup)
+  );
+};
 
 /**
  * Evaluates the expression tree formed by the node.
