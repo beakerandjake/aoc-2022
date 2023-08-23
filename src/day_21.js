@@ -5,6 +5,9 @@
 import { add, multiply, subtract, divide } from './util/math.js';
 import { toNumber } from './util/string.js';
 
+/**
+ * A binary tree node.
+ */
 class Node {
   constructor(key, value, lhs, rhs) {
     this.key = key;
@@ -14,6 +17,9 @@ class Node {
   }
 }
 
+/**
+ * Maps an operator key to the function which can perform the operation.
+ */
 const operatorLookup = {
   '+': add,
   '-': subtract,
@@ -21,26 +27,43 @@ const operatorLookup = {
   '/': divide,
 };
 
-const nodeName = (line, start) => line.slice(start, start + 4);
+/**
+ * Parse the input line and return the nodes key.
+ */
+const parseNodeKey = (line, start) => line.slice(start, start + 4);
 
-const leafNode = (line) => ({
+/**
+ * Parse the input line corresponding to a leaf node of a tree.
+ */
+const parseLeafNode = (line) => ({
   value: toNumber(line.slice(6)),
   lhs: undefined,
   rhs: undefined,
 });
 
-const innerNode = (line) => ({
+/**
+ * Parse the input line corresponding to an inner node of a tree.
+ */
+const parseInnerNode = (line) => ({
   value: line[11],
-  lhs: nodeName(line, 6),
-  rhs: nodeName(line, 13),
+  lhs: parseNodeKey(line, 6),
+  rhs: parseNodeKey(line, 13),
 });
 
+/**
+ * Parses the input and returns a lookup table mapping node key to node data.
+ */
 const nodeLookup = (lines) =>
   lines.reduce((acc, line) => {
-    acc[nodeName(line, 0)] = line.length === 17 ? innerNode(line) : leafNode(line);
+    acc[parseNodeKey(line, 0)] =
+      line.length === 17 ? parseInnerNode(line) : parseLeafNode(line);
     return acc;
   }, {});
 
+/**
+ * Returns an expression tree built from the node lookup.
+ * The root node of the tree will be the node in the lookup matching the key.
+ */
 const expressionTree = (key, lookup) =>
   lookup[key]
     ? new Node(
@@ -51,6 +74,9 @@ const expressionTree = (key, lookup) =>
       )
     : undefined;
 
+/**
+ * Evaluates the expression tree formed by the node.
+ */
 const evaluate = (node) =>
   !node.lhs && !node.rhs
     ? node.value
@@ -66,13 +92,13 @@ export const levelOne = ({ lines }) =>
  * Returns the solution for level two of this puzzle.
  */
 export const levelTwo = (() => {
+  /**
+   * Returns all ancestor nodes of the node with the given key.
+   */
   const getAncestors = (tree, key) => {
     const ancestors = new Set();
     const search = (node) => {
-      if (!node) {
-        return false;
-      }
-      if (node.key === key || search(node.lhs) || search(node.rhs)) {
+      if (node && (node.key === key || search(node.lhs) || search(node.rhs))) {
         ancestors.add(node.key);
         return true;
       }
@@ -82,7 +108,9 @@ export const levelTwo = (() => {
     return ancestors;
   };
 
-  // map of functions to solve for LHS of equation: lhs OP rhs = value
+  /**
+   * Maps an operation key to the function which will solve for LHS of equation: lhs OP rhs = value
+   */
   const solveForLhsLookup = {
     '+': (rhs, value) => subtract(value, rhs),
     '-': (rhs, value) => add(value, rhs),
@@ -90,7 +118,9 @@ export const levelTwo = (() => {
     '/': (rhs, value) => multiply(value, rhs),
   };
 
-  // map of functions to solve for RHS of equation: lhs OP rhs = value
+  /**
+   * Maps an operation key to the function which will solve for RHS of equation: lhs OP rhs = value
+   */
   const solveForRhsLookup = {
     '+': (lhs, value) => subtract(value, lhs),
     '-': (lhs, value) => subtract(lhs, value),
