@@ -10,11 +10,7 @@ const parseLine = (line) => new Vector3(...line.split(',').map(toNumber));
 
 const parseInput = (lines) => lines.map(parseLine);
 
-const cubeLookup = (cubes) =>
-  cubes.reduce((acc, x) => {
-    acc.add(x.toString());
-    return acc;
-  }, new Set());
+const pointLookup = (points) => new Set(points.map((x) => x.toString()));
 
 const sides = [up, down, left, right, forward, back];
 
@@ -23,7 +19,7 @@ const getExposedSides = (cube, lookup) =>
 
 export const levelOne = ({ lines }) => {
   const cubes = parseInput(lines);
-  const lookup = cubeLookup(cubes);
+  const lookup = pointLookup(cubes);
   return sum(cubes.map((cube) => getExposedSides(cube, lookup).length));
 };
 
@@ -108,9 +104,8 @@ export const levelTwo = (() => {
 
   return ({ lines }) => {
     const cubes = parseInput(lines);
-    const lookup = cubeLookup(cubes);
+    const lookup = pointLookup(cubes);
     const worldBounds = findBounds(cubes);
-    console.log('world bounds', worldBounds);
     const outsideCube = pointsOutsideCube(worldBounds, lookup);
     console.log('outside cube', outsideCube.length);
     console.log('cube', cubes.length);
@@ -122,8 +117,8 @@ export const levelTwo = (() => {
     //   }
     // }
 
-    // have a world cube of x*y*z, every point on the cube is either outside space, a point of lava or an air pocket inside of lava.
-    // start from outer boundaries and flood fill entire outside of lava..
+    // have a world cube of x*y*z, every point on the cube is either empty space, a point of lava or an air pocket inside of lava.
+    // start from outer boundaries and flood fill all empty space outside of lava..
     // if a point is not flood filled and is not part of lava, then it must be an air pocket.
     // once know air pocket locations, can ignore exposed edges which touch an air pocket.
 
