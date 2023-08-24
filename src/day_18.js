@@ -31,9 +31,38 @@ const cubeLookup = (cubes) =>
 const sides = [up, down, left, right, forward, back];
 
 /**
+ * Returns the positions of each side surrounding the cube which are exposed.
+ */
+const getExposedSides = (cube, lookup) =>
+  sides.map((side) => add(cube, side)).filter((side) => !lookup.has(side.toString()));
+
+/**
  * Returns the solution for level one of this puzzle.
  */
-export const levelOne = (() => {
+export const levelOne = ({ lines }) => {
+  const cubes = parseInput(lines);
+  const lookup = cubeLookup(cubes);
+  return sum(cubes.map((cube) => getExposedSides(cube, lookup).length));
+};
+
+/**
+ * Returns the solution for level two of this puzzle.
+ */
+export const levelTwo = (() => {
+  const getAllExposedSides = (cubes, lookup) => {
+    const exposed = cubes.map((cube) => getExposedSides(cube, lookup));
+    const z = exposed.reduce((acc, points) => {
+      points
+        .map((point) => point.toString())
+        .forEach((key) => {
+          acc[key] = acc[key] ? acc[key] + 1 : 1;
+        });
+      return acc;
+    }, {});
+    const q = Object.values(z).filter((x) => x >= 6);
+    return sum(q);
+  };
+
   /**
    * Return the count of the cubes sides which are not covered by another cube.
    */
@@ -45,118 +74,6 @@ export const levelOne = (() => {
   return ({ lines }) => {
     const cubes = parseInput(lines);
     const lookup = cubeLookup(cubes);
-    return sum(cubes.map((cube) => countExposedSides(cube, lookup)));
-  };
-})();
-
-/**
- * Returns the solution for level two of this puzzle.
- */
-export const levelTwo = (() => {
-  const rayCast = (origin, direction, distance, lavaDroplet) => {
-    let traveled = 0;
-    let current = origin;
-    while (traveled++ <= distance) {
-      if (lavaDroplet.has(current.toString())) {
-        return true;
-      }
-      current = add(current, direction);
-    }
-    return false;
-  };
-
-  const exposedLeft = (xBounds, yBounds, zBounds, lavaDroplet) => {
-    let exposedCount = 0;
-    const distance = zBounds[1] - zBounds[0];
-    for (let z = zBounds[0]; z <= zBounds[1]; z++) {
-      for (let y = yBounds[0]; y <= yBounds[1]; y++) {
-        if (rayCast(new Vector3(xBounds[0], y, z), right, distance, lavaDroplet)) {
-          exposedCount += 1;
-        }
-      }
-    }
-    return exposedCount;
-  };
-
-  const exposedRight = (xBounds, yBounds, zBounds, lavaDroplet) => {
-    let exposedCount = 0;
-    const distance = zBounds[1] - zBounds[0];
-    for (let z = zBounds[0]; z <= zBounds[1]; z++) {
-      for (let y = yBounds[0]; y <= yBounds[1]; y++) {
-        if (rayCast(new Vector3(xBounds[1], y, z), left, distance, lavaDroplet)) {
-          exposedCount += 1;
-        }
-      }
-    }
-    return exposedCount;
-  };
-
-  const exposedTop = (xBounds, yBounds, zBounds, lavaDroplet) => {
-    let exposedCount = 0;
-    const distance = yBounds[1] - yBounds[0];
-    for (let z = zBounds[0]; z <= zBounds[1]; z++) {
-      for (let x = xBounds[0]; x <= xBounds[1]; x++) {
-        if (rayCast(new Vector3(x, yBounds[1], z), down, distance, lavaDroplet)) {
-          exposedCount += 1;
-        }
-      }
-    }
-    return exposedCount;
-  };
-
-  const exposedBottom = (xBounds, yBounds, zBounds, lavaDroplet) => {
-    let exposedCount = 0;
-    const distance = yBounds[1] - yBounds[0];
-    for (let z = zBounds[0]; z <= zBounds[1]; z++) {
-      for (let x = xBounds[0]; x <= xBounds[1]; x++) {
-        if (rayCast(new Vector3(x, yBounds[0], z), up, distance, lavaDroplet)) {
-          exposedCount += 1;
-        }
-      }
-    }
-    return exposedCount;
-  };
-
-  const exposedFront = (xBounds, yBounds, zBounds, lavaDroplet) => {
-    let exposedCount = 0;
-    const distance = zBounds[1] - zBounds[0];
-    for (let y = yBounds[0]; y <= yBounds[1]; y++) {
-      for (let x = xBounds[0]; x <= xBounds[1]; x++) {
-        if (rayCast(new Vector3(x, y, zBounds[0]), back, distance, lavaDroplet)) {
-          exposedCount += 1;
-        }
-      }
-    }
-    return exposedCount;
-  };
-
-  const exposedBack = (xBounds, yBounds, zBounds, lavaDroplet) => {
-    let exposedCount = 0;
-    const distance = zBounds[1] - zBounds[0];
-    for (let y = yBounds[0]; y <= yBounds[1]; y++) {
-      for (let x = xBounds[0]; x <= xBounds[1]; x++) {
-        if (rayCast(new Vector3(x, y, zBounds[1]), forward, distance, lavaDroplet)) {
-          exposedCount += 1;
-        }
-      }
-    }
-    return exposedCount;
-  };
-
-  return ({ lines }) => {
-    const cubes = parseInput(lines);
-    const lookup = cubeLookup(cubes);
-    const xBounds = bounds(cubes.map(({ x }) => x));
-    const yBounds = bounds(cubes.map(({ y }) => y));
-    const zBounds = bounds(cubes.map(({ z }) => z));
-    const counts = [
-      exposedLeft(xBounds, yBounds, zBounds, lookup),
-      exposedRight(xBounds, yBounds, zBounds, lookup),
-      exposedTop(xBounds, yBounds, zBounds, lookup),
-      exposedBottom(xBounds, yBounds, zBounds, lookup),
-      exposedFront(xBounds, yBounds, zBounds, lookup),
-      exposedBack(xBounds, yBounds, zBounds, lookup),
-    ];
-    return sum(counts);
+    return getAllExposedSides(cubes, lookup);
   };
 })();
