@@ -50,42 +50,33 @@ export const levelTwo = (() => {
     z < bounds.back ||
     z > bounds.front;
 
-  // Returns a lookup of all points which are within the world bounds but outside of the lava droplet.
   const getEmptyPoints = (bounds, lavaPoints) => {
     const queue = [new Vector3(bounds.left, bounds.bottom, bounds.back)];
-    const examined = new Set();
+    const toReturn = new Set();
     while (queue.length) {
       const point = queue.shift();
       const key = point.toString();
-      if (examined.has(key) || isOutOfBounds(point, bounds) || lavaPoints.has(key)) {
-        continue;
+      if (!toReturn.has(key) && !isOutOfBounds(point, bounds) && !lavaPoints.has(key)) {
+        queue.push(...sides.map((side) => add(point, side)));
+        toReturn.add(key);
       }
-      queue.push(...sides.map((side) => add(point, side)));
-      examined.add(key);
     }
-    return examined;
+    return toReturn;
   };
 
+  const filterExteriorSides = (exposedPoints, bounds, emptyPoints) =>
+    exposedPoints.filter(
+      (x) => isOutOfBounds(x, bounds) || emptyPoints.has(x.toString())
+    );
+
   return ({ lines }) => {
-    const cubes = parseInput(lines);
-    const cubeLookup = toLookup(cubes);
-    const worldBounds = findBounds(cubes);
-    const outsideCube = getEmptyPoints(worldBounds, cubeLookup);
-
-    const exposedToAirPockets = sum(
-      cubes.map(
-        (cube) =>
-          getExposedSides(cube, cubeLookup).filter(
-            (point) =>
-              !isOutOfBounds(point, worldBounds) && !outsideCube.has(point.toString())
-          ).length
-      )
+    const dropletCubes = parseInput(lines);
+    const dropletCubeLookup = toLookup(dropletCubes);
+    const worldBounds = findBounds(dropletCubes);
+    const emptyPointsLookup = getEmptyPoints(worldBounds, dropletCubeLookup);
+    const exposedSides = dropletCubes.flatMap((cube) =>
+      getExposedSides(cube, dropletCubeLookup)
     );
-
-    const totalExposed = sum(
-      cubes.map((cube) => getExposedSides(cube, cubeLookup).length)
-    );
-
-    return totalExposed - exposedToAirPockets;
+    return filterExteriorSides(exposedSides, worldBounds, emptyPointsLookup).length;
   };
 })();
