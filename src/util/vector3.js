@@ -1,3 +1,5 @@
+import { bounds } from './array.js';
+
 /**
  * Representation of 3d vectors and points.
  */
@@ -26,6 +28,25 @@ export const equals = (lhs, rhs) => lhs.x === rhs.x && lhs.y === rhs.y && lhs.z 
  * @param {Vector3} rhs
  */
 export const add = (lhs, rhs) => new Vector3(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z);
+
+/**
+ * Finds the top, bottom, left, right, front and back extremes of the positions.
+ * "Origin" point is back, left, bottom
+ * @param {Vector3[]} positions
+ */
+export const findBounds = (positions) => {
+  const [left, right] = bounds(positions.map(({ x }) => x));
+  const [bottom, top] = bounds(positions.map(({ y }) => y));
+  const [back, front] = bounds(positions.map(({ z }) => z));
+  return {
+    left,
+    right,
+    bottom,
+    top,
+    back,
+    front,
+  };
+};
 
 /**
  * Shorthand for writing Vector3(0, 0, -1).
