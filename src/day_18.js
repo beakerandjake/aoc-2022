@@ -10,17 +10,19 @@ const parseLine = (line) => new Vector3(...line.split(',').map(toNumber));
 
 const parseInput = (lines) => lines.map(parseLine);
 
-const pointLookup = (points) => new Set(points.map((x) => x.toString()));
+const toLookup = (points) => new Set(points.map((x) => x.toString()));
 
 const sides = [up, down, left, right, forward, back];
 
+const getSides = (cube) => sides.map((side) => add(cube, side));
+
 const getExposedSides = (cube, lookup) =>
-  sides.map((side) => add(cube, side)).filter((side) => !lookup.has(side.toString()));
+  getSides(cube).filter((side) => !lookup.has(side.toString()));
 
 export const levelOne = ({ lines }) => {
   const cubes = parseInput(lines);
-  const lookup = pointLookup(cubes);
-  return sum(cubes.map((cube) => getExposedSides(cube, lookup).length));
+  const cubeLookup = toLookup(cubes);
+  return sum(cubes.map((cube) => getExposedSides(cube, cubeLookup).length));
 };
 
 /**
