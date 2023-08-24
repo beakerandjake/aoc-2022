@@ -104,7 +104,7 @@ const printWorld = (elves) => {
 /**
  * Returns the solution for level one of this puzzle.
  */
-export const levelOne = ({ input, lines }) => {
+export const levelOne = ({ lines }) => {
   let elves = parseLines(lines);
   let rules = [...defaultRules];
 
@@ -116,6 +116,8 @@ export const levelOne = ({ input, lines }) => {
   return [...worldToString(elves)].filter((x) => x === '.').length;
 };
 
+const arraysEqual = (lhs, rhs) => lhs.every((x, index) => equals(x, rhs[index]));
+
 /**
  * Returns the solution for level two of this puzzle.
  * @param {Object} args - Provides both raw and split input.
@@ -123,6 +125,22 @@ export const levelOne = ({ input, lines }) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelTwo = ({ input, lines }) => {
-  // your code here
+export const levelTwo = ({ lines }) => {
+  let elves = parseLines(lines);
+  let rules = [...defaultRules];
+  let roundNumber = 1;
+
+  for (;;) {
+    const result = round(elves, rules);
+
+    if (arraysEqual(elves, result)) {
+      break;
+    }
+
+    elves = result;
+    rules = cycleRules(rules);
+    roundNumber++;
+  }
+
+  return roundNumber;
 };
