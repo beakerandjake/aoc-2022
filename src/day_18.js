@@ -5,6 +5,7 @@
 import {
   Vector3,
   findBounds,
+  isOutOfBounds,
   up,
   down,
   left,
@@ -42,41 +43,30 @@ export const levelOne = ({ lines }) => {
  * Returns the solution for level two of this puzzle.
  */
 export const levelTwo = (() => {
-  const isOutOfBounds = ({ x, y, z }, bounds) =>
-    x < bounds.left ||
-    x > bounds.right ||
-    y < bounds.bottom ||
-    y > bounds.top ||
-    z < bounds.back ||
-    z > bounds.front;
-
-  const getEmptyPoints = (bounds, lavaPoints) => {
-    const queue = [new Vector3(bounds.left, bounds.bottom, bounds.back)];
-    const toReturn = new Set();
+  const getEmptyPoints = (worldBounds, lavaPoints) => {
+    const queue = [new Vector3(worldBounds.left, worldBounds.bottom, worldBounds.back)];
+    const empty = new Set();
     while (queue.length) {
       const point = queue.shift();
       const key = point.toString();
-      if (!toReturn.has(key) && !isOutOfBounds(point, bounds) && !lavaPoints.has(key)) {
+      if (!empty.has(key) && !isOutOfBounds(point, worldBounds) && !lavaPoints.has(key)) {
+        empty.add(key);
         queue.push(...sides.map((side) => add(point, side)));
-        toReturn.add(key);
       }
     }
-    return toReturn;
+    return empty;
   };
 
-  const filterExteriorSides = (exposedPoints, bounds, emptyPoints) =>
-    exposedPoints.filter(
-      (x) => isOutOfBounds(x, bounds) || emptyPoints.has(x.toString())
-    );
+  const sideIsExterior = (side, worldBounds, emptyPoints) =>
+    isOutOfBounds(side, worldBounds) || emptyPoints.has(side.toString());
 
   return ({ lines }) => {
-    const dropletCubes = parseInput(lines);
-    const dropletCubeLookup = toLookup(dropletCubes);
-    const worldBounds = findBounds(dropletCubes);
-    const emptyPointsLookup = getEmptyPoints(worldBounds, dropletCubeLookup);
-    const exposedSides = dropletCubes.flatMap((cube) =>
-      getExposedSides(cube, dropletCubeLookup)
-    );
-    return filterExteriorSides(exposedSides, worldBounds, emptyPointsLookup).length;
+    const droplet = parseInput(lines);
+    const dropletLookup = toLookup(droplet);
+    const worldBounds = findBounds(droplet);
+    const emptyPointsLookup = getEmptyPoints(worldBounds, dropletLookup);
+    return droplet
+      .flatMap((cube) => getExposedSides(cube, dropletLookup))
+      .filter((side) => sideIsExterior(side, worldBounds, emptyPointsLookup)).length;
   };
 })();

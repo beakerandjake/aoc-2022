@@ -49,6 +49,14 @@ export const findBounds = (positions) => {
 };
 
 /**
+ * Returns true if the point is located outside of the bounds.
+ * @param {Vector3[]} positions
+ * @param {Object} bounds
+ */
+export const isOutOfBounds = ({ x, y, z }, { left, right, bottom, top, back, front }) =>
+  x < left || x > right || y < bottom || y > top || z < back || z > front;
+
+/**
  * Shorthand for writing Vector3(0, 0, -1).
  */
 export const back = new Vector3(0, 0, -1);
