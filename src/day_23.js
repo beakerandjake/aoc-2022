@@ -15,6 +15,8 @@ import {
   downRight,
   add,
   zero,
+  findBounds,
+  area,
 } from './util/vector2.js';
 import { worldToString } from './util/debug.js';
 
@@ -104,17 +106,22 @@ const printWorld = (elves) => {
 /**
  * Returns the solution for level one of this puzzle.
  */
-export const levelOne = ({ lines }) => {
-  let elves = parseLines(lines);
-  let rules = [...defaultRules];
+export const levelOne = (() => {
+  const countEmptySpaces = (elves) => area(findBounds(elves)) - elves.length;
 
-  for (let index = 0; index < 10; index++) {
-    elves = round(elves, rules);
-    rules = cycleRules(rules);
-  }
+  const rounds = (elves, rules, number) => {
+    let currentElves = elves;
+    let currentRules = rules;
+    let currentRound = number;
+    while (currentRound--) {
+      currentElves = round(currentElves, currentRules);
+      currentRules = cycleRules(currentRules);
+    }
+    return currentElves;
+  };
 
-  return [...worldToString(elves)].filter((x) => x === '.').length;
-};
+  return ({ lines }) => countEmptySpaces(rounds(parseLines(lines), defaultRules, 10));
+})();
 
 const arraysEqual = (lhs, rhs) => lhs.every((x, index) => equals(x, rhs[index]));
 
