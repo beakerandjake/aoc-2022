@@ -68,7 +68,7 @@ export const levelTwo = (() => {
     };
   };
 
-  const pointOutOfBounds = ({ x, y, z }, worldBounds) => {
+  const isOutOfBounds = ({ x, y, z }, worldBounds) => {
     if (x < worldBounds.left || x > worldBounds.right) {
       return true;
     }
@@ -81,10 +81,9 @@ export const levelTwo = (() => {
     return false;
   };
 
-  const getPointsOutsideDroplet = (worldBounds, lookup) => {
+  const getEmptyPoints = (worldBounds, lavaLookup) => {
     const queue = [new Vector3(worldBounds.left, worldBounds.bottom, worldBounds.back)];
     const examined = new Set();
-    const toReturn = [];
     while (queue.length) {
       const point = queue.shift();
       const pointKey = point.toString();
@@ -93,9 +92,8 @@ export const levelTwo = (() => {
         continue;
       }
 
-      if (!pointOutOfBounds(point, worldBounds) && !lookup.has(point.toString())) {
+      if (!isOutOfBounds(point, worldBounds) && !lavaLookup.has(pointKey)) {
         examined.add(pointKey);
-        toReturn.push(point);
         queue.push(add(point, left));
         queue.push(add(point, right));
         queue.push(add(point, down));
@@ -104,29 +102,69 @@ export const levelTwo = (() => {
         queue.push(add(point, back));
       }
     }
-    return toReturn;
+    return examined;
   };
 
   return ({ lines }) => {
     const cubes = parseInput(lines);
     const cubeLookup = toLookup(cubes);
     const worldBounds = findBounds(cubes);
-    const outsideCube = getPointsOutsideDroplet(worldBounds, cubeLookup);
-    console.log('outside cube', outsideCube.length);
-    console.log('cube', cubes.length);
-    // for (let x = xMin; x <= xMax; x++) {
-    //   for (let y = yMin; y <= yMax; y++) {
-    //     for (let z = zMin; z <= zMax; z++) {
-    //       console.
+    const outsideCube = getEmptyPoints(worldBounds, cubeLookup);
+
+    const exposedToAirPockets = sum(
+      cubes.map(
+        (cube) =>
+          getExposedSides(cube, cubeLookup).filter(
+            (point) =>
+              !isOutOfBounds(point, worldBounds) && !outsideCube.has(point.toString())
+          ).length
+      )
+    );
+
+    const totalExposed = sum(
+      cubes.map((cube) => getExposedSides(cube, cubeLookup).length)
+    );
+
+    return totalExposed - exposedToAirPockets;
+
+    // const cubeNeighbors = cubes.map(
+    //   (cube) =>
+    //     getSides(cube)
+    //       .map((side) => side.toString())
+    //       .filter((side) => !cubeLookup.has(side) && !outsideCube.has(side)).length
+    // );
+
+    // const numPoints =
+    //   (worldBounds.right - worldBounds.left + 1) *
+    //   (worldBounds.top - worldBounds.bottom + 1) *
+    //   (worldBounds.front - worldBounds.back + 1);
+
+    // console.log();
+    // console.log('total', numPoints);
+    // console.log('cube', cubes.length);
+    // console.log('empty', outsideCube.size);
+    // console.log('air pocket', numPoints - cubes.length - outsideCube.size);
+    // console.log('exposed to airpocket', sum(exposedToAirPockets));
+
+    // const airPockets = [];
+    // for (let x = worldBounds.left; x <= worldBounds.right; x++) {
+    //   for (let y = worldBounds.bottom; y <= worldBounds.top; y++) {
+    //     for (let z = worldBounds.back; z <= worldBounds.front; z++) {
+    //       const point = new Vector3(x, y, z).toString();
+    //       if (!cubeLookup.has(point) && !outsideCube.has(point)) {
+    //         airPockets.push(point);
+    //       }
     //     }
     //   }
     // }
 
-    // have a world cube of x*y*z, every point on the cube is either empty space, a point of lava or an air pocket inside of lava.
-    // start from outer boundaries and flood fill all empty space outside of lava..
-    // if a point is not flood filled and is not part of lava, then it must be an air pocket.
-    // once know air pocket locations, can ignore exposed edges which touch an air pocket.
+    // console.log('air pockets', airPockets);
 
-    return 1234;
+    // // have a world cube of x*y*z, every point on the cube is either empty space, a point of lava or an air pocket inside of lava.
+    // // start from outer boundaries and flood fill all empty space outside of lava..
+    // // if a point is not flood filled and is not part of lava, then it must be an air pocket.
+    // // once know air pocket locations, can ignore exposed edges which touch an air pocket.
+
+    // return 1234;
   };
 })();
