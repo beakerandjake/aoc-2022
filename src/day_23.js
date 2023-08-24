@@ -52,6 +52,8 @@ const defaultRules = [
 // todo look into bit packing into 32 bits with 16 bits for x and y
 // might be a faster hash than tostring.. wrap with method for now.
 const hash = (vector) => vector.toString();
+const toLookup = (points) => new Set(points.map(hash));
+const isOccupied = (point, pointLookup) => pointLookup.has(hash(point));
 
 const parseLine = (line, y) =>
   [...line]
@@ -61,22 +63,14 @@ const parseLine = (line, y) =>
 
 const parseLines = (lines) => lines.map(parseLine).flat();
 
-const includes = (elf, elves) => elves.find((x) => equals(x, elf));
+const hasNeighbors = (elf, directions, elfLookup) =>
+  directions
+    .map((direction) => add(elf, direction))
+    .some((position) => isOccupied(position, elfLookup));
 
-const isOccupied = (position, elves) => includes(position, elves);
-
-const anyOccupied = (positions, elves) =>
-  positions.some((position) => isOccupied(position, elves));
-
-const getNeighbors = (elf, directions) =>
-  directions.map((direction) => add(elf, direction));
-
-const hasNeighbors = (elf, directions, elves) =>
-  anyOccupied(getNeighbors(elf, directions), elves);
-
-const roundFirstHalf = (elf, elves, rules) => {
+const roundFirstHalf = (elf, elfLookup, rules) => {
   const matchingRule = rules.find(
-    ([directions]) => !hasNeighbors(elf, directions, elves)
+    ([directions]) => !hasNeighbors(elf, directions, elfLookup)
   );
   return matchingRule ? add(elf, matchingRule[1]) : elf;
 };
@@ -92,7 +86,8 @@ const roundSecondHalf = (elves, desired) =>
   });
 
 const simulateRound = (elves, rules) => {
-  const desired = elves.map((elf) => roundFirstHalf(elf, elves, rules));
+  const elfLookup = toLookup(elves);
+  const desired = elves.map((elf) => roundFirstHalf(elf, elfLookup, rules));
   return roundSecondHalf(elves, desired);
 };
 
