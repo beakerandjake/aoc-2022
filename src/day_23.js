@@ -120,7 +120,11 @@ export const levelOne = (() => {
     return currentElves;
   };
 
-  return ({ lines }) => countEmptySpaces(rounds(parseLines(lines), defaultRules, 10));
+  return ({ lines }) => {
+    const elves = parseLines(lines);
+    const result = rounds(elves, defaultRules, 10);
+    return countEmptySpaces(result);
+  };
 })();
 
 const arraysEqual = (lhs, rhs) => lhs.every((x, index) => equals(x, rhs[index]));
