@@ -34,9 +34,9 @@ const getExposedSides = (cube, lookup) =>
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
-  const cubes = parseInput(lines);
-  const cubeLookup = toLookup(cubes);
-  return sum(cubes.map((cube) => getExposedSides(cube, cubeLookup).length));
+  const droplet = parseInput(lines);
+  const dropletLookup = toLookup(droplet);
+  return sum(droplet.map((cube) => getExposedSides(cube, dropletLookup).length));
 };
 
 /**
