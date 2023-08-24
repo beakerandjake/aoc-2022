@@ -74,14 +74,14 @@ const getNeighbors = (elf, directions) =>
 const hasNeighbors = (elf, directions, elves) =>
   anyOccupied(getNeighbors(elf, directions), elves);
 
-const startRound = (elf, elves, rules) => {
+const roundFirstHalf = (elf, elves, rules) => {
   const matchingRule = rules.find(
     ([directions]) => !hasNeighbors(elf, directions, elves)
   );
   return matchingRule ? add(elf, matchingRule[1]) : elf;
 };
 
-const endRound = (elves, desired) =>
+const roundSecondHalf = (elves, desired) =>
   desired.map((position, index) => {
     if (equals(position, elves[index])) {
       return position;
@@ -91,17 +91,12 @@ const endRound = (elves, desired) =>
       : elves[index];
   });
 
-const round = (elves, rules) => {
-  const desired = elves.map((elf) => startRound(elf, elves, rules));
-  return endRound(elves, desired);
+const simulateRound = (elves, rules) => {
+  const desired = elves.map((elf) => roundFirstHalf(elf, elves, rules));
+  return roundSecondHalf(elves, desired);
 };
 
 const cycleRules = (rules) => [rules[0], rules[2], rules[3], rules[4], rules[1]];
-
-const printWorld = (elves) => {
-  console.log();
-  console.log(worldToString(elves));
-};
 
 /**
  * Returns the solution for level one of this puzzle.
@@ -109,12 +104,12 @@ const printWorld = (elves) => {
 export const levelOne = (() => {
   const countEmptySpaces = (elves) => area(findBounds(elves)) - elves.length;
 
-  const rounds = (elves, rules, number) => {
+  const simulateRounds = (elves, rules, number) => {
     let currentElves = elves;
     let currentRules = rules;
     let currentRound = number;
     while (currentRound--) {
-      currentElves = round(currentElves, currentRules);
+      currentElves = simulateRound(currentElves, currentRules);
       currentRules = cycleRules(currentRules);
     }
     return currentElves;
@@ -122,7 +117,7 @@ export const levelOne = (() => {
 
   return ({ lines }) => {
     const elves = parseLines(lines);
-    const result = rounds(elves, defaultRules, 10);
+    const result = simulateRounds(elves, defaultRules, 10);
     return countEmptySpaces(result);
   };
 })();
@@ -142,7 +137,7 @@ export const levelTwo = ({ lines }) => {
   let roundNumber = 1;
 
   for (;;) {
-    const result = round(elves, rules);
+    const result = simulateRound(elves, rules);
 
     if (arraysEqual(elves, result)) {
       break;
