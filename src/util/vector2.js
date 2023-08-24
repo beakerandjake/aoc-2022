@@ -1,4 +1,4 @@
-import { bounds } from './array.js';
+import { bounds as arrayBounds } from './array.js';
 
 /**
  * Representation of 2d vectors and points.
@@ -49,10 +49,17 @@ export const taxicabDistance = (lhs, rhs) =>
  * @param {Vector2[]} positions
  */
 export const findBounds = (positions) => {
-  const [left, right] = bounds(positions.map(({ x }) => x));
-  const [top, bottom] = bounds(positions.map(({ y }) => y));
+  const [left, right] = arrayBounds(positions.map(({ x }) => x));
+  const [top, bottom] = arrayBounds(positions.map(({ y }) => y));
   return { left, right, bottom, top };
 };
+
+/**
+ * Returns the area of the rectangle formed by the bounds.
+ * @param {Object} bounds
+ */
+export const area = ({ left, right, bottom, top }) =>
+  (right - left + 1) * (bottom - top + 1);
 
 /**
  * Returns a set containing the unique points.
