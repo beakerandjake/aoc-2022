@@ -19,6 +19,9 @@ const getSides = (cube) => sides.map((side) => add(cube, side));
 const getExposedSides = (cube, lookup) =>
   getSides(cube).filter((side) => !lookup.has(side.toString()));
 
+/**
+ * Returns the solution for level one of this puzzle.
+ */
 export const levelOne = ({ lines }) => {
   const cubes = parseInput(lines);
   const cubeLookup = toLookup(cubes);
@@ -65,20 +68,20 @@ export const levelTwo = (() => {
     };
   };
 
-  const pointIsOutsideWorld = (point, worldBounds) => {
-    if (point.x < worldBounds.left || point.x > worldBounds.right) {
+  const pointOutOfBounds = ({ x, y, z }, worldBounds) => {
+    if (x < worldBounds.left || x > worldBounds.right) {
       return true;
     }
-    if (point.y < worldBounds.bottom || point.y > worldBounds.top) {
+    if (y < worldBounds.bottom || y > worldBounds.top) {
       return true;
     }
-    if (point.z < worldBounds.back || point.z > worldBounds.front) {
+    if (z < worldBounds.back || z > worldBounds.front) {
       return true;
     }
     return false;
   };
 
-  const pointsOutsideCube = (worldBounds, lookup) => {
+  const getPointsOutsideDroplet = (worldBounds, lookup) => {
     const queue = [new Vector3(worldBounds.left, worldBounds.bottom, worldBounds.back)];
     const examined = new Set();
     const toReturn = [];
@@ -90,7 +93,7 @@ export const levelTwo = (() => {
         continue;
       }
 
-      if (!pointIsOutsideWorld(point, worldBounds) && !lookup.has(point.toString())) {
+      if (!pointOutOfBounds(point, worldBounds) && !lookup.has(point.toString())) {
         examined.add(pointKey);
         toReturn.push(point);
         queue.push(add(point, left));
@@ -106,9 +109,9 @@ export const levelTwo = (() => {
 
   return ({ lines }) => {
     const cubes = parseInput(lines);
-    const lookup = pointLookup(cubes);
+    const cubeLookup = toLookup(cubes);
     const worldBounds = findBounds(cubes);
-    const outsideCube = pointsOutsideCube(worldBounds, lookup);
+    const outsideCube = getPointsOutsideDroplet(worldBounds, cubeLookup);
     console.log('outside cube', outsideCube.length);
     console.log('cube', cubes.length);
     // for (let x = xMin; x <= xMax; x++) {
