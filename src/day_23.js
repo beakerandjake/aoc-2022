@@ -34,25 +34,6 @@ import { worldToString } from './util/debug.js';
 //       return acc;
 //     }, []);
 
-const compass = {
-  N: up,
-  E: right,
-  S: down,
-  W: left,
-  NE: upRight,
-  NW: upLeft,
-  SE: downRight,
-  SW: downLeft,
-};
-
-// const neighbors = {
-//   north: [compass.N, compass.NE, compass.NW],
-//   south: [compass.S, compass.SE, compass.SW],
-//   west: [compass.W, compass.NW, compass.SW],
-//   east: [compass.E, compass.NE, compass.SE],
-//   any: Object.values(compass),
-// };
-
 const defaultRules = [
   // all directions.
   [[up, down, left, right, upRight, upLeft, downRight, downLeft], zero, 'all'],
@@ -85,51 +66,54 @@ const isOccupied = (position, elves) => includes(position, elves);
 const anyOccupied = (positions, elves) =>
   positions.some((position) => isOccupied(position, elves));
 
-const applyRules = (elf, elves, rules) => {
-  const matchingRule = rules.find(([directions]) => {
-    const neighbors = directions.map((direction) => add(elf, direction));
-    return !anyOccupied(neighbors, elves);
-  });
-  console.log(`matching rule: ${matchingRule ? matchingRule[2] : 'none'}`);
-  return matchingRule ? add(elf, matchingRule[1]) : elf;
-};
-
 const getNeighbors = (elf, directions) =>
   directions.map((direction) => add(elf, direction));
 
-// const checkNeighbors = (elf, elves, direction) =>
-//   anyOccupied(getNeighbors(elf, neighbors[direction]), elves);
+const hasNeighbors = (elf, directions, elves) =>
+  anyOccupied(getNeighbors(elf, directions), elves);
 
-// const getDesiredMove = (elf, elves, movePriorities) => {
-//   // no neighbors? stay put.
-//   if (!checkNeighbors(elf, elves, neighbors.any)) {
-//     return elf;
-//   }
+const startRound = (elf, elves, rules) => {
+  const matchingRule = rules.find(
+    ([directions]) => !hasNeighbors(elf, directions, elves)
+  );
+  return matchingRule ? add(elf, matchingRule[1]) : elf;
+};
 
-//   return movePriorities.find((direction) => !checkNeighbors(elf, elves, direction));
-// };
+const endRound = (elves, desired) =>
+  desired.map((position, index) => {
+    if (equals(position, elves[index])) {
+      return position;
+    }
+    return desired.filter((x) => equals(x, position)).length === 1
+      ? position
+      : elves[index];
+  });
 
-const cycleRules = (directions) => [
-  directions[0],
-  directions[2],
-  directions[3],
-  directions[4],
-  directions[1],
-];
+const round = (elves, rules) => {
+  const desired = elves.map((elf) => startRound(elf, elves, rules));
+  return endRound(elves, desired);
+};
+
+const cycleRules = (rules) => [rules[0], rules[2], rules[3], rules[4], rules[1]];
+
+const printWorld = (elves) => {
+  console.log();
+  console.log(worldToString(elves));
+};
 
 /**
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ input, lines }) => {
-  // your code here
-  const initialState = parseLines(lines);
-  // const world = worldToString(initialState);
+  let elves = parseLines(lines);
+  let rules = [...defaultRules];
 
-  const center = new Vector2(1, 1);
-  const result = applyRules(center, initialState, defaultRules);
+  for (let index = 0; index < 10; index++) {
+    elves = round(elves, rules);
+    rules = cycleRules(rules);
+  }
 
-  // console.log(test);
-  return 1234;
+  return [...worldToString(elves)].filter((x) => x === '.').length;
 };
 
 /**
