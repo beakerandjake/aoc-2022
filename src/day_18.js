@@ -2,8 +2,18 @@
  * Contains solutions for Day 18
  * Puzzle Description: https://adventofcode.com/2022/day/18
  */
-import { Vector3, up, down, left, right, forward, back, add } from './util/vector3.js';
-import { bounds, sum } from './util/array.js';
+import {
+  Vector3,
+  findBounds,
+  up,
+  down,
+  left,
+  right,
+  forward,
+  back,
+  add,
+} from './util/vector3.js';
+import { sum } from './util/array.js';
 import { toNumber } from './util/string.js';
 
 const parseLine = (line) => new Vector3(...line.split(',').map(toNumber));
@@ -32,75 +42,26 @@ export const levelOne = ({ lines }) => {
  * Returns the solution for level two of this puzzle.
  */
 export const levelTwo = (() => {
-  const getAllExposedSides = (cubes, lookup) => {
-    const exposed = cubes.map((cube) => getExposedSides(cube, lookup));
-    const z = exposed.reduce((acc, points) => {
-      points
-        .map((point) => point.toString())
-        .forEach((key) => {
-          acc[key] = acc[key] ? acc[key] + 1 : 1;
-        });
-      return acc;
-    }, {});
-    const q = Object.values(z).filter((x) => x !== 6);
-    return sum(q);
-  };
+  const isOutOfBounds = ({ x, y, z }, bounds) =>
+    x < bounds.left ||
+    x > bounds.right ||
+    y < bounds.bottom ||
+    y > bounds.top ||
+    z < bounds.back ||
+    z > bounds.front;
 
-  /**
-   * Return the count of the cubes sides which are not covered by another cube.
-   */
-  const countExposedSides = (cube, lookup) =>
-    sides
-      .map((side) => add(cube, side).toString())
-      .reduce((acc, side) => (lookup.has(side) ? acc : acc + 1), 0);
-
-  const findBounds = (cubes) => {
-    const [xMin, xMax] = bounds(cubes.map(({ x }) => x));
-    const [yMin, yMax] = bounds(cubes.map(({ y }) => y));
-    const [zMin, zMax] = bounds(cubes.map(({ z }) => z));
-    return {
-      left: xMin,
-      right: xMax,
-      bottom: yMin,
-      top: yMax,
-      back: zMin,
-      front: zMax,
-    };
-  };
-
-  const isOutOfBounds = ({ x, y, z }, worldBounds) => {
-    if (x < worldBounds.left || x > worldBounds.right) {
-      return true;
-    }
-    if (y < worldBounds.bottom || y > worldBounds.top) {
-      return true;
-    }
-    if (z < worldBounds.back || z > worldBounds.front) {
-      return true;
-    }
-    return false;
-  };
-
-  const getEmptyPoints = (worldBounds, lavaLookup) => {
-    const queue = [new Vector3(worldBounds.left, worldBounds.bottom, worldBounds.back)];
+  // Returns a lookup of all points which are within the world bounds but outside of the lava droplet.
+  const getEmptyPoints = (bounds, lavaPoints) => {
+    const queue = [new Vector3(bounds.left, bounds.bottom, bounds.back)];
     const examined = new Set();
     while (queue.length) {
       const point = queue.shift();
-      const pointKey = point.toString();
-
-      if (examined.has(pointKey)) {
+      const key = point.toString();
+      if (examined.has(key) || isOutOfBounds(point, bounds) || lavaPoints.has(key)) {
         continue;
       }
-
-      if (!isOutOfBounds(point, worldBounds) && !lavaLookup.has(pointKey)) {
-        examined.add(pointKey);
-        queue.push(add(point, left));
-        queue.push(add(point, right));
-        queue.push(add(point, down));
-        queue.push(add(point, up));
-        queue.push(add(point, forward));
-        queue.push(add(point, back));
-      }
+      queue.push(...sides.map((side) => add(point, side)));
+      examined.add(key);
     }
     return examined;
   };
@@ -126,45 +87,5 @@ export const levelTwo = (() => {
     );
 
     return totalExposed - exposedToAirPockets;
-
-    // const cubeNeighbors = cubes.map(
-    //   (cube) =>
-    //     getSides(cube)
-    //       .map((side) => side.toString())
-    //       .filter((side) => !cubeLookup.has(side) && !outsideCube.has(side)).length
-    // );
-
-    // const numPoints =
-    //   (worldBounds.right - worldBounds.left + 1) *
-    //   (worldBounds.top - worldBounds.bottom + 1) *
-    //   (worldBounds.front - worldBounds.back + 1);
-
-    // console.log();
-    // console.log('total', numPoints);
-    // console.log('cube', cubes.length);
-    // console.log('empty', outsideCube.size);
-    // console.log('air pocket', numPoints - cubes.length - outsideCube.size);
-    // console.log('exposed to airpocket', sum(exposedToAirPockets));
-
-    // const airPockets = [];
-    // for (let x = worldBounds.left; x <= worldBounds.right; x++) {
-    //   for (let y = worldBounds.bottom; y <= worldBounds.top; y++) {
-    //     for (let z = worldBounds.back; z <= worldBounds.front; z++) {
-    //       const point = new Vector3(x, y, z).toString();
-    //       if (!cubeLookup.has(point) && !outsideCube.has(point)) {
-    //         airPockets.push(point);
-    //       }
-    //     }
-    //   }
-    // }
-
-    // console.log('air pockets', airPockets);
-
-    // // have a world cube of x*y*z, every point on the cube is either empty space, a point of lava or an air pocket inside of lava.
-    // // start from outer boundaries and flood fill all empty space outside of lava..
-    // // if a point is not flood filled and is not part of lava, then it must be an air pocket.
-    // // once know air pocket locations, can ignore exposed edges which touch an air pocket.
-
-    // return 1234;
   };
 })();
