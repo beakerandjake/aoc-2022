@@ -16,6 +16,7 @@ import {
   add,
   zero,
   findBounds,
+  toLookup,
   area,
 } from './util/vector2.js';
 import { filterDuplicates } from './util/array.js';
@@ -33,11 +34,9 @@ const defaultRules = [
   [[right, upRight, downRight], right],
 ];
 
-// todo look into bit packing into 32 bits with 16 bits for x and y
-// might be a faster hash than tostring.. wrap with method for now.
-const hash = (vector) => vector.toString();
-const toLookup = (points) => new Set(points.map(hash));
-const isOccupied = (point, pointLookup) => pointLookup.has(hash(point));
+const fastHash = ({ x, y }) => x + (y << 16);
+
+const includes = (point, pointLookup) => pointLookup.has(fastHash(point));
 
 const parseLine = (line, y) =>
   [...line]
@@ -50,7 +49,7 @@ const parseLines = (lines) => lines.map(parseLine).flat();
 const hasNeighbors = (elf, directions, elfLookup) =>
   directions
     .map((direction) => add(elf, direction))
-    .some((position) => isOccupied(position, elfLookup));
+    .some((position) => includes(position, elfLookup));
 
 const roundFirstHalf = (elf, elfLookup, rules) => {
   const matchingRule = rules.find(
@@ -59,19 +58,19 @@ const roundFirstHalf = (elf, elfLookup, rules) => {
   return matchingRule ? add(elf, matchingRule[1]) : elf;
 };
 
-const roundSecondHalf = (elfCurrent, elfDesired, duplicateMoveLookup) => {
+const roundSecondHalf = (elfCurrent, elfDesired, invalidMoveLookup) => {
   if (equals(elfCurrent, elfDesired)) {
     return elfCurrent;
   }
-  return duplicateMoveLookup.has(hash(elfDesired)) ? elfCurrent : elfDesired;
+  return includes(elfDesired, invalidMoveLookup) ? elfCurrent : elfDesired;
 };
 
 const simulateRound = (elves, rules) => {
-  const elfLookup = toLookup(elves);
+  const elfLookup = toLookup(elves, fastHash);
   const desired = elves.map((elf) => roundFirstHalf(elf, elfLookup, rules));
-  const duplicateMoveLookup = toLookup(filterDuplicates(desired, hash));
+  const invalidMoveLookup = toLookup(filterDuplicates(desired, fastHash), fastHash);
   return elves.map((elf, index) =>
-    roundSecondHalf(elf, desired[index], duplicateMoveLookup)
+    roundSecondHalf(elf, desired[index], invalidMoveLookup)
   );
 };
 
