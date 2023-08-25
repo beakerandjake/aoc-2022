@@ -2,9 +2,9 @@
  * Contains solutions for Day 25
  * Puzzle Description: https://adventofcode.com/2022/day/25
  */
-import { arraysEqual, sum, arrayToString } from './util/array.js';
+import { sum } from './util/array.js';
 
-const snafuToDecimalChars = {
+const snafuToDecimalMap = {
   2: 2,
   1: 1,
   0: 0,
@@ -12,7 +12,7 @@ const snafuToDecimalChars = {
   '=': -2,
 };
 
-const decimalToSnafuChars = {
+const remainderToSnafuMap = {
   0: '0',
   1: '1',
   2: '2',
@@ -23,27 +23,24 @@ const decimalToSnafuChars = {
 const snafuToDecimal = (snafu) =>
   [...snafu]
     .reverse()
-    .reduce((total, char, index) => total + 5 ** index * snafuToDecimalChars[char], 0);
+    .reduce((total, char, index) => total + 5 ** index * snafuToDecimalMap[char], 0);
 
 const decimalToSnafu = (decimal) => {
   let value = decimal;
-  const quantities = [];
+  const output = [];
+  let carry = 0;
   while (value) {
-    quantities.push(value % 5);
+    const remainder = value % 5;
+    const modifiedRemainder = carry ? (remainder + 1) % 5 : remainder;
+    output.push(remainderToSnafuMap[modifiedRemainder]);
+    carry = remainder > 2 || modifiedRemainder > 2 ? 1 : 0;
     value = Math.floor(value / 5);
   }
 
-  let borrow = 0;
-  const output = [];
-  for (let index = 0; index < quantities.length; index++) {
-    const originalQuantity = quantities[index] || 0;
-    const modifiedQuantity = borrow ? (originalQuantity + 1) % 5 : originalQuantity;
-    output.push(decimalToSnafuChars[modifiedQuantity]);
-    borrow = originalQuantity > 2 || modifiedQuantity > 2 ? 1 : 0;
-  }
-  if (borrow) {
+  if (carry) {
     output.push('1');
   }
+
   return output.reverse().join('');
 };
 
