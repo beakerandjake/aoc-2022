@@ -4,7 +4,7 @@
  */
 import {
   Vector2,
-  equals,
+  equals as pointsAreEqual,
   up,
   down,
   left,
@@ -19,7 +19,7 @@ import {
   toLookup,
   area,
 } from './util/vector2.js';
-import { filterDuplicates } from './util/array.js';
+import { filterDuplicates, arraysEqual } from './util/array.js';
 
 const defaultRules = [
   // all directions.
@@ -34,10 +34,6 @@ const defaultRules = [
   [[right, upRight, downRight], right],
 ];
 
-const fastHash = ({ x, y }) => x + (y << 16);
-
-const includes = (point, pointLookup) => pointLookup.has(fastHash(point));
-
 const parseLine = (line, y) =>
   [...line]
     .map((char, x) => (char === '#' ? x : null))
@@ -45,6 +41,10 @@ const parseLine = (line, y) =>
     .map((x) => new Vector2(x, y));
 
 const parseLines = (lines) => lines.map(parseLine).flat();
+
+const fastHash = ({ x, y }) => x + (y << 16);
+
+const includes = (point, pointLookup) => pointLookup.has(fastHash(point));
 
 const hasNeighbors = (elf, directions, elfLookup) =>
   directions
@@ -59,7 +59,7 @@ const roundFirstHalf = (elf, elfLookup, rules) => {
 };
 
 const roundSecondHalf = (elfCurrent, elfDesired, invalidMoveLookup) => {
-  if (equals(elfCurrent, elfDesired)) {
+  if (pointsAreEqual(elfCurrent, elfDesired)) {
     return elfCurrent;
   }
   return includes(elfDesired, invalidMoveLookup) ? elfCurrent : elfDesired;
@@ -100,31 +100,21 @@ export const levelOne = (() => {
   };
 })();
 
-const arraysEqual = (lhs, rhs) => lhs.every((x, index) => equals(x, rhs[index]));
-
 /**
  * Returns the solution for level two of this puzzle.
- * @param {Object} args - Provides both raw and split input.
- * @param {String} args.input - The original, unparsed input string.
- * @param {String[]} args.lines - Array containing each line of the input string.
- * @returns {Number|String}
  */
 export const levelTwo = ({ lines }) => {
   let elves = parseLines(lines);
-  let rules = [...defaultRules];
-  let roundNumber = 1;
+  let rules = defaultRules;
+  let round = 1;
 
   for (;;) {
     const result = simulateRound(elves, rules);
-
-    if (arraysEqual(elves, result)) {
-      break;
+    if (arraysEqual(elves, result, pointsAreEqual)) {
+      return round;
     }
-
     elves = result;
     rules = cycleRules(rules);
-    roundNumber++;
+    round++;
   }
-
-  return roundNumber;
 };

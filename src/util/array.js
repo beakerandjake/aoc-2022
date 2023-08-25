@@ -157,8 +157,9 @@ export const arrayToString = (items, itemToStringFn = (x) => `${x}`) =>
  * Returns true if every element of the lhs array is equal to every element of the rhs array.
  * @param {Array} lhs
  * @param {Array} rhs
+ * @param {Function} equalityFn - Function invoked for every item to determine equality.
  */
-export const arraysEqual = (lhs, rhs) => {
+export const arraysEqual = (lhs, rhs, equalityFn = (a, b) => a === b) => {
   if (lhs === rhs) {
     return true;
   }
@@ -168,7 +169,7 @@ export const arraysEqual = (lhs, rhs) => {
   if (lhs.length !== rhs.length) {
     return false;
   }
-  return lhs.every((a, index) => a === rhs[index]);
+  return lhs.every((a, index) => equalityFn(a, rhs[index]));
 };
 
 /**
