@@ -65,7 +65,8 @@ export const area = ({ left, right, bottom, top }) =>
  * Returns a set containing the unique points.
  * @param {Vector2[]} points
  */
-export const toLookup = (points) => new Set(points.map((x) => x.toString()));
+export const toLookup = (points, hashFn = (x) => x.toString()) =>
+  new Set(points.map(hashFn));
 
 export const up = new Vector2(0, -1);
 export const down = new Vector2(0, 1);
