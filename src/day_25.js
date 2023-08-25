@@ -20,12 +20,12 @@ const remainderToSnafuMap = {
   4: '-',
 };
 
-const snafuToDecimal = (snafu) =>
+const toDecimal = (snafu) =>
   [...snafu]
     .reverse()
     .reduce((total, char, index) => total + 5 ** index * snafuToDecimalMap[char], 0);
 
-const decimalToSnafu = (decimal) => {
+const toSnafu = (decimal) => {
   let value = decimal;
   const output = [];
   let carry = 0;
@@ -47,7 +47,7 @@ const decimalToSnafu = (decimal) => {
 /**
  * Returns the solution for level one of this puzzle.
  */
-export const levelOne = ({ lines }) => decimalToSnafu(sum(lines.map(snafuToDecimal)));
+export const levelOne = ({ lines }) => toSnafu(sum(lines.map(toDecimal)));
 /**
  * Returns the solution for level two of this puzzle.
  */
