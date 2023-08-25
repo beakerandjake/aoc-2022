@@ -18,23 +18,6 @@ import {
   findBounds,
   area,
 } from './util/vector2.js';
-import { worldToString } from './util/debug.js';
-
-// faster parsing methods, could come in handy later, but ugly..
-// const parseLine = (line, y) =>
-//   [...line].reduce((acc, char, x) => {
-//     if (char === '#') {
-//       acc.push(new Vector2(x, y));
-//     }
-//     return acc;
-//   }, []);
-// const parseLines = (lines) =>
-//   lines
-//     .map((line, y) => parseLine(line, y))
-//     .reduce((acc, points) => {
-//       acc.push(...points);
-//       return acc;
-//     }, []);
 
 const defaultRules = [
   // all directions.
@@ -75,20 +58,29 @@ const roundFirstHalf = (elf, elfLookup, rules) => {
   return matchingRule ? add(elf, matchingRule[1]) : elf;
 };
 
-const roundSecondHalf = (elves, desired) =>
-  desired.map((position, index) => {
-    if (equals(position, elves[index])) {
-      return position;
-    }
-    return desired.filter((x) => equals(x, position)).length === 1
-      ? position
-      : elves[index];
-  });
+const roundSecondHalf = (elfCurrent, elfDesired, duplicateMoveLookup) => {
+  if (equals(elfCurrent, elfDesired)) {
+    return elfCurrent;
+  }
+  return duplicateMoveLookup.has(hash(elfDesired)) ? elfCurrent : elfDesired;
+};
+
+const filterDuplicates = (items, hashFn) => {
+  const counts = items.reduce((acc, item, index) => {
+    const hashed = hashFn(item);
+    acc[hashed] = acc[hashed] ? acc[hashed] + 1 : 1;
+    return acc;
+  }, {});
+  return items.filter((item) => counts[hash(item)] > 1);
+};
 
 const simulateRound = (elves, rules) => {
   const elfLookup = toLookup(elves);
   const desired = elves.map((elf) => roundFirstHalf(elf, elfLookup, rules));
-  return roundSecondHalf(elves, desired);
+  const duplicateMoveLookup = toLookup(filterDuplicates(desired, hash));
+  return elves.map((elf, index) =>
+    roundSecondHalf(elf, desired[index], duplicateMoveLookup)
+  );
 };
 
 const cycleRules = (rules) => [rules[0], rules[2], rules[3], rules[4], rules[1]];
