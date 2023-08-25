@@ -199,3 +199,21 @@ export const swap = (array, lhsIndex, rhsIndex) =>
     }
     return value;
   });
+
+/**
+ * Returns a new array containing each item in the original array which was not unique.
+ * @param {Array} array
+ * @param {Function} hashFn - Function used to generate a key for each element.
+ */
+export const filterDuplicates = (array, hashFn = (x) => x) => {
+  const counts = array.reduce((acc, item) => {
+    const hashed = hashFn(item);
+    if (acc[hashed]) {
+      acc[hashed] += 1;
+    } else {
+      acc[hashed] = 1;
+    }
+    return acc;
+  }, {});
+  return array.filter((item) => counts[hashFn(item)] > 1);
+};
