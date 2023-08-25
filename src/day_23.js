@@ -44,12 +44,12 @@ const parseLines = (lines) => lines.map(parseLine).flat();
 
 const fastHash = ({ x, y }) => x + (y << 16);
 
-const includes = (point, pointLookup) => pointLookup.has(fastHash(point));
+const includes = (pointLookup, point) => pointLookup.has(fastHash(point));
 
 const hasNeighbors = (elf, directions, elfLookup) =>
   directions
     .map((direction) => add(elf, direction))
-    .some((position) => includes(position, elfLookup));
+    .some((position) => includes(elfLookup, position));
 
 const roundFirstHalf = (elf, elfLookup, rules) => {
   const matchingRule = rules.find(
@@ -62,7 +62,7 @@ const roundSecondHalf = (elfCurrent, elfDesired, invalidMoveLookup) => {
   if (pointsAreEqual(elfCurrent, elfDesired)) {
     return elfCurrent;
   }
-  return includes(elfDesired, invalidMoveLookup) ? elfCurrent : elfDesired;
+  return includes(invalidMoveLookup, elfDesired) ? elfCurrent : elfDesired;
 };
 
 const simulateRound = (elves, rules) => {
