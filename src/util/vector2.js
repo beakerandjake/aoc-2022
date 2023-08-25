@@ -64,6 +64,7 @@ export const area = ({ left, right, bottom, top }) =>
 /**
  * Returns a set containing the unique points.
  * @param {Vector2[]} points
+ * @param {Function} hashFn - The function used to hash each Vector2
  */
 export const toLookup = (points, hashFn = (x) => x.toString()) =>
   new Set(points.map(hashFn));
