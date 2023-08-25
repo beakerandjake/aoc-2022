@@ -2,6 +2,20 @@
  * Contains solutions for Day 25
  * Puzzle Description: https://adventofcode.com/2022/day/25
  */
+import { sum } from './util/array.js';
+
+const snafuValueMap = {
+  2: 2,
+  1: 1,
+  0: 0,
+  '-': -1,
+  '=': -2,
+};
+
+const snafuToDecimal = (snafu) =>
+  [...snafu]
+    .reverse()
+    .reduce((total, char, index) => total + 5 ** index * snafuValueMap[char], 0);
 
 /**
  * Returns the solution for level one of this puzzle.
@@ -12,6 +26,8 @@
  */
 export const levelOne = ({ input, lines }) => {
   // your code here
+  const decimals = lines.map(snafuToDecimal);
+  return sum(decimals);
 };
 
 /**
