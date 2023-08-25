@@ -18,18 +18,19 @@ import {
   findBounds,
   area,
 } from './util/vector2.js';
+import { filterDuplicates } from './util/array.js';
 
 const defaultRules = [
   // all directions.
-  [[up, down, left, right, upRight, upLeft, downRight, downLeft], zero, 'all'],
+  [[up, down, left, right, upRight, upLeft, downRight, downLeft], zero],
   // north
-  [[up, upLeft, upRight], up, 'north'],
+  [[up, upLeft, upRight], up],
   // south
-  [[down, downLeft, downRight], down, 'south'],
+  [[down, downLeft, downRight], down],
   // west
-  [[left, upLeft, downLeft], left, 'west'],
+  [[left, upLeft, downLeft], left],
   // east
-  [[right, upRight, downRight], right, 'east'],
+  [[right, upRight, downRight], right],
 ];
 
 // todo look into bit packing into 32 bits with 16 bits for x and y
@@ -63,15 +64,6 @@ const roundSecondHalf = (elfCurrent, elfDesired, duplicateMoveLookup) => {
     return elfCurrent;
   }
   return duplicateMoveLookup.has(hash(elfDesired)) ? elfCurrent : elfDesired;
-};
-
-const filterDuplicates = (items, hashFn) => {
-  const counts = items.reduce((acc, item, index) => {
-    const hashed = hashFn(item);
-    acc[hashed] = acc[hashed] ? acc[hashed] + 1 : 1;
-    return acc;
-  }, {});
-  return items.filter((item) => counts[hash(item)] > 1);
 };
 
 const simulateRound = (elves, rules) => {
