@@ -48,9 +48,3 @@ const toSnafu = (decimal) => {
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => toSnafu(sum(lines.map(toDecimal)));
-/**
- * Returns the solution for level two of this puzzle.
- */
-export const levelTwo = ({ input, lines }) => {
-  // your code here
-};
