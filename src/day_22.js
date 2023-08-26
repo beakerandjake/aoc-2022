@@ -5,7 +5,7 @@
 import { arrayToString } from './util/array.js';
 import { convertTo2dArray, index2d, elementAt2d } from './util/array2d.js';
 import { array2dToString } from './util/debug.js';
-import { Vector2, left, right, down, up, add } from './util/vector2.js';
+import { Vector2, left, right, down, up, add, equals, one } from './util/vector2.js';
 import { toNumber } from './util/string.js';
 
 const directions = [
@@ -27,8 +27,14 @@ const directionIndexLookup = {
  */
 const render = ({ data, shape }, history) => {
   const mapCopy = [...data];
-  history.forEach(({ position, facing }) => {
-    mapCopy[index2d(shape.width, position.y, position.x)] = directions[facing].display;
+  history.forEach(({ position, facing }, index) => {
+    let char = directions[facing].display;
+    if (index === 0) {
+      char = '0';
+    } else if (index === history.length - 1) {
+      char = '$';
+    }
+    mapCopy[index2d(shape.width, position.y, position.x)] = char;
   });
   console.log(array2dToString(mapCopy, shape));
 };
@@ -112,11 +118,6 @@ const isVoid = (tile) => tile === ' ';
 const getTile = (map, { x, y }) => elementAt2d(map.data, map.shape, y, x);
 
 /**
- * Returns the new position after moving the specified amount.
- */
-const move = (position, amount) => add(position, amount);
-
-/**
  * Is the position outside of the map bounds?
  */
 const outOfBounds = ({ x, y }, { shape: { width, height } }) =>
@@ -128,7 +129,6 @@ const outOfBounds = ({ x, y }, { shape: { width, height } }) =>
  */
 const findFirstTile = (startX, startY, xStep, yStep, map) => {
   const position = new Vector2(startX, startY);
-  console.log('starting search at', position);
   for (;;) {
     if (isVoid(getTile(map, position))) {
       position.x += xStep;
@@ -143,6 +143,7 @@ const findFirstTile = (startX, startY, xStep, yStep, map) => {
  * Wraps the x value around the row based on the facing direction.
  * If facing right assumes wrapping around the right edge.
  * If facing left assumes wrapping around the left edge.
+ * Returns first non void tile from the wrapped side.
  */
 const wrapX = (y, facing, map) =>
   facing === directionIndexLookup.right
@@ -153,71 +154,95 @@ const wrapX = (y, facing, map) =>
  * Wraps the y value around the column based on the facing direction.
  * If facing down assumes wrapping around the bottom edge.
  * If facing up assumes wrapping around the top edge.
+ * Returns first non void tile from the wrapped side.
  */
-const wrapY = (x, facing, map) => {
-  console.log('wrap around y');
-  return facing === directionIndexLookup.up
+const wrapY = (x, facing, map) =>
+  facing === directionIndexLookup.up
     ? findFirstTile(x, map.shape.height - 1, 0, -1, map)
     : findFirstTile(x, 0, 0, 1, map);
-};
 
+/**
+ * Wraps the position around the edge of the map based on the current facing direction.
+ * Returns first non void tile from the wrapped side.
+ */
 const wrapAround = ({ x, y }, facing, map) =>
   facing === directionIndexLookup.left || facing === directionIndexLookup.right
     ? wrapX(y, facing, map)
     : wrapY(x, facing, map);
 
-const tryToMove = (position, facing, map) => {
-  const newPosition = move(position, directions[facing].value);
-
-  if (outOfBounds(newPosition, map)) {
-    return wrapAround(position, facing, map);
+/**
+ * Attempts to move one tile in the currently facing direction.
+ * If the new position is obstructed by a wall the old position is returned.
+ */
+const move = (position, facing, map) => {
+  let newPosition = add(position, directions[facing].value);
+  let destinationTile = getTile(map, newPosition);
+  if (outOfBounds(newPosition, map) || isVoid(destinationTile)) {
+    newPosition = wrapAround(newPosition, facing, map);
+    destinationTile = getTile(map, newPosition);
   }
-
-  const destinationTile = getTile(map, newPosition);
-
-  if (isVoid(destinationTile)) {
-    console.log(`cant move to: ${newPosition} because void!!, facing: ${facing}`);
-    return wrapAround(position, facing, map);
-  }
-  if (isWall(destinationTile)) {
-    console.log(`cant move to: ${newPosition} because wall!`);
-    return position;
-  }
-  console.log(`moving from: ${position} to ${newPosition}`);
-  return newPosition;
+  return !isWall(destinationTile) ? newPosition : position;
 };
 
-const followInstruction = (position, facing, instruction, map) => {
-  if (instruction === 'R') {
-    return { position, facing: rotateClockwise(position, facing) };
+const moveTimes = (position, facing, times, map) => {
+  let remaining = times;
+  let currentPosition = position;
+  const toReturn = [];
+  while (remaining--) {
+    const newPosition = move(currentPosition, facing, map);
+    // console.log(`current: ${currentPosition}, new: ${newPosition}`);
+    if (equals(newPosition, currentPosition)) {
+      break;
+    }
+    toReturn.push({ position: newPosition, facing });
+    currentPosition = newPosition;
   }
-  if (instruction === 'L') {
-    return { position, facing: rotateCounterClockwise(position, facing) };
-  }
-  return { position: tryToMove(position, facing, instruction, map), facing };
+  return toReturn;
+};
+
+const followPath = (position, facing, path, map) => {
+  let currentPosition = position;
+  let currentFacing = facing;
+
+  return path.reduce((acc, instruction) => {
+    // console.group(`instruction: ${instruction}`);
+    if (instruction === 'R') {
+      // console.log('rotate right');
+      currentFacing = rotateClockwise(currentFacing);
+      acc.push({ position: currentPosition, facing: currentFacing });
+    } else if (instruction === 'L') {
+      // console.log('rotate left');
+      currentFacing = rotateCounterClockwise(currentFacing);
+      acc.push({ position: currentPosition, facing: currentFacing });
+    } else {
+      // console.log(`move ${instruction} times`);
+      const moves = moveTimes(currentPosition, currentFacing, instruction, map);
+      // console.log(moves);
+      currentPosition = moves.length ? moves[moves.length - 1].position : currentPosition;
+      acc.push(...moves);
+    }
+    console.groupEnd();
+    return acc;
+  }, []);
+};
+
+const finalPassword = (position, facing) => {
+  const translatedPosition = add(position, one);
+  return 1000 * translatedPosition.y + 4 * translatedPosition.x + facing;
 };
 
 /**
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ input, lines }) => {
-  console.log();
-
+  // console.log();
   const { map, path } = parseInput(lines);
   const startX = findStartX(map.data);
-  let position = new Vector2(5, 7);
-  let facing = 1;
-  const history = [{ position, facing }];
-
-  position = tryToMove(position, facing, map);
-  history.push({ position, facing });
-  // position = tryToMove(position, facing, map);
-  // history.push({ position, facing });
-  // position = tryToMove(position, facing, map);
-  // history.push({ position, facing });
-  // position = tryToMove(position, facing, map);
-  // history.push({ position, facing });
-
-  render(map, history);
-  return 1234;
+  const position = new Vector2(startX, 0);
+  const facing = 0;
+  const pathHistory = followPath(position, facing, path, map);
+  // console.log(pathHistory);
+  // render(map, [{ position, facing }, ...pathHistory]);
+  const finalStep = pathHistory[pathHistory.length - 1];
+  return finalPassword(finalStep.position, finalStep.facing);
 };
