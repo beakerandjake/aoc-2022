@@ -207,22 +207,23 @@ const followPathWithHistory = (position, facing, path, map, wrapAroundFn) => {
   }, []);
 };
 
+const instructionLookup = {
+  R: (acc) => ({ ...acc, facing: rotateClockwise(acc.facing) }),
+  L: (acc) => ({ ...acc, facing: rotateCounterClockwise(acc.facing) }),
+  move: (acc, value, map, wrapAroundFn) => ({
+    ...acc,
+    position: moveTimes(acc.position, acc.facing, value, map, wrapAroundFn),
+  }),
+};
+
 /**
  * Follow the each instruction in the path and return the resulting postiion and facing
  */
 const followPath = (position, facing, path, map, wrapAroundFn) =>
   path.reduce(
     (acc, value) => {
-      if (value === 'R') {
-        return { ...acc, facing: rotateClockwise(acc.facing) };
-      }
-      if (value === 'L') {
-        return { ...acc, facing: rotateCounterClockwise(acc.facing) };
-      }
-      return {
-        ...acc,
-        position: moveTimes(acc.position, acc.facing, value, map, wrapAroundFn),
-      };
+      const fn = instructionLookup[value] || instructionLookup.move;
+      return fn(acc, value, map, wrapAroundFn);
     },
     { position, facing }
   );
