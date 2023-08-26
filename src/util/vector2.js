@@ -78,3 +78,4 @@ export const downRight = add(down, right);
 export const upLeft = add(up, left);
 export const upRight = add(up, right);
 export const zero = new Vector2(0, 0);
+export const one = new Vector2(1, 1);
