@@ -8,6 +8,10 @@ import { Vector2, left, right, down, up, add, equals, one } from './util/vector2
 import { toNumber } from './util/string.js';
 import { repeat } from './util/functions.js';
 
+/**
+ * The directions that you can face.
+ * Order of items in array allows 90 degree rotation by incrementing or decrementing the index.
+ */
 const directions = [
   { value: right, display: '>' },
   { value: down, display: 'v' },
@@ -15,7 +19,10 @@ const directions = [
   { value: up, display: '^' },
 ];
 
-const directionIndexLookup = {
+/**
+ * Helper lookup which maps a direction name to its index in the direction array.
+ */
+const directionIndexes = {
   right: 0,
   down: 1,
   left: 2,
@@ -165,7 +172,7 @@ const moveTimes = (position, facing, times, map, wrapAroundFn, onMoveCallback) =
   // eslint-disable-next-line consistent-return
   repeat(() => {
     const newPosition = move(currentPosition, facing, map, wrapAroundFn);
-    if (newPosition === currentPosition) {
+    if (equals(newPosition, currentPosition)) {
       return false;
     }
     currentPosition = newPosition;
@@ -239,7 +246,7 @@ export const levelOne = (() => {
    * Returns first non void tile from the wrapped side.
    */
   const wrapX = (y, facing, map) =>
-    facing === directionIndexLookup.right
+    facing === directionIndexes.right
       ? findFirstTile(0, y, 1, 0, map)
       : findFirstTile(map.shape.width - 1, y, -1, 0, map);
 
@@ -250,7 +257,7 @@ export const levelOne = (() => {
    * Returns first non void tile from the wrapped side.
    */
   const wrapY = (x, facing, map) =>
-    facing === directionIndexLookup.up
+    facing === directionIndexes.up
       ? findFirstTile(x, map.shape.height - 1, 0, -1, map)
       : findFirstTile(x, 0, 0, 1, map);
 
@@ -259,7 +266,7 @@ export const levelOne = (() => {
    * Returns first non void tile from the wrapped side.
    */
   const wrapAround = ({ x, y }, facing, map) =>
-    facing === directionIndexLookup.left || facing === directionIndexLookup.right
+    facing === directionIndexes.left || facing === directionIndexes.right
       ? wrapX(y, facing, map)
       : wrapY(x, facing, map);
 
@@ -267,7 +274,7 @@ export const levelOne = (() => {
     const { map, path } = parseInput(lines);
     const { position, facing } = followPath(
       new Vector2(findStartX(map.data), 0),
-      directionIndexLookup.right,
+      directionIndexes.right,
       path,
       map,
       wrapAround
