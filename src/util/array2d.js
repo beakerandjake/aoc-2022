@@ -29,6 +29,29 @@ export const parse2dArray = (input, characterMapFn = null, rowSeparator = '\n') 
 };
 
 /**
+ * Convert a regular 2d array into a flat 2d array.
+ * @param {any[][]} array
+ */
+export const convertTo2dArray = (array) => {
+  if (!array.length) {
+    return { items: [], width: 0, height: 0 };
+  }
+  const height = array.length;
+  const width = array[0].length;
+  const toReturn = array.reduce((acc, row) => {
+    if (row.length !== width) {
+      throw new Error(
+        `every row in 2d array must have the same width, expected: ${width} but received: ${row.width}`
+      );
+    }
+    acc.push(...row);
+    return acc;
+  }, []);
+
+  return { items: toReturn, shape: { width, height } };
+};
+
+/**
  * Returns the index of the element in a *flattened* representation of the 2d array.
  * @param {Number} width - The number of elements in each row of the 2d array.
  * @param {Number} y - The y (row) index.
