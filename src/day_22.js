@@ -155,65 +155,67 @@ const move = (position, facing, map, wrapAroundFn) => {
   return !isWall(destinationTile) ? newPosition : position;
 };
 
-const moveTimes = (position, facing, times, map) => {
-  let remaining = times;
+/**
+ * Attempts to move one tile in the currently facing direction up to x times.
+ * If a new position is obstructed by a wall the old position is returned.
+ * Can optionally pass a callback fn to get the current position on each successful move.
+ */
+const moveTimes = (position, facing, times, map, wrapAroundFn, onMoveCallback) => {
   let currentPosition = position;
-  const toReturn = [];
-  while (remaining--) {
-    const newPosition = move(currentPosition, facing, map);
-    // console.log(`current: ${currentPosition}, new: ${newPosition}`);
-    if (equals(newPosition, currentPosition)) {
-      break;
+  // eslint-disable-next-line consistent-return
+  repeat(() => {
+    const newPosition = move(currentPosition, facing, map, wrapAroundFn);
+    if (newPosition === currentPosition) {
+      return false;
     }
-    toReturn.push({ position: newPosition, facing });
     currentPosition = newPosition;
-  }
-  return toReturn;
+    if (onMoveCallback) {
+      onMoveCallback(currentPosition);
+    }
+  }, times);
+  return currentPosition;
 };
 
 const followPathWithHistory = (position, facing, path, map, wrapAroundFn) => {
-  let currentPosition = position;
-  let currentFacing = facing;
-  return path.reduce((acc, instruction) => {
-    if (instruction === 'R') {
-      currentFacing = rotateClockwise(currentFacing);
-      acc.push({ position: currentPosition, facing: currentFacing });
-    } else if (instruction === 'L') {
-      currentFacing = rotateCounterClockwise(currentFacing);
-      acc.push({ position: currentPosition, facing: currentFacing });
-    } else {
-      // eslint-disable-next-line consistent-return
-      repeat(() => {
-        const newPosition = move(currentPosition, currentFacing, map, wrapAroundFn);
-        if (newPosition === currentPosition) {
-          return false;
-        }
-        currentPosition = newPosition;
-        acc.push({ position: currentPosition, facing: currentFacing });
-      }, instruction);
+  let curr = {
+    facing,
+    position,
+  };
+  return path.reduce((acc, value) => {
+    if (value === 'R') {
+      curr = { ...curr, facing: rotateClockwise(curr.facing) };
+      acc.push(curr);
+      return acc;
     }
+    if (value === 'L') {
+      curr = { ...curr, facing: rotateCounterClockwise(curr.facing) };
+      acc.push(curr);
+      return acc;
+    }
+    const n = moveTimes(curr.position, curr.facing, value, map, wrapAroundFn, (x) => {
+      acc.push({ ...curr, position: x });
+    });
+    curr = { ...curr, position: n };
     return acc;
   }, []);
 };
 
+/**
+ * Follow the each instruction in the path and return the resulting postiion and facing
+ */
 const followPath = (position, facing, path, map, wrapAroundFn) =>
   path.reduce(
-    (acc, instruction) => {
-      if (instruction === 'R') {
-        acc.facing = rotateClockwise(acc.facing);
-      } else if (instruction === 'L') {
-        acc.facing = rotateCounterClockwise(acc.facing);
-      } else {
-        // eslint-disable-next-line consistent-return
-        repeat(() => {
-          const newPosition = move(acc.position, acc.facing, map, wrapAroundFn);
-          if (newPosition === acc.position) {
-            return false;
-          }
-          acc.position = newPosition;
-        }, instruction);
+    (acc, value) => {
+      if (value === 'R') {
+        return { ...acc, facing: rotateClockwise(acc.facing) };
       }
-      return acc;
+      if (value === 'L') {
+        return { ...acc, facing: rotateCounterClockwise(acc.facing) };
+      }
+      return {
+        ...acc,
+        position: moveTimes(acc.position, acc.facing, value, map, wrapAroundFn),
+      };
     },
     { position, facing }
   );
