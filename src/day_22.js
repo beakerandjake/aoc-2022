@@ -171,7 +171,7 @@ const moveTimes = (position, facing, times, map) => {
   return toReturn;
 };
 
-const followPathWithHistory = (position, facing, path, map) => {
+const followPathWithHistory = (position, facing, path, map, wrapAroundFn) => {
   let currentPosition = position;
   let currentFacing = facing;
   return path.reduce((acc, instruction) => {
@@ -182,9 +182,15 @@ const followPathWithHistory = (position, facing, path, map) => {
       currentFacing = rotateCounterClockwise(currentFacing);
       acc.push({ position: currentPosition, facing: currentFacing });
     } else {
-      const moves = moveTimes(currentPosition, currentFacing, instruction, map);
-      currentPosition = moves.length ? moves[moves.length - 1].position : currentPosition;
-      acc.push(...moves);
+      // eslint-disable-next-line consistent-return
+      repeat(() => {
+        const newPosition = move(currentPosition, currentFacing, map, wrapAroundFn);
+        if (newPosition === currentPosition) {
+          return false;
+        }
+        currentPosition = newPosition;
+        acc.push({ position: currentPosition, facing: currentFacing });
+      }, instruction);
     }
     return acc;
   }, []);
@@ -198,6 +204,7 @@ const followPath = (position, facing, path, map, wrapAroundFn) =>
       } else if (instruction === 'L') {
         acc.facing = rotateCounterClockwise(acc.facing);
       } else {
+        // eslint-disable-next-line consistent-return
         repeat(() => {
           const newPosition = move(acc.position, acc.facing, map, wrapAroundFn);
           if (newPosition === acc.position) {
@@ -211,6 +218,9 @@ const followPath = (position, facing, path, map, wrapAroundFn) =>
     { position, facing }
   );
 
+/**
+ * Calculates the final password based on the position and facing.
+ */
 const finalPassword = (position, facing) => {
   const translatedPosition = add(position, one);
   return 1000 * translatedPosition.y + 4 * translatedPosition.x + facing;
@@ -251,15 +261,26 @@ export const levelOne = (() => {
       ? wrapX(y, facing, map)
       : wrapY(x, facing, map);
 
-  return ({ input, lines }) => {
+  return ({ lines }) => {
     const { map, path } = parseInput(lines);
-    const { position: endPosition, facing: endFacing } = followPath(
+    const { position, facing } = followPath(
       new Vector2(findStartX(map.data), 0),
       directionIndexLookup.right,
       path,
       map,
       wrapAround
     );
-    return finalPassword(endPosition, endFacing);
+    return finalPassword(position, facing);
+
+    // const { map, path } = parseInput(lines);
+    // const history = followPathWithHistory(
+    //   new Vector2(findStartX(map.data), 0),
+    //   directionIndexLookup.right,
+    //   path,
+    //   map,
+    //   wrapAround
+    // );
+    // const { position, facing } = history[history.length - 1];
+    // return finalPassword(position, facing);
   };
 })();
