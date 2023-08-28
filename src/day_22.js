@@ -133,22 +133,6 @@ const outOfBounds = ({ x, y }, { shape: { width, height } }) =>
   x < 0 || x >= width || y < 0 || y >= height;
 
 /**
- * Searches for the first non void tile and returns the position.
- * Search starts from (x,y) and increments each step by (xStep, yStep)
- */
-const findFirstTile = (startX, startY, xStep, yStep, map) => {
-  const position = new Vector2(startX, startY);
-  for (;;) {
-    if (isVoid(getTile(map, position))) {
-      position.x += xStep;
-      position.y += yStep;
-      continue;
-    }
-    return position;
-  }
-};
-
-/**
  * Attempts to move one tile in the currently facing direction.
  * If the new position is obstructed by a wall the old position is returned.
  */
@@ -239,6 +223,22 @@ const finalPassword = (position, facing) => {
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = (() => {
+  /**
+   * Searches for the first non void tile and returns the position.
+   * Search starts from (x,y) and increments each step by (xStep, yStep)
+   */
+  const findFirstTile = (startX, startY, xStep, yStep, map) => {
+    const position = new Vector2(startX, startY);
+    for (;;) {
+      if (isVoid(getTile(map, position))) {
+        position.x += xStep;
+        position.y += yStep;
+        continue;
+      }
+      return position;
+    }
+  };
+
   /**
    * Wraps the x value around the row based on the facing direction.
    * If facing right assumes wrapping around the right edge.
