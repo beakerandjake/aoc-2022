@@ -215,8 +215,8 @@ const followPath = (position, facing, path, map, wrapAroundFn) =>
  * Calculates the final password based on the position and facing.
  */
 const finalPassword = (position, facing) => {
-  const translatedPosition = add(position, one);
-  return 1000 * translatedPosition.y + 4 * translatedPosition.x + facing;
+  const { x, y } = add(position, one);
+  return 1000 * y + 4 * x + facing;
 };
 
 /**
