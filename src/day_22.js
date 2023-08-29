@@ -107,20 +107,9 @@ const rotate = (facing, direction) =>
 const isWall = (tile) => tile === '#';
 
 /**
- * Is the tile an empty void?
- */
-const isVoid = (tile) => tile === ' ';
-
-/**
  * Returns the tile at the given position.
  */
 const getTile = (map, { x, y }) => elementAt2d(map.data, map.shape, y, x);
-
-/**
- * Is the position outside of the map bounds?
- */
-const outOfBounds = ({ x, y }, { shape: { width, height } }) =>
-  x < 0 || x >= width || y < 0 || y >= height;
 
 /**
  * Calculates the final password based on the position and facing.
@@ -134,6 +123,11 @@ const finalPassword = ({ position, facing }) => {
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = (() => {
+  /**
+   * Is the tile an empty void?
+   */
+  const isVoid = (tile) => tile === ' ';
+
   /**
    * Searches for the first non void tile and returns the position.
    * Search starts from (x,y) and increments each step by (xStep, yStep)
@@ -180,6 +174,12 @@ export const levelOne = (() => {
     facing === directionIndexes.left || facing === directionIndexes.right
       ? wrapX(y, facing, map)
       : wrapY(x, facing, map);
+
+  /**
+   * Is the position outside of the map bounds?
+   */
+  const outOfBounds = ({ x, y }, { shape: { width, height } }) =>
+    x < 0 || x >= width || y < 0 || y >= height;
 
   /**
    * Attempts to move one tile in the currently facing direction.
@@ -418,8 +418,6 @@ export const levelTwo = (() => {
       ],
     },
   ];
-
-  const inRange = (value, start, end) => value >= start && value <= end;
 
   const getFace = ({ position: { x, y }, facing }) =>
     faces.find(
