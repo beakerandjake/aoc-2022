@@ -251,22 +251,22 @@ export const levelTwo = (() => {
       top: 0,
       bottom: 3,
       wrapping: [
-        // right
+        // right - connected to right of face 6
         ({ position: { y } }) => ({
           facing: directionIndexes.left,
           position: new Vector2(faces[5].right, faces[5].bottom - relative(y)),
         }),
-        // down,
+        // down - connected to top of face 4
         ({ position: { x } }) => ({
           facing: directionIndexes.down,
           position: new Vector2(x, faces[3].top),
         }),
-        // left
+        // left - connected to top of face 3
         ({ position: { y } }) => ({
           facing: directionIndexes.down,
           position: new Vector2(relative(y) + faces[2].left, faces[2].top),
         }),
-        // up,
+        // up - connected to top of face 2
         ({ position: { x } }) => ({
           facing: directionIndexes.down,
           position: new Vector2(relative(x) + faces[1].left, faces[1].top),
@@ -280,22 +280,22 @@ export const levelTwo = (() => {
       top: 4,
       bottom: 7,
       wrapping: [
-        // right
+        // right - connected to left of face 3
         ({ position: { y } }) => ({
           facing: directionIndexes.right,
           position: new Vector2(faces[2].left, y),
         }),
-        // down,
+        // down - connected to bottom of face 5
         ({ position: { x } }) => ({
           facing: directionIndexes.up,
           position: new Vector2(relative(x) + faces[4].left, faces[4].bottom),
         }),
-        // left
+        // left - connected to bottom of face 6
         ({ position: { y } }) => ({
           facing: directionIndexes.up,
           position: new Vector2(faces[5].right - relative(y), faces[5].bottom),
         }),
-        // up,
+        // up - connected to top of face 0
         ({ position: { x } }) => ({
           facing: directionIndexes.down,
           position: new Vector2(faces[0].right - relative(x), faces[0].top),
@@ -309,20 +309,25 @@ export const levelTwo = (() => {
       top: 4,
       bottom: 7,
       wrapping: [
-        // right - connected to left side of face 4
+        // right - connected to left of face 4
         ({ position: { y } }) => ({
           facing: directionIndexes.right,
           position: new Vector2(faces[3].left, y),
         }),
-        // down - connected to left side of face 5
+        // down - connected to left of face 5
         ({ position: { x } }) => ({
           facing: directionIndexes.right,
           position: new Vector2(faces[4].left, faces[4].bottom - relative(x)),
         }),
-        // left - connected to right side of face 2
+        // left - connected to right of face 2
         ({ position: { y } }) => ({
-          facing: directionIndexes.up,
-          position: new Vector2(faces[5].right - relative(y), faces[5].bottom),
+          facing: directionIndexes.left,
+          position: new Vector2(faces[1].right, y),
+        }),
+        // up - connected to left of face 1
+        ({ position: { x } }) => ({
+          facing: directionIndexes.right,
+          position: new Vector2(faces[0].left, relative(x) + faces[0].top),
         }),
       ],
     },
@@ -332,6 +337,28 @@ export const levelTwo = (() => {
       right: 11,
       top: 4,
       bottom: 7,
+      wrapping: [
+        // right - connected to top of face 6
+        ({ position: { y } }) => ({
+          facing: directionIndexes.down,
+          position: new Vector2(faces[5].right - relative(y), faces[5].top),
+        }),
+        // down - connected to top of face 5
+        ({ position: { x } }) => ({
+          facing: directionIndexes.down,
+          position: new Vector2(x, faces[4].top),
+        }),
+        // left - connected to right of face 3
+        ({ position: { y } }) => ({
+          facing: directionIndexes.left,
+          position: new Vector2(faces[2].right, y),
+        }),
+        // up - connected to bottom of face 1
+        ({ position: { x } }) => ({
+          facing: directionIndexes.up,
+          position: new Vector2(x, faces[0].bottom),
+        }),
+      ],
     },
     // face 5 (index 4)
     {
@@ -339,6 +366,28 @@ export const levelTwo = (() => {
       right: 11,
       top: 8,
       bottom: 11,
+      wrapping: [
+        // right -  connected to left of face 6
+        ({ position: { y } }) => ({
+          facing: directionIndexes.right,
+          position: new Vector2(faces[5].left, y),
+        }),
+        // down - connected to bottom of face 2
+        ({ position: { x } }) => ({
+          facing: directionIndexes.down,
+          position: new Vector2(faces[1].right - relative(x), faces[1].bottom),
+        }),
+        // left - connected to bottom of face 3
+        ({ position: { y } }) => ({
+          facing: directionIndexes.up,
+          position: new Vector2(faces[2].right - relative(y), faces[2].bottom),
+        }),
+        // up - connected to bottom of face 4
+        ({ position: { x } }) => ({
+          facing: directionIndexes.up,
+          position: new Vector2(x, faces[0].bottom),
+        }),
+      ],
     },
     // face 6 (index 5)
     {
@@ -346,16 +395,38 @@ export const levelTwo = (() => {
       right: 15,
       top: 8,
       bottom: 11,
+      wrapping: [
+        // right - connected to right of face 1
+        ({ position: { y } }) => ({
+          facing: directionIndexes.left,
+          position: new Vector2(faces[0].right, faces[0].bottom - relative(y)),
+        }),
+        // down - connected to left of face 2
+        ({ position: { x } }) => ({
+          facing: directionIndexes.right,
+          position: new Vector2(faces[1].left, faces[1].bottom - relative(x)),
+        }),
+        // left - connected to right of face 5
+        ({ position: { y } }) => ({
+          facing: directionIndexes.up,
+          position: new Vector2(faces[2].right - relative(y), faces[2].bottom),
+        }),
+        // up -
+        ({ position: { x } }) => ({
+          facing: directionIndexes.up,
+          position: new Vector2(x, faces[0].bottom),
+        }),
+      ],
     },
   ];
 
   return ({ lines }) => {
     const { map, path } = parseInput(lines);
     const initialState = {
-      position: new Vector2(faces[2].left + 3, faces[2].bottom),
+      position: new Vector2(faces[5].left + 3, faces[5].bottom),
       facing: directionIndexes.down,
     };
-    render(map, [initialState, faces[2].wrapping[1](initialState)]);
+    render(map, [initialState, faces[5].wrapping[1](initialState)]);
 
     return 1234;
   };
