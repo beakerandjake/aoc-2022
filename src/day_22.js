@@ -7,6 +7,7 @@ import { array2dToString } from './util/debug.js';
 import { Vector2, left, right, down, up, add, equals, one } from './util/vector2.js';
 import { toNumber } from './util/string.js';
 import { repeat } from './util/functions.js';
+import { mod } from './util/math.js';
 
 /**
  * The directions that you can face.
@@ -101,15 +102,10 @@ const findStartX = (map) =>
   map.indexOf('.');
 
 /**
- * Returns a new direction that is 90 degrees clockwise from the current direction.
+ * Returns the new facing direction after rotating in the direction (clockwise or counterclockwise).
  */
-const rotateClockwise = (facing) => (facing + 1) % directions.length;
-
-/**
- * Returns a new direction that is 90 degrees counter clockwise from the current direction.
- */
-const rotateCounterClockwise = (facing) =>
-  (((facing - 1) % directions.length) + directions.length) % directions.length;
+const rotate = (facing, direction) =>
+  mod(direction === 'R' ? facing + 1 : facing - 1, directions.length);
 
 /**
  * Is the tile an impassible wall?
@@ -173,13 +169,8 @@ const followPathWithHistory = (position, facing, path, map, wrapAroundFn) => {
     position,
   };
   return path.reduce((acc, value) => {
-    if (value === 'R') {
-      curr = { ...curr, facing: rotateClockwise(curr.facing) };
-      acc.push(curr);
-      return acc;
-    }
-    if (value === 'L') {
-      curr = { ...curr, facing: rotateCounterClockwise(curr.facing) };
+    if (value === 'R' || value === 'L') {
+      curr = { ...curr, facing: rotate(curr.facing, value) };
       acc.push(curr);
       return acc;
     }
@@ -197,12 +188,10 @@ const followPathWithHistory = (position, facing, path, map, wrapAroundFn) => {
 const followPath = (position, facing, path, map, wrapAroundFn) =>
   path.reduce(
     (acc, value) => {
-      if (value === 'R') {
-        return { ...acc, facing: rotateClockwise(acc.facing) };
+      if (value === 'R' || value === 'L') {
+        return { ...acc, facing: rotate(acc.facing, value) };
       }
-      if (value === 'L') {
-        return { ...acc, facing: rotateCounterClockwise(acc.facing) };
-      }
+
       return {
         ...acc,
         position: moveTimes(acc.position, acc.facing, value, map, wrapAroundFn),
