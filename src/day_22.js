@@ -7,7 +7,7 @@ import { array2dToString } from './util/debug.js';
 import { Vector2, left, right, down, up, add, equals, one } from './util/vector2.js';
 import { toNumber } from './util/string.js';
 import { repeat } from './util/functions.js';
-import { mod } from './util/math.js';
+import { mod, inRangeInclusive } from './util/math.js';
 
 /**
  * The directions that you can face.
@@ -373,7 +373,7 @@ export const levelTwo = (() => {
         }),
         // down - connected to bottom of face 2
         ({ position: { x } }) => ({
-          facing: directionIndexes.down,
+          facing: directionIndexes.up,
           position: new Vector2(faces[1].right - relative(x), faces[1].bottom),
         }),
         // left - connected to bottom of face 3
@@ -424,10 +424,10 @@ export const levelTwo = (() => {
   const getFace = ({ position: { x, y }, facing }) =>
     faces.find(
       ({ left: l, right: r, top: t, bottom: b }) =>
-        (facing === directionIndexes.up && y === t && inRange(x, l, r)) ||
-        (facing === directionIndexes.right && x === r && inRange(y, t, b)) ||
-        (facing === directionIndexes.down && y === b && inRange(x, l, r)) ||
-        (facing === directionIndexes.left && x === l && inRange(y, t, b))
+        (facing === directionIndexes.up && y === t && inRangeInclusive(x, l, r)) ||
+        (facing === directionIndexes.right && x === r && inRangeInclusive(y, t, b)) ||
+        (facing === directionIndexes.down && y === b && inRangeInclusive(x, l, r)) ||
+        (facing === directionIndexes.left && x === l && inRangeInclusive(y, t, b))
     );
 
   /**
