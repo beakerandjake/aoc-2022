@@ -198,7 +198,6 @@ export const levelOne = (() => {
   /**
    * Attempts to move one tile in the currently facing direction up to x times.
    * If a new position is obstructed by a wall the old position is returned.
-   * Can optionally pass a callback fn to get the current position on each successful move.
    */
   const moveNTimes = ({ position, facing }, times, map) => {
     let currentPosition = position;
@@ -408,26 +407,91 @@ export const levelTwo = (() => {
         }),
         // left - connected to right of face 5
         ({ position: { y } }) => ({
-          facing: directionIndexes.up,
-          position: new Vector2(faces[2].right - relative(y), faces[2].bottom),
+          facing: directionIndexes.left,
+          position: new Vector2(faces[4].right, y),
         }),
-        // up -
+        // up - connected to right of face 4
         ({ position: { x } }) => ({
-          facing: directionIndexes.up,
-          position: new Vector2(x, faces[0].bottom),
+          facing: directionIndexes.left,
+          position: new Vector2(faces[3].right, faces[3].bottom - relative(x)),
         }),
       ],
     },
   ];
 
+  const inRange = (value, start, end) => value >= start && value <= end;
+
+  const getFace = ({ position: { x, y }, facing }) =>
+    faces.find(
+      ({ left: l, right: r, top: t, bottom: b }) =>
+        (facing === directionIndexes.up && y === t && inRange(x, l, r)) ||
+        (facing === directionIndexes.right && x === r && inRange(y, t, b)) ||
+        (facing === directionIndexes.down && y === b && inRange(x, l, r)) ||
+        (facing === directionIndexes.left && x === l && inRange(y, t, b))
+    );
+
+  /**
+   * Attempts to move one tile in the currently facing direction.
+   * If the new position is occupied by a wall the old position is returned.
+   */
+  const move = (state, map) => {
+    const wrappingFace = getFace(state);
+    const newState = wrappingFace
+      ? wrappingFace.wrapping[state.facing](state)
+      : { ...state, position: add(state.position, directions[state.facing].value) };
+    const destinationTile = getTile(map, newState.position);
+    return !isWall(destinationTile) ? newState : state;
+  };
+
+  /**
+   * Attempts to move one tile in the currently facing direction up to x times.
+   * If a new position is obstructed by a wall the old position is returned.
+   */
+  const moveNTimes = (state, times, map) => {
+    const toReturn = [];
+    let currentState = state;
+    // eslint-disable-next-line consistent-return
+    repeat(() => {
+      const newState = move(currentState, map);
+      if (currentState === newState) {
+        return false;
+      }
+      currentState = newState;
+      toReturn.push(currentState);
+    }, times);
+    return toReturn;
+  };
+
+  /**
+   * Follow the each instruction in the path and returns the resulting position and facing
+   */
+  const followPath = (state, path, map) =>
+    path.reduce((history, instruction) => {
+      const currentState = history[history.length - 1] || state;
+      switch (instruction) {
+        case 'L':
+        case 'R':
+          history.push({
+            ...currentState,
+            facing: rotate(currentState.facing, instruction),
+          });
+          break;
+        default:
+          history.push(...moveNTimes(currentState, instruction, map));
+          break;
+      }
+      return history;
+    }, []);
+
   return ({ lines }) => {
     const { map, path } = parseInput(lines);
     const initialState = {
-      position: new Vector2(faces[5].left + 3, faces[5].bottom),
-      facing: directionIndexes.down,
+      position: new Vector2(findStartX(map.data), 0),
+      facing: directionIndexes.right,
     };
-    render(map, [initialState, faces[5].wrapping[1](initialState)]);
-
+    const history = followPath(initialState, path, map);
+    console.log();
+    render(map, history);
     return 1234;
   };
 })();
