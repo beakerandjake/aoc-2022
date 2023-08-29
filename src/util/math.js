@@ -39,3 +39,10 @@ export const inRange = (value, start, end) => value >= start && value < end;
  * @param {Number} max - The max random integer value to use.
  */
 export const randomInt = (max) => Math.floor(Math.random() * max);
+
+/**
+ * Returns the modulo of a and b.
+ * @param {Number} a
+ * @param {Number} b
+ */
+export const mod = (a, b) => ((a % b) + b) % b;
