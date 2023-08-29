@@ -242,3 +242,33 @@ export const levelOne = (() => {
     return finalPassword(followPath(initialState, path, map));
   };
 })();
+
+/**
+ * Returns the solution for level one of this puzzle.
+ */
+export const levelTwo = (() => {
+  const cubeFaces = [
+    {
+      left: 7,
+      right: 10,
+      bottom: 0,
+      top: 3,
+    },
+    {
+      left: 50,
+      right: 100,
+      bottom: 50,
+      top: 0,
+    },
+  ];
+
+  return ({ lines }) => {
+    const { map, path } = parseInput(lines);
+    const initialState = {
+      position: new Vector2(findStartX(map.data), 0),
+      facing: directionIndexes.right,
+    };
+
+    return 1234;
+  };
+})();
