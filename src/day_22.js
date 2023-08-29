@@ -129,81 +129,9 @@ const outOfBounds = ({ x, y }, { shape: { width, height } }) =>
   x < 0 || x >= width || y < 0 || y >= height;
 
 /**
- * Attempts to move one tile in the currently facing direction.
- * If the new position is obstructed by a wall the old position is returned.
- */
-const move = (position, facing, map, wrapAroundFn) => {
-  let newPosition = add(position, directions[facing].value);
-  let destinationTile = getTile(map, newPosition);
-  if (outOfBounds(newPosition, map) || isVoid(destinationTile)) {
-    newPosition = wrapAroundFn(newPosition, facing, map);
-    destinationTile = getTile(map, newPosition);
-  }
-  return !isWall(destinationTile) ? newPosition : position;
-};
-
-/**
- * Attempts to move one tile in the currently facing direction up to x times.
- * If a new position is obstructed by a wall the old position is returned.
- * Can optionally pass a callback fn to get the current position on each successful move.
- */
-const moveTimes = (position, facing, times, map, wrapAroundFn, onMoveCallback) => {
-  let currentPosition = position;
-  // eslint-disable-next-line consistent-return
-  repeat(() => {
-    const newPosition = move(currentPosition, facing, map, wrapAroundFn);
-    if (equals(newPosition, currentPosition)) {
-      return false;
-    }
-    currentPosition = newPosition;
-    if (onMoveCallback) {
-      onMoveCallback(currentPosition);
-    }
-  }, times);
-  return currentPosition;
-};
-
-const followPathWithHistory = (position, facing, path, map, wrapAroundFn) => {
-  let curr = {
-    facing,
-    position,
-  };
-  return path.reduce((acc, value) => {
-    if (value === 'R' || value === 'L') {
-      curr = { ...curr, facing: rotate(curr.facing, value) };
-      acc.push(curr);
-      return acc;
-    }
-    const n = moveTimes(curr.position, curr.facing, value, map, wrapAroundFn, (x) => {
-      acc.push({ ...curr, position: x });
-    });
-    curr = { ...curr, position: n };
-    return acc;
-  }, []);
-};
-
-/**
- * Follow the each instruction in the path and return the resulting postiion and facing
- */
-const followPath = (position, facing, path, map, wrapAroundFn) =>
-  path.reduce(
-    (acc, value) => {
-      if (value === 'R' || value === 'L') {
-        return { ...acc, facing: rotate(acc.facing, value) };
-      }
-
-      return {
-        ...acc,
-        position: moveTimes(acc.position, acc.facing, value, map, wrapAroundFn),
-      };
-    },
-    { position, facing }
-  );
-
-/**
  * Calculates the final password based on the position and facing.
  */
-const finalPassword = (position, facing) => {
+const finalPassword = ({ position, facing }) => {
   const { x, y } = add(position, one);
   return 1000 * y + 4 * x + facing;
 };
@@ -259,26 +187,58 @@ export const levelOne = (() => {
       ? wrapX(y, facing, map)
       : wrapY(x, facing, map);
 
+  /**
+   * Attempts to move one tile in the currently facing direction.
+   * If the new position is obstructed by a wall the old position is returned.
+   */
+  const move = (position, facing, map) => {
+    let newPosition = add(position, directions[facing].value);
+    let destinationTile = getTile(map, newPosition);
+    if (outOfBounds(newPosition, map) || isVoid(destinationTile)) {
+      newPosition = wrapAround(newPosition, facing, map);
+      destinationTile = getTile(map, newPosition);
+    }
+    return !isWall(destinationTile) ? newPosition : position;
+  };
+
+  /**
+   * Attempts to move one tile in the currently facing direction up to x times.
+   * If a new position is obstructed by a wall the old position is returned.
+   * Can optionally pass a callback fn to get the current position on each successful move.
+   */
+  const moveNTimes = ({ position, facing }, times, map) => {
+    let currentPosition = position;
+    // eslint-disable-next-line consistent-return
+    repeat(() => {
+      const newPosition = move(currentPosition, facing, map);
+      if (equals(newPosition, currentPosition)) {
+        return false;
+      }
+      currentPosition = newPosition;
+    }, times);
+    return currentPosition;
+  };
+
+  /**
+   * Follow the each instruction in the path and return the resulting position and facing
+   */
+  const followPath = (state, path, map) =>
+    path.reduce((currentState, instruction) => {
+      if (instruction === 'R' || instruction === 'L') {
+        return { ...currentState, facing: rotate(currentState.facing, instruction) };
+      }
+      return {
+        ...currentState,
+        position: moveNTimes(currentState, instruction, map),
+      };
+    }, state);
+
   return ({ lines }) => {
     const { map, path } = parseInput(lines);
-    const { position, facing } = followPath(
-      new Vector2(findStartX(map.data), 0),
-      directionIndexes.right,
-      path,
-      map,
-      wrapAround
-    );
-    return finalPassword(position, facing);
-
-    // const { map, path } = parseInput(lines);
-    // const history = followPathWithHistory(
-    //   new Vector2(findStartX(map.data), 0),
-    //   directionIndexLookup.right,
-    //   path,
-    //   map,
-    //   wrapAround
-    // );
-    // const { position, facing } = history[history.length - 1];
-    // return finalPassword(position, facing);
+    const initialState = {
+      position: new Vector2(findStartX(map.data), 0),
+      facing: directionIndexes.right,
+    };
+    return finalPassword(followPath(initialState, path, map));
   };
 })();
