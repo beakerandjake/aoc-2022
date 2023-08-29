@@ -35,14 +35,8 @@ const directionIndexes = {
  */
 const render = ({ data, shape }, history) => {
   const mapCopy = [...data];
-  history.forEach(({ position, facing }, index) => {
-    let char = directions[facing].display;
-    if (index === 0) {
-      char = '0';
-    } else if (index === history.length - 1) {
-      char = '$';
-    }
-    mapCopy[index2d(shape.width, position.y, position.x)] = char;
+  history.forEach(({ position, facing }) => {
+    mapCopy[index2d(shape.width, position.y, position.x)] = directions[facing].display;
   });
   console.log(array2dToString(mapCopy, shape));
 };
@@ -247,27 +241,106 @@ export const levelOne = (() => {
  * Returns the solution for level one of this puzzle.
  */
 export const levelTwo = (() => {
-  const cubeFaces = [
+  const cubeSize = 4;
+  const relative = (value) => value - cubeSize;
+  const faces = [
+    // Face 1
     {
-      left: 7,
-      right: 10,
-      bottom: 0,
-      top: 3,
-    },
-    {
-      left: 50,
-      right: 100,
-      bottom: 50,
+      left: 8,
+      right: 11,
       top: 0,
+      bottom: 3,
+      wrapping: [
+        // right
+        ({ position: { y } }) => ({
+          facing: directionIndexes.left,
+          position: new Vector2(faces[5].right, relative(y) + faces[5].top),
+        }),
+        // down,
+        ({ position: { x } }) => ({
+          facing: directionIndexes.down,
+          position: new Vector2(x, faces[3].top),
+        }),
+        // left
+        ({ position: { y } }) => ({
+          facing: directionIndexes.down,
+          position: new Vector2(relative(y) + faces[2].left, faces[2].top),
+        }),
+        // up,
+        ({ position: { x } }) => ({
+          facing: directionIndexes.down,
+          position: new Vector2(relative(x) + faces[1].left, faces[1].top),
+        }),
+      ],
+    },
+    // Face 2
+    {
+      left: 0,
+      right: 3,
+      top: 4,
+      bottom: 7,
+      wrapping: [
+        // right
+        ({ position: { y } }) => ({
+          facing: directionIndexes.left,
+          position: new Vector2(faces[5].right, relative(y) + faces[5].top),
+        }),
+        // down,
+        ({ position: { x } }) => ({
+          facing: directionIndexes.down,
+          position: new Vector2(x, faces[3].top),
+        }),
+        // left
+        ({ position: { y } }) => ({
+          facing: directionIndexes.down,
+          position: new Vector2(relative(y) + faces[2].left, faces[2].top),
+        }),
+        // up,
+        ({ position: { x } }) => ({
+          facing: directionIndexes.down,
+          position: new Vector2(relative(x) + faces[1].left, faces[1].top),
+        }),
+      ],
+    },
+    // Face 3
+    {
+      left: 4,
+      right: 7,
+      top: 4,
+      bottom: 7,
+    },
+    // Face 4
+    {
+      left: 8,
+      right: 11,
+      top: 4,
+      bottom: 7,
+    },
+    // Face 5
+    {
+      left: 8,
+      right: 11,
+      top: 8,
+      bottom: 11,
+    },
+    // Face 6
+    {
+      left: 12,
+      right: 15,
+      top: 8,
+      bottom: 11,
     },
   ];
 
   return ({ lines }) => {
     const { map, path } = parseInput(lines);
     const initialState = {
-      position: new Vector2(findStartX(map.data), 0),
-      facing: directionIndexes.right,
+      position: new Vector2(faces[0].left + 3, faces[0].top),
+      facing: directionIndexes.up,
     };
+    console.log(initialState);
+    console.log(faces[0].wrapping[0](initialState));
+    render(map, [initialState, faces[0].wrapping[3](initialState)]);
 
     return 1234;
   };
