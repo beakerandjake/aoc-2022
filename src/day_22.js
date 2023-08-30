@@ -435,25 +435,25 @@ export const levelTwo = (() => {
       top: cubeSize * 2,
       bottom: cubeSize * 3 - 1,
       wrapping: [
-        // right - connected to
+        // right - connected to right of face 2
         ({ position: { y } }) => ({
-          facing: directionIndexes.right,
-          position: new Vector2(faces[4].left, relative(y) + faces[4].top),
+          facing: directionIndexes.left,
+          position: new Vector2(faces[1].right, faces[1].bottom - relative(y)),
         }),
-        // down - connected to
+        // down - connected to right of face 6
         ({ position: { x } }) => ({
-          facing: directionIndexes.down,
-          position: new Vector2(relative(x) + faces[5].left, faces[5].top),
+          facing: directionIndexes.left,
+          position: new Vector2(faces[5].right, relative(x) + faces[5].top),
         }),
-        // left - connected to
+        // left - connected to right of face 4
         ({ position: { y } }) => ({
-          facing: directionIndexes.right,
-          position: new Vector2(faces[0].left, faces[0].bottom - relative(y)),
+          facing: directionIndexes.left,
+          position: new Vector2(faces[3].right, faces[3].top + relative(y)),
         }),
-        // up - connected to
+        // up - connected to bottom of face 3
         ({ position: { x } }) => ({
-          facing: directionIndexes.right,
-          position: new Vector2(faces[2].left, faces[2].top + relative(x)),
+          facing: directionIndexes.up,
+          position: new Vector2(faces[2].left + relative(x), faces[2].bottom),
         }),
       ],
     },
@@ -529,7 +529,7 @@ export const levelTwo = (() => {
     }, []);
 
   const moveOffLeft = (face) => {
-    const edges = [...Array(5)].map((_, index) => ({
+    const edges = [...Array(cubeSize)].map((_, index) => ({
       position: new Vector2(face.left, face.top + index),
       facing: directionIndexes.left,
     }));
@@ -587,7 +587,7 @@ export const levelTwo = (() => {
       position: new Vector2(faces[0].right, faces[0].top),
       facing: directionIndexes.right,
     };
-    const history = moveOffLeft(faces[4]);
+    const history = moveOffTop(faces[4]);
     // console.log(history);
     render(map, history);
     return 1234;
