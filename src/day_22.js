@@ -35,8 +35,14 @@ const directionIndexes = {
  */
 const render = ({ data, shape }, history) => {
   const mapCopy = [...data];
-  history.forEach(({ position, facing }) => {
-    mapCopy[index2d(shape.width, position.y, position.x)] = directions[facing].display;
+  history.forEach(({ position, facing }, index) => {
+    let char = directions[facing].display;
+    if (index === 0) {
+      char = '1';
+    } else if (index === history.length - 1) {
+      char = '$';
+    }
+    mapCopy[index2d(shape.width, position.y, position.x)] = char;
   });
   console.log(array2dToString(mapCopy, shape));
 };
@@ -603,25 +609,22 @@ export const levelTwo = (() => {
   };
 
   return ({ lines }) => {
-    const { map, path } = parseInput(lines);
-    console.log(map.shape);
-    const initialState = {
-      position: new Vector2(faces[0].right, faces[0].top),
-      facing: directionIndexes.right,
-    };
-    const history = moveOffTop(faces[5]);
-    // console.log(history);
-    render(map, history);
-    return 1234;
-
     // const { map, path } = parseInput(lines);
     // const initialState = {
-    //   position: new Vector2(findStartX(map.data), 0),
+    //   position: new Vector2(faces[0].right, faces[0].top),
     //   facing: directionIndexes.right,
     // };
-    // const history = followPath(initialState, path, map);
-    // console.log();
+    // const history = moveOffTop(faces[5]);
+    // // console.log(history);
     // render(map, history);
     // return 1234;
+
+    const { map, path } = parseInput(lines);
+    const initialState = {
+      position: new Vector2(findStartX(map.data), 0),
+      facing: directionIndexes.right,
+    };
+    const history = followPath(initialState, path, map);
+    return finalPassword(history[history.length - 1]);
   };
 })();
