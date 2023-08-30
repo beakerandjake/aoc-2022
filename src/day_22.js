@@ -320,7 +320,7 @@ export const levelTwo = (() => {
       bottom: cubeSize - 1,
       wrapping: [
         // right - connected to left of face 2
-        ({ position: { x, y } }) => ({
+        ({ position: { y } }) => ({
           facing: directionIndexes.right,
           position: new Vector2(faces[1].left, y),
         }),
@@ -347,6 +347,28 @@ export const levelTwo = (() => {
       right: cubeSize * 3 - 1,
       top: 0,
       bottom: cubeSize - 1,
+      wrapping: [
+        // right - connected to right of face 5
+        ({ position: { y } }) => ({
+          facing: directionIndexes.left,
+          position: new Vector2(faces[4].right, faces[4].bottom - relative(y)),
+        }),
+        // down - connected to right of face 3
+        ({ position: { x } }) => ({
+          facing: directionIndexes.left,
+          position: new Vector2(faces[2].right, faces[2].top + relative(x)),
+        }),
+        // left - connected to right of face 1
+        ({ position: { y } }) => ({
+          facing: directionIndexes.left,
+          position: new Vector2(faces[0].right, y),
+        }),
+        // up - connected to bottom of face 6
+        ({ position: { x } }) => ({
+          facing: directionIndexes.up,
+          position: new Vector2(relative(x) + faces[5].left, faces[5].bottom),
+        }),
+      ],
     },
     // face 3 (index 2)
     {
@@ -499,7 +521,7 @@ export const levelTwo = (() => {
       position: new Vector2(faces[0].right, faces[0].top),
       facing: directionIndexes.right,
     };
-    const history = moveOffTop(faces[0]);
+    const history = moveOffTop(faces[1]);
     // console.log(history);
     render(map, history);
     return 1234;
