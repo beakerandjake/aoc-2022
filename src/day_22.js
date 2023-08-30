@@ -241,7 +241,7 @@ export const levelOne = (() => {
  */
 export const levelTwo = (() => {
   const cubeSize = 50;
-  const relative = (value) => value % `cubeSize`;
+  const relative = (value) => value % cubeSize;
 
   // faces for example cube
   // const faces = [
@@ -319,25 +319,25 @@ export const levelTwo = (() => {
       top: 0,
       bottom: cubeSize - 1,
       wrapping: [
-        // right - connected to right of face 6
-        ({ position: { y } }) => ({
-          facing: directionIndexes.left,
-          position: new Vector2(faces[5].right, faces[5].bottom - relative(y)),
+        // right - connected to left of face 2
+        ({ position: { x, y } }) => ({
+          facing: directionIndexes.right,
+          position: new Vector2(faces[1].left, y),
         }),
-        // down - connected to top of face 4
+        // down - connected to top of face 3
         ({ position: { x } }) => ({
           facing: directionIndexes.down,
-          position: new Vector2(x, faces[3].top),
+          position: new Vector2(x, faces[2].top),
         }),
-        // left - connected to top of face 3
+        // left - connected to right of face 4
         ({ position: { y } }) => ({
-          facing: directionIndexes.down,
-          position: new Vector2(relative(y) + faces[2].left, faces[2].top),
+          facing: directionIndexes.right,
+          position: new Vector2(faces[3].left, faces[3].bottom - relative(y)),
         }),
-        // up - connected to top of face 2
+        // up - connected to left of face 6
         ({ position: { x } }) => ({
-          facing: directionIndexes.down,
-          position: new Vector2(relative(x) + faces[1].left, faces[1].top),
+          facing: directionIndexes.right,
+          position: new Vector2(faces[5].left, relative(x) + faces[5].top),
         }),
       ],
     },
@@ -440,25 +440,57 @@ export const levelTwo = (() => {
       return history;
     }, []);
 
-  const sides = (faceIndex) => [
-    {
-      position: new Vector2(faces[faceIndex].left, faces[faceIndex].top),
-      facing: directionIndexes.up,
-    },
-    {
-      position: new Vector2(faces[faceIndex].right, faces[faceIndex].top),
-      facing: directionIndexes.right,
-    },
-
-    {
-      position: new Vector2(faces[faceIndex].right, faces[faceIndex].bottom),
-      facing: directionIndexes.down,
-    },
-    {
-      position: new Vector2(faces[faceIndex].left, faces[faceIndex].bottom),
+  const moveOffLeft = (face) => {
+    const edges = [...Array(cubeSize)].map((_, index) => ({
+      position: new Vector2(face.left, face.top + index),
       facing: directionIndexes.left,
-    },
-  ];
+    }));
+
+    return edges.reduce((acc, x) => {
+      acc.push(x);
+      acc.push(face.wrapping[x.facing](x));
+      return acc;
+    }, []);
+  };
+
+  const moveOffRight = (face) => {
+    const edges = [...Array(cubeSize)].map((_, index) => ({
+      position: new Vector2(face.right, face.top + index),
+      facing: directionIndexes.right,
+    }));
+
+    return edges.reduce((acc, x) => {
+      acc.push(x);
+      acc.push(face.wrapping[x.facing](x));
+      return acc;
+    }, []);
+  };
+
+  const moveOffBottom = (face) => {
+    const edges = [...Array(cubeSize)].map((_, index) => ({
+      position: new Vector2(face.left + index, face.bottom),
+      facing: directionIndexes.down,
+    }));
+
+    return edges.reduce((acc, x) => {
+      acc.push(x);
+      acc.push(face.wrapping[x.facing](x));
+      return acc;
+    }, []);
+  };
+
+  const moveOffTop = (face) => {
+    const edges = [...Array(cubeSize)].map((_, index) => ({
+      position: new Vector2(face.left + index, face.top),
+      facing: directionIndexes.up,
+    }));
+
+    return edges.reduce((acc, x) => {
+      acc.push(x);
+      acc.push(face.wrapping[x.facing](x));
+      return acc;
+    }, []);
+  };
 
   return ({ lines }) => {
     const { map, path } = parseInput(lines);
@@ -467,8 +499,9 @@ export const levelTwo = (() => {
       position: new Vector2(faces[0].right, faces[0].top),
       facing: directionIndexes.right,
     };
-    const history = [initialState];
-    render(map, sides(5));
+    const history = moveOffTop(faces[0]);
+    // console.log(history);
+    render(map, history);
     return 1234;
 
     // const { map, path } = parseInput(lines);
