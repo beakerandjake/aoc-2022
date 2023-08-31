@@ -71,18 +71,12 @@ const maximumRelease = (graph, startNodeKey, minutes) => {
   let maximum = 0;
 
   while (queue.length) {
-    const current = queue.shift();
-    if (current.pressure > maximum) {
-      maximum = current.pressure;
+    const { current, visited, pressure, remainingTime } = queue.shift();
+    if (pressure > maximum) {
+      maximum = pressure;
     }
     queue.push(
-      ...getChoices(
-        graph,
-        travelCosts[current.current],
-        current.visited,
-        current.remainingTime,
-        current.pressure
-      )
+      ...getChoices(graph, travelCosts[current], visited, remainingTime, pressure)
     );
   }
   return maximum;
