@@ -30,17 +30,62 @@ const parseLines = (lines) =>
  */
 const bfs = (graph, rootKey) => {
   const queue = [rootKey];
-  const history = { [rootKey]: 0 };
+  const history = {};
   while (queue.length) {
     const current = queue.shift();
     graph[current].neighbors
       .filter((x) => !(x in history))
       .forEach((x) => {
-        history[x] = history[current] + 1;
+        history[x] = (history[current] || 0) + 1;
         queue.push(x);
       });
   }
   return history;
+};
+
+const getChoices = (graph, travelCosts, visitedNodes, minutes, pressure) =>
+  Object.entries(travelCosts)
+    // skip already opened nodes.
+    .filter(([key]) => !visitedNodes.has(key))
+    // skip nodes which have no flow rate. F
+    .filter(([key]) => graph[key].flowRate > 0)
+    // calculate the new state if move to and open node.
+    .map(([key, travelCost]) => {
+      // include one minute it takes to open the valve.
+      const remainingTime = minutes - travelCost - 1;
+      return {
+        current: key,
+        remainingTime,
+        pressure: graph[key].flowRate * remainingTime + pressure,
+        visited: new Set([...visitedNodes, key]),
+      };
+    })
+    .filter(({ remainingTime }) => remainingTime > 0);
+
+const maximumRelease = (graph, startNodeKey, minutes) => {
+  const travelCosts = Object.keys(graph).reduce(
+    (acc, key) => ({ ...acc, [key]: bfs(graph, key) }),
+    {}
+  );
+  const queue = [...getChoices(graph, travelCosts[startNodeKey], new Set(), minutes, 0)];
+  let maximum = 0;
+
+  while (queue.length) {
+    const current = queue.shift();
+    if (current.pressure > maximum) {
+      maximum = current.pressure;
+    }
+    queue.push(
+      ...getChoices(
+        graph,
+        travelCosts[current.current],
+        current.visited,
+        current.remainingTime,
+        current.pressure
+      )
+    );
+  }
+  return maximum;
 };
 
 /**
@@ -52,12 +97,7 @@ const bfs = (graph, rootKey) => {
  */
 export const levelOne = ({ lines }) => {
   const graph = parseLines(lines);
-  const paths = Object.keys(graph).reduce(
-    (acc, key) => ({ ...acc, [key]: bfs(graph, key) }),
-    {}
-  );
-  console.log(paths);
-  return 1234;
+  return maximumRelease(graph, 'AA', 30);
 };
 
 /**
