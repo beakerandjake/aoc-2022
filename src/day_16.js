@@ -93,25 +93,24 @@ const findMaximumPressure = (graph, startNodeKey, totalTime) => {
   );
 
   // return a hash code of the state.
-  const hashCode = (time, opened) => `${time}_${[...opened].sort().join('_')}`;
+  const hashCode = (time, opened) => `${time}${[...opened].sort().join('')}`;
 
   // object which will map a state to its maximum value.
   const memo = {};
 
   const topDown = (key, time, pressure, opened) => {
-    const stateHash = hashCode(time, opened);
-
-    // if this state has already been calculated return the memoized value.
-    if (memo[stateHash]) {
-      return memo[stateHash];
-    }
-
+    // no time left means the pressure we have is the pressure we got.
     if (time <= 0) {
       return pressure;
     }
 
-    const results = [];
+    // return value if already memoized.
+    const stateHash = hashCode(time, opened);
+    if (memo[stateHash]) {
+      return memo[stateHash];
+    }
 
+    const results = [];
     // travel to each unopened neighbor and get the result if we opened that value.
     for (const [neighborKey, travelTime] of Object.entries(travelCosts[key])) {
       const { flowRate } = graph[neighborKey];
@@ -129,6 +128,7 @@ const findMaximumPressure = (graph, startNodeKey, totalTime) => {
     }
 
     const result = results.length ? Math.max(...results) : pressure;
+    // memoize this result so we don't have to recalculate it again.
     memo[stateHash] = result;
     return result;
   };
@@ -143,7 +143,10 @@ const findMaximumPressure = (graph, startNodeKey, totalTime) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = ({ lines }) => findMaximumPressure(parseLines(lines), 'AA', 30);
+export const levelOne = ({ lines }) => {
+  const graph = parseLines(lines);
+  return findMaximumPressure(graph, 'AA', 30);
+};
 
 /**
  * Returns the solution for level two of this puzzle.
