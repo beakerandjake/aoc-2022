@@ -82,18 +82,35 @@ const maximumRelease = (graph, startNodeKey, minutes) => {
   return maximum;
 };
 
+const getHashCodes = (keys) => {
+  const mapped = keys.map((_, index) => index + 1);
+  for (let index = 2; index < mapped.length; index++) {
+    mapped[index] = mapped[index - 1] + mapped[index - 2] + 1;
+  }
+  return mapped.reduce((acc, value, index) => {
+    acc[keys[index]] = value;
+    return acc;
+  }, {});
+};
+
 /**
  * Returns the maximum pressure that can be released in the given time starting from the start node.
  */
 const findMaximumPressure = (graph, startNodeKey, totalTime) => {
+  const graphKeys = Object.keys(graph);
+
   // create a lookup which maps a node key to the distances to each node.
-  const travelCosts = Object.keys(graph).reduce(
+  const travelCosts = graphKeys.reduce(
     (acc, key) => ({ ...acc, [key]: nodeDistances(graph, key) }),
     {}
   );
 
+  const hashCodes = getHashCodes(graphKeys);
+
   // return a hash code of the state.
-  const hashCode = (time, opened) => `${time}${[...opened].sort().join('')}`;
+  // const hashCode = (time, opened) => `${time}${[...opened].sort().join('')}`;
+  const hashCode = (time, opened) =>
+    `${time}${[...opened].reduce((total, key) => total + hashCodes[key], 0)}`;
 
   // object which will map a state to its maximum value.
   const memo = {};
