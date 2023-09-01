@@ -34,10 +34,10 @@ const nodeDistances = (graph, rootKey) => {
   while (queue.length) {
     const current = queue.shift();
     graph[current].neighbors
-      .filter((x) => !(x in history))
-      .forEach((x) => {
-        history[x] = (history[current] || 0) + 1;
-        queue.push(x);
+      .filter((key) => !(key in history))
+      .forEach((key) => {
+        history[key] = (history[current] || 0) + 1;
+        queue.push(key);
       });
   }
   return history;
