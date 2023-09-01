@@ -54,7 +54,7 @@ const findMaximumPressure = (graph, startNodeKey, totalTime) => {
   );
 
   // return a hash code of the state.
-  const hashCode = (time, opened) => `${time}${[...opened].sort().join('')}`;
+  const hashCode = (time, opened) => `${time}${[...opened].join('')}`;
 
   // object which will map a state to its maximum value.
   const memo = {};
