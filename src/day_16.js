@@ -127,8 +127,8 @@ const findMaximumPressure = (graph, startNodeKey, totalTime) => {
       }
     }
 
-    const result = results.length ? Math.max(...results) : pressure;
     // memoize this result so we don't have to recalculate it again.
+    const result = results.length ? Math.max(...results) : pressure;
     memo[stateHash] = result;
     return result;
   };
