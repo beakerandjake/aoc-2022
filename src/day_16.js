@@ -98,6 +98,7 @@ const findMaximumPressure = (graph, startNodeKey, totalTime) => {
   // object which will map a state to its maximum value.
   const memo = {};
 
+  // recursively find the max value in a top down manner
   const topDown = (key, time, pressure, opened) => {
     // no time left means the pressure we have is the pressure we got.
     if (time <= 0) {
@@ -110,25 +111,31 @@ const findMaximumPressure = (graph, startNodeKey, totalTime) => {
       return memo[stateHash];
     }
 
+    // const results = Object.keys(travelCosts[key]).reduce((acc, targetKey) => {
+    //   const { flowRate } = graph[targetKey];
+    //   const newTime = time - travelCosts[key][targetKey] - 1;
+    //   if (!opened.has(targetKey) && flowRate > 0 && newTime > 0) {
+    //     const newPressure = flowRate * newTime + pressure;
+    //     const newVisited = new Set([...opened, targetKey]);
+    //     acc.push(topDown(targetKey, newTime, newPressure, newVisited));
+    //   }
+    //   return acc;
+    // }, []);
+
     const results = [];
     // travel to each unopened neighbor and get the result if we opened that value.
-    for (const [neighborKey, travelTime] of Object.entries(travelCosts[key])) {
-      const { flowRate } = graph[neighborKey];
-      const remainingTime = time - travelTime - 1;
-      if (!opened.has(neighborKey) && flowRate > 0 && remainingTime > 0) {
-        results.push(
-          topDown(
-            neighborKey,
-            remainingTime,
-            flowRate * remainingTime + pressure,
-            new Set([...opened, neighborKey])
-          )
-        );
+    for (const targetKey of Object.keys(travelCosts[key])) {
+      const { flowRate } = graph[targetKey];
+      const newTime = time - travelCosts[key][targetKey] - 1;
+      if (!opened.has(targetKey) && flowRate > 0 && newTime > 0) {
+        const newPressure = flowRate * newTime + pressure;
+        const newVisited = new Set([...opened, targetKey]);
+        results.push(topDown(targetKey, newTime, newPressure, newVisited));
       }
     }
 
+    const result = Math.max(...results, pressure);
     // memoize this result so we don't have to recalculate it again.
-    const result = results.length ? Math.max(...results) : pressure;
     memo[stateHash] = result;
     return result;
   };
