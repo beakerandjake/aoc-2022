@@ -25,10 +25,21 @@ const parseLines = (lines) =>
     .reduce((acc, { name, ...nodeData }) => ({ ...acc, [name]: nodeData }), {});
 
 /**
+ * Removes entries for any nodes which do not not have a flow rate of at least 1.
+ */
+const pickPositiveFlow = (graph, distances) =>
+  Object.keys(distances).reduce((acc, key) => {
+    if (graph[key].flowRate > 0) {
+      acc[key] = distances[key];
+    }
+    return acc;
+  }, {});
+
+/**
  * Returns an object which maps each node to the length of the shortest path from that node to all other nodes.
  */
 const nodeDistances = (graph, rootKey) => {
-  // Use BFS to find the shortest path to other nodes.
+  // use BFS to find the shortest path to other nodes.
   const queue = [rootKey];
   const history = {};
   while (queue.length) {
@@ -40,45 +51,80 @@ const nodeDistances = (graph, rootKey) => {
         queue.push(key);
       });
   }
+
+  // return Object.keys(history).reduce((acc, key) => {
+  //   acc[key] = pickPositiveFlow(graph, history[key]);
+  //   return acc;
+  // }, {});
+
+  // return distances only to nodes with positive flow.
   return history;
 };
 
 /**
+ * Returns map of a nodes key to the the distances to each node.
+ */
+const getTravelCosts = (graph, keys) =>
+  keys.reduce((acc, key) => ({ ...acc, [key]: nodeDistances(graph, key) }), {});
+
+/**
+ * Return a new object which wraps the graph with additional data to make computations easier.
+ */
+const augmentGraph = (graph) => {
+  const keys = Object.keys(graph);
+  const travelCosts = getTravelCosts(graph, keys);
+  return {
+    graph,
+    keys,
+    travelCosts,
+  };
+};
+
+/**
+ * Returns a hash code for the given set of opened nodes.
+ */
+const hashNodes = (opened, graphKeys) =>
+  graphKeys.reduce((acc, key, index) => {
+    if (opened.has(key)) {
+      return acc | (1 << index);
+    }
+    return acc;
+  }, 0);
+
+/**
  * Returns the maximum pressure that can be released in the given time starting from the start node.
  */
-const findMaximumPressure = (graph, startNodeKey, totalTime) => {
-  // create a lookup which maps a node key to the distances to each node.
-  const travelCosts = Object.keys(graph).reduce(
-    (acc, key) => ({ ...acc, [key]: nodeDistances(graph, key) }),
-    {}
-  );
-
-  // return a hash code of the state.
-  const hashCode = (time, opened) => `${time}${[...opened].join('')}`;
+const findMaximumPressure = ({ graph, keys, travelCosts }, startNodeKey, totalTime) => {
+  // // return a hash code of the state.
+  const hashCode = (currentNodeKey, pressure, time, opened) =>
+    `${currentNodeKey}_${pressure}_${time}_${hashNodes(opened, keys)}`;
 
   // object which will map a state to its maximum value.
   const memo = {};
 
   // recursively find the max value in a top down manner
-  const topDown = (costs, time, pressure, opened) => {
+  const topDown = (currentNodeKey, time, pressure, opened) => {
     // return value if already memoized.
-    const stateHash = hashCode(time, opened);
+    const stateHash = hashCode(currentNodeKey, pressure, time, opened);
     if (memo[stateHash]) {
       return memo[stateHash];
     }
 
     // recursively find the max value by visiting unopened nodes.
-    const maxPressure = Object.keys(costs).reduce((max, targetKey) => {
-      const { flowRate } = graph[targetKey];
-      const newTime = time - costs[targetKey] - 1;
-      if (!opened.has(targetKey) && flowRate > 0 && newTime > 0) {
-        const newPressure = flowRate * newTime + pressure;
-        const newVisited = new Set([...opened, targetKey]);
-        const result = topDown(travelCosts[targetKey], newTime, newPressure, newVisited);
-        return result > max ? result : max;
-      }
-      return max;
-    }, pressure);
+    const maxPressure = Object.keys(travelCosts[currentNodeKey]).reduce(
+      (max, targetKey) => {
+        const { flowRate } = graph[targetKey];
+        const newTime = time - travelCosts[currentNodeKey][targetKey] - 1;
+        if (!opened.has(targetKey) && flowRate > 0 && newTime >= 0) {
+          const newPressure = flowRate * newTime + pressure;
+          const newVisited = new Set([...opened, targetKey]);
+          const result = topDown(targetKey, newTime, newPressure, newVisited);
+          return result > max ? result : max;
+        }
+        return max;
+      },
+      pressure
+    );
 
     // memoize the pressure released by this state so we don't have to recalculate it.
     memo[stateHash] = maxPressure;
@@ -86,7 +132,7 @@ const findMaximumPressure = (graph, startNodeKey, totalTime) => {
     return maxPressure;
   };
 
-  return topDown(travelCosts[startNodeKey], totalTime, 0, new Set());
+  return topDown(startNodeKey, totalTime, 0, new Set());
 };
 
 /**
@@ -97,17 +143,14 @@ const findMaximumPressure = (graph, startNodeKey, totalTime) => {
  * @returns {Number|String}
  */
 export const levelOne = ({ lines }) => {
-  const graph = parseLines(lines);
+  const graph = augmentGraph(parseLines(lines));
   return findMaximumPressure(graph, 'AA', 30);
 };
 
 /**
  * Returns the solution for level two of this puzzle.
- * @param {Object} args - Provides both raw and split input.
- * @param {String} args.input - The original, unparsed input string.
- * @param {String[]} args.lines - Array containing each line of the input string.
- * @returns {Number|String}
  */
 export const levelTwo = ({ input, lines }) => {
-  // your code here
+  const graph = parseLines(lines);
+  return 1234;
 };
