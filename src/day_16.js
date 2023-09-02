@@ -69,8 +69,10 @@ const augmentGraph = (graph) => {
   return {
     graph,
     keys,
+    // for each travel cost, remove any node without positive flow.
     travelCosts: Object.keys(travelCosts).reduce((acc, key) => {
-      acc[key] = pickNodesWithPositiveFlow(graph, travelCosts[key]);
+      const positiveFlow = pickNodesWithPositiveFlow(graph, travelCosts[key]);
+      acc[key] = { ...positiveFlow, keys: Object.keys(positiveFlow) };
       return acc;
     }, {}),
   };
@@ -88,39 +90,37 @@ const hashNodes = (opened, graphKeys) =>
   }, 0);
 
 /**
+ * Return a hash code representing the state defined by the arguments.
+ */
+const hashCode = (currentNodeKey, pressure, time, opened, nodeKeys) =>
+  `${currentNodeKey}_${pressure}_${time}_${hashNodes(opened, nodeKeys)}`;
+
+/**
  * Returns the maximum pressure that can be released in the given time starting from the start node.
  */
 const findMaximumPressure = ({ graph, keys, travelCosts }, startNodeKey, totalTime) => {
-  // // return a hash code of the state.
-  const hashCode = (currentNodeKey, pressure, time, opened) =>
-    `${currentNodeKey}_${pressure}_${time}_${hashNodes(opened, keys)}`;
-
   // object which will map a state to its maximum value.
   const memo = {};
 
   // recursively find the max value in a top down manner
   const topDown = (currentNodeKey, time, pressure, opened) => {
     // return value if already memoized.
-    const stateHash = hashCode(currentNodeKey, pressure, time, opened);
-    if (memo[stateHash]) {
+    const stateHash = hashCode(currentNodeKey, pressure, time, opened, keys);
+    if (stateHash in memo) {
       return memo[stateHash];
     }
 
     // recursively find the max value by visiting unopened nodes.
-    const maxPressure = Object.keys(travelCosts[currentNodeKey]).reduce(
-      (max, targetKey) => {
-        const { flowRate } = graph[targetKey];
-        const newTime = time - travelCosts[currentNodeKey][targetKey] - 1;
-        if (!opened.has(targetKey) && newTime >= 0) {
-          const newPressure = flowRate * newTime + pressure;
-          const newVisited = new Set([...opened, targetKey]);
-          const result = topDown(targetKey, newTime, newPressure, newVisited);
-          return result > max ? result : max;
-        }
-        return max;
-      },
-      pressure
-    );
+    const maxPressure = travelCosts[currentNodeKey].keys.reduce((max, targetKey) => {
+      const newTime = time - travelCosts[currentNodeKey][targetKey] - 1;
+      if (!opened.has(targetKey) && newTime >= 0) {
+        const newPressure = graph[targetKey].flowRate * newTime + pressure;
+        const newVisited = new Set([...opened, targetKey]);
+        const result = topDown(targetKey, newTime, newPressure, newVisited);
+        return result > max ? result : max;
+      }
+      return max;
+    }, pressure);
 
     // memoize the pressure released by this state so we don't have to recalculate it.
     memo[stateHash] = maxPressure;
