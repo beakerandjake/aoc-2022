@@ -177,10 +177,11 @@ export const levelTwo = ({ input, lines }) => {
   for (let i = 0; i < result.length; i++) {
     const combination = result[i];
     const set = bitFieldToSet(combination, nodes);
+    const inversion = ~combination;
     console.log(
       `combination: ${binaryToString(combination, nodes.length)}, set: ${arrayToString([
         ...set,
-      ])}`
+      ])} inversion: ${binaryToString(inversion, nodes.length)}`
     );
   }
   return 1234;

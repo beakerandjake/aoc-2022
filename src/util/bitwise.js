@@ -25,11 +25,6 @@ export const leftShift = (value) => value << 1;
 export const rightShift = (value) => value >> 1;
 
 /**
- * Inverts the bits.
- */
-export const invert = (value) => ~value;
-
-/**
  * Returns a string representation of the number in binary.
  * @param {Number} number - The number to convert to binary.
  * @param {Number} minDigits - The amount of digits to pad with zeros to ensure consistent string length.
