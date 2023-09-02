@@ -111,16 +111,18 @@ const findMaximumPressure = ({ graph, keys, travelCosts }, startNodeKey, totalTi
     }
 
     // recursively find the max value by visiting unopened nodes.
-    const maxPressure = travelCosts[currentNodeKey].keys.reduce((max, targetKey) => {
-      const newTime = time - travelCosts[currentNodeKey][targetKey] - 1;
-      if (!opened.has(targetKey) && newTime >= 0) {
-        const newPressure = graph[targetKey].flowRate * newTime + pressure;
-        const newVisited = new Set([...opened, targetKey]);
-        const result = topDown(targetKey, newTime, newPressure, newVisited);
-        return result > max ? result : max;
-      }
-      return max;
-    }, pressure);
+    const maxPressure = travelCosts[currentNodeKey].keys
+      .filter((key) => !opened.has(key))
+      .reduce((max, targetKey) => {
+        const newTime = time - travelCosts[currentNodeKey][targetKey] - 1;
+        if (newTime >= 0) {
+          const newPressure = graph[targetKey].flowRate * newTime + pressure;
+          const newOpened = new Set([...opened, targetKey]);
+          const result = topDown(targetKey, newTime, newPressure, newOpened);
+          return result > max ? result : max;
+        }
+        return max;
+      }, pressure);
 
     // memoize the pressure released by this state so we don't have to recalculate it.
     memo[stateHash] = maxPressure;
