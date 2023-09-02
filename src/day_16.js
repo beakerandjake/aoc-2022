@@ -25,17 +25,6 @@ const parseLines = (lines) =>
     .reduce((acc, { name, ...nodeData }) => ({ ...acc, [name]: nodeData }), {});
 
 /**
- * Removes entries for any nodes which do not not have a flow rate of at least 1.
- */
-const pickPositiveFlow = (graph, distances) =>
-  Object.keys(distances).reduce((acc, key) => {
-    if (graph[key].flowRate > 0) {
-      acc[key] = distances[key];
-    }
-    return acc;
-  }, {});
-
-/**
  * Returns an object which maps each node to the length of the shortest path from that node to all other nodes.
  */
 const nodeDistances = (graph, rootKey) => {
@@ -51,13 +40,6 @@ const nodeDistances = (graph, rootKey) => {
         queue.push(key);
       });
   }
-
-  // return Object.keys(history).reduce((acc, key) => {
-  //   acc[key] = pickPositiveFlow(graph, history[key]);
-  //   return acc;
-  // }, {});
-
-  // return distances only to nodes with positive flow.
   return history;
 };
 
@@ -68,6 +50,17 @@ const getTravelCosts = (graph, keys) =>
   keys.reduce((acc, key) => ({ ...acc, [key]: nodeDistances(graph, key) }), {});
 
 /**
+ * Removes entries for any nodes which do not not have a flow rate of at least 1.
+ */
+const pickNodesWithPositiveFlow = (graph, distances) =>
+  Object.keys(distances).reduce((acc, key) => {
+    if (graph[key].flowRate > 0) {
+      acc[key] = distances[key];
+    }
+    return acc;
+  }, {});
+
+/**
  * Return a new object which wraps the graph with additional data to make computations easier.
  */
 const augmentGraph = (graph) => {
@@ -76,7 +69,10 @@ const augmentGraph = (graph) => {
   return {
     graph,
     keys,
-    travelCosts,
+    travelCosts: Object.keys(travelCosts).reduce((acc, key) => {
+      acc[key] = pickNodesWithPositiveFlow(graph, travelCosts[key]);
+      return acc;
+    }, {}),
   };
 };
 
@@ -115,7 +111,7 @@ const findMaximumPressure = ({ graph, keys, travelCosts }, startNodeKey, totalTi
       (max, targetKey) => {
         const { flowRate } = graph[targetKey];
         const newTime = time - travelCosts[currentNodeKey][targetKey] - 1;
-        if (!opened.has(targetKey) && flowRate > 0 && newTime >= 0) {
+        if (!opened.has(targetKey) && newTime >= 0) {
           const newPressure = flowRate * newTime + pressure;
           const newVisited = new Set([...opened, targetKey]);
           const result = topDown(targetKey, newTime, newPressure, newVisited);
