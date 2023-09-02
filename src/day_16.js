@@ -3,6 +3,8 @@
  * Puzzle Description: https://adventofcode.com/2022/day/16
  */
 import { toNumber } from './util/string.js';
+import { binaryToString } from './util/bitwise.js';
+import { arrayToString, toSet } from './util/array.js';
 
 /**
  * Return the node data represented by the line.
@@ -146,9 +148,40 @@ export const levelOne = ({ lines }) => {
 };
 
 /**
+ * Returns an array of bit fields representing the possible ways the nodes can be visited by an individual.
+ * A zero means the node is not visited, a one means the node is visited.
+ */
+const combinations = (nodeCount) => {
+  const toReturn = [];
+  const permutationCount = 2 ** (nodeCount - 1);
+  for (let i = 0; i < permutationCount; i++) {
+    toReturn.push(i);
+  }
+  return toReturn;
+};
+
+/**
+ * Creates a new set out of each bit in the bitfield set to one.
+ */
+const bitFieldToSet = (bitField, keys) =>
+  toSet(keys.filter((_, index) => bitField & (1 << index)));
+
+/**
  * Returns the solution for level two of this puzzle.
  */
 export const levelTwo = ({ input, lines }) => {
-  const graph = parseLines(lines);
+  console.log();
+  const graph = augmentGraph(parseLines(lines));
+  const nodes = ['AA', 'BB', 'CC', 'DD'];
+  const result = combinations(nodes.length);
+  for (let i = 0; i < result.length; i++) {
+    const combination = result[i];
+    const set = bitFieldToSet(combination, nodes);
+    console.log(
+      `combination: ${binaryToString(combination, nodes.length)}, set: ${arrayToString([
+        ...set,
+      ])}`
+    );
+  }
   return 1234;
 };
