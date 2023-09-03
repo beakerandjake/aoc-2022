@@ -86,7 +86,9 @@ export const bounds = (values) => [Math.min(...values), Math.max(...values)];
  * @param {Number} startAt
  */
 export const range = (size, start = 0) =>
-  [...Array(size).keys()].map((_, index) => index + start);
+  start === 0
+    ? [...Array(size).keys()]
+    : [...Array(size)].map((_, index) => index + start);
 
 /**
  * Returns an iterator function which will return the next item each time it is invoked.
