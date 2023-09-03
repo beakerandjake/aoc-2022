@@ -3,9 +3,11 @@
  * Puzzle Description: https://adventofcode.com/2022/day/16
  */
 import { toNumber } from './util/string.js';
-import { isBitSet, bitmask } from './util/bitwise.js';
+import { isBitSet, bitmask, binaryToString } from './util/bitwise.js';
 import { range, toSet } from './util/array.js';
 import { pick } from './util/object.js';
+
+const defaultStartNode = 'AA';
 
 /**
  * Parses the input and returns an object containing the graph and additional helper data.
@@ -109,7 +111,7 @@ const setToBitField = (set, array) =>
 /**
  * Returns the maximum pressure that can be released in the given time starting from the start node.
  */
-const findMaximumPressure = (
+const maxPressure = (
   { graph, keys, travelCosts },
   startNodeKey,
   totalTime,
@@ -166,11 +168,8 @@ const findMaximumPressure = (
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelOne = ({ lines }) => {
-  const graph = parseGraph(lines, 'AA');
-  // console.log(graph.travelCosts);
-  return findMaximumPressure(graph, 'AA', 30).value;
-};
+export const levelOne = ({ lines }) =>
+  maxPressure(parseGraph(lines, defaultStartNode), defaultStartNode, 30).value;
 
 /**
  * Returns the solution for level two of this puzzle.
@@ -201,26 +200,42 @@ export const levelTwo = (() => {
     keys.filter((key) => graph[key].flowRate > 0);
 
   return ({ lines }) => {
-    const graph = augmentGraph(parseLines(lines));
-    const positiveFlowNodes = filterPositiveFlowNodes(graph);
-    const visitCombinations = combinations(positiveFlowNodes.length);
-    const myNodes = visitCombinations.map((bitField) =>
-      bitFieldToSet(bitField, positiveFlowNodes)
-    );
-    const inversionMask = bitmask(positiveFlowNodes.length);
-    const elephantNodes = visitCombinations.map((bitField) =>
-      bitFieldToSet(invertBitField(bitField, inversionMask), positiveFlowNodes)
+    const graph = parseGraph(lines, defaultStartNode);
+    const solo = maxPressure(graph, defaultStartNode, 26, new Set());
+    const memo = {};
+
+    const elephantTarget = maxPressure(
+      graph,
+      defaultStartNode,
+      26,
+      bitFieldToSet(solo.opened, graph.keys),
+      memo
     );
 
-    const results = [];
-    for (let i = 0; i < myNodes.length; i++) {
-      const mine = myNodes[i];
-      const elephant = elephantNodes[i];
-      const myPressure = findMaximumPressure(graph, 'AA', 26, elephant);
-      const elephantPressure = findMaximumPressure(graph, 'AA', 26, mine);
-      results[i] = myPressure + elephantPressure;
+    const inversionMask = bitmask(graph.keys.length);
+    const betterElephantBranches = [];
+    const soloCombinations = combinations(graph.keys.length);
+    for (let index = 0; index < soloCombinations.length; index++) {
+      const openedByMe = bitFieldToSet(soloCombinations[index], graph.keys);
+      const elephantResult = maxPressure(graph, defaultStartNode, 26, openedByMe);
+      if (elephantResult.value >= elephantTarget.value) {
+        betterElephantBranches.push({
+          value: elephantResult.value,
+          opened: invertBitField(soloCombinations[index], inversionMask, memo),
+        });
+      }
     }
 
-    return Math.max(...results);
+    const values = [solo.value + elephantTarget.value];
+    for (let index = 0; index < betterElephantBranches.length; index++) {
+      const openedByElephant = bitFieldToSet(
+        betterElephantBranches[index].opened,
+        graph.keys
+      );
+      const soloResult = maxPressure(graph, defaultStartNode, 26, openedByElephant, memo);
+      values.push(soloResult.value + betterElephantBranches[index].value);
+    }
+
+    return Math.max(...values);
   };
 })();
