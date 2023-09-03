@@ -109,7 +109,7 @@ const maxPressure = (
   totalTime,
   initialOpened = 0
 ) => {
-  // object which will map a state to its maximum value.
+  // object which will memoize the result of previous recursions so we don't have to recalculate.
   const memo = {};
 
   /**
