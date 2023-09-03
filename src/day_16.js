@@ -5,51 +5,93 @@
 import { toNumber } from './util/string.js';
 import { isBitSet, bitmask } from './util/bitwise.js';
 import { range, toSet } from './util/array.js';
+import { pick } from './util/object.js';
 
 /**
- * Return the node data represented by the line.
+ * Parses the input and returns an object containing the graph and additional helper data.
  */
-const parseLine = (line) => {
-  const [lhs, rhs] = line.split(';');
-  return {
-    name: lhs.slice(6, 8),
-    flowRate: toNumber(lhs.slice(23)),
-    neighbors: rhs.match(/[A-Z]{2}/g),
+const parseGraph = (() => {
+  /**
+   * Return the node data represented by the line.
+   */
+  const parseLine = (line) => {
+    const [lhs, rhs] = line.split(';');
+    return {
+      name: lhs.slice(6, 8),
+      flowRate: toNumber(lhs.slice(23)),
+      neighbors: rhs.match(/[A-Z]{2}/g),
+    };
   };
-};
 
-/**
- * Returns a graph constructed from the input lines.
- */
-const parseLines = (lines) =>
-  lines
-    .map((line) => parseLine(line))
-    .reduce((acc, { name, ...nodeData }) => ({ ...acc, [name]: nodeData }), {});
+  /**
+   * Returns a graph constructed from the input lines.
+   */
+  const parseLines = (lines) =>
+    lines
+      .map((line) => parseLine(line))
+      .reduce((acc, { name, ...nodeData }) => ({ ...acc, [name]: nodeData }), {});
 
-/**
- * Returns an object which maps each node to the length of the shortest path from that node to all other nodes.
- */
-const nodeDistances = (graph, rootKey) => {
-  // use BFS to find the shortest path to other nodes.
-  const queue = [rootKey];
-  const history = {};
-  while (queue.length) {
-    const current = queue.shift();
-    graph[current].neighbors
-      .filter((key) => !(key in history))
-      .forEach((key) => {
-        history[key] = (history[current] || 0) + 1;
-        queue.push(key);
-      });
-  }
-  return history;
-};
+  /**
+   * Returns an object which maps each node to the length of the shortest path from that node to all other nodes.
+   */
+  const nodeDistances = (graph, rootKey) => {
+    // use BFS to find the shortest path to other nodes.
+    const queue = [rootKey];
+    const history = {};
+    while (queue.length) {
+      const current = queue.shift();
+      graph[current].neighbors
+        .filter((key) => !(key in history))
+        .forEach((key) => {
+          history[key] = (history[current] || 0) + 1;
+          queue.push(key);
+        });
+    }
+    return history;
+  };
 
-/**
- * Returns map of a nodes key to the the distances to each node.
- */
-const getTravelCosts = (graph, keys) =>
-  keys.reduce((acc, key) => ({ ...acc, [key]: nodeDistances(graph, key) }), {});
+  /**
+   * Returns map of a nodes key to the the distances to each node.
+   */
+  const getTravelCosts = (graph, keys) =>
+    keys.reduce((acc, key) => ({ ...acc, [key]: nodeDistances(graph, key) }), {});
+
+  /**
+   * Return a new object which wraps the graph with additional data to make computations easier.
+   */
+  const augmentGraph = (graph) => {
+    const keys = Object.keys(graph);
+    return {
+      graph,
+      keys,
+      travelCosts: getTravelCosts(graph, keys),
+    };
+  };
+
+  /**
+   * Compresses the augmented graph data to effectively ignore nodes with a zero flow rate.
+   * Does not actually remove these nodes from the graph since computations are done through the helper data.
+   */
+  const compress = ({ graph, keys, travelCosts }, startNodeKey) => {
+    const positiveFlowKeys = keys.filter((key) => graph[key].flowRate > 0);
+    const positiveFlowLookup = toSet(positiveFlowKeys);
+    return {
+      graph,
+      keys: positiveFlowKeys,
+      travelCosts: keys
+        .filter((fromKey) => startNodeKey === fromKey || positiveFlowLookup.has(fromKey))
+        .reduce((acc, fromKey) => {
+          const value = pick(travelCosts[fromKey], positiveFlowKeys);
+          // cache the keys because travel costs are iterated a lot.
+          value.keys = Object.keys(value);
+          acc[fromKey] = value;
+          return acc;
+        }, {}),
+    };
+  };
+
+  return (lines, startNodeKey) => compress(augmentGraph(parseLines(lines)), startNodeKey);
+})();
 
 /**
  * Removes entries for any nodes which do not not have a flow rate of at least 1.
@@ -62,23 +104,10 @@ const pickNodesWithPositiveFlow = (graph, distances) =>
     return acc;
   }, {});
 
-/**
- * Return a new object which wraps the graph with additional data to make computations easier.
- */
-const augmentGraph = (graph) => {
-  const keys = Object.keys(graph);
-  const travelCosts = getTravelCosts(graph, keys);
-  return {
-    graph,
-    keys,
-    // for each travel cost, remove any node without positive flow.
-    travelCosts: Object.keys(travelCosts).reduce((acc, key) => {
-      const positiveFlow = pickNodesWithPositiveFlow(graph, travelCosts[key]);
-      acc[key] = { ...positiveFlow, keys: Object.keys(positiveFlow) };
-      return acc;
-    }, {}),
-  };
-};
+const filterPositiveFlowNodes = (graph, keys) =>
+  keys.filter((key) => graph[key].flowRate > 0);
+
+const compressGraph = ({ graph, keys, travelCosts }) => {};
 
 /**
  * Returns a hash code for the given set of opened nodes.
@@ -117,6 +146,11 @@ const findMaximumPressure = (
       return memo[stateHash];
     }
 
+    if (!travelCosts[currentNodeKey]) {
+      console.log(currentNodeKey);
+      return 0;
+    }
+
     // recursively find the max value by visiting unopened nodes.
     const maxPressure = travelCosts[currentNodeKey].keys
       .filter((key) => !opened.has(key))
@@ -148,7 +182,8 @@ const findMaximumPressure = (
  * @returns {Number|String}
  */
 export const levelOne = ({ lines }) => {
-  const graph = augmentGraph(parseLines(lines));
+  const graph = parseGraph(lines, 'AA');
+  // console.log(graph.travelCosts);
   return findMaximumPressure(graph, 'AA', 30);
 };
 
