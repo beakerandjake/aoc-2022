@@ -148,41 +148,58 @@ export const levelOne = ({ lines }) => {
 };
 
 /**
- * Returns an array of bit fields representing the possible ways the nodes can be visited by an individual.
- * A zero means the node is not visited, a one means the node is visited.
- */
-const combinations = (nodeCount) => {
-  const toReturn = [];
-  const permutationCount = 2 ** (nodeCount - 1);
-  for (let i = 0; i < permutationCount; i++) {
-    toReturn.push(i);
-  }
-  return toReturn;
-};
-
-/**
- * Creates a new set out of each bit in the bitfield set to one.
- */
-const bitFieldToSet = (bitField, keys) =>
-  toSet(keys.filter((_, index) => bitField & (1 << index)));
-
-/**
  * Returns the solution for level two of this puzzle.
  */
-export const levelTwo = ({ input, lines }) => {
-  console.log();
-  const graph = augmentGraph(parseLines(lines));
-  const nodes = ['AA', 'BB', 'CC', 'DD'];
-  const result = combinations(nodes.length);
-  for (let i = 0; i < result.length; i++) {
-    const combination = result[i];
-    const set = bitFieldToSet(combination, nodes);
-    const inversion = ~combination;
-    console.log(
-      `combination: ${binaryToString(combination, nodes.length)}, set: ${arrayToString([
-        ...set,
-      ])} inversion: ${binaryToString(inversion, nodes.length)}`
-    );
-  }
-  return 1234;
-};
+export const levelTwo = (() => {
+  /**
+   * Returns an array of bit fields.
+   * Assuming two individuals (a and b) are working together to visit a set of nodes.
+   * The bit fields represent all possible combinations that the nodes can be visited a and b.
+   * Assuming that a and b can split up and visit nodes separately.
+   * In each bit field a one means the node is visited by a, and a zero means the node is visited by b.
+   */
+  const combinations = (nodeCount) => {
+    const toReturn = [];
+    const permutationCount = 2 ** (nodeCount - 1);
+    for (let i = 0; i < permutationCount; i++) {
+      toReturn.push(i);
+    }
+    return toReturn;
+  };
+
+  /**
+   * Creates a new set of keys using the bit field.
+   * The set is populated with keys whose index matches each set bit (index 0 corresponds to the lsb).
+   */
+  const bitFieldToSet = (bitField, keys) =>
+    toSet(keys.filter((_, index) => bitField & (1 << index)));
+
+  /**
+   * Inverts the bitfield and discards irrelevant bits using the mask.
+   */
+  const invertBitField = (bitField, inversionMask) => inversionMask & ~bitField;
+
+  return ({ lines }) => {
+    console.log();
+    const graph = augmentGraph(parseLines(lines));
+    const nodes = ['AA', 'BB', 'CC', 'DD'];
+    const result = combinations(nodes.length);
+    const bitmask = (1 << nodes.length) - 1;
+    for (let i = 0; i < result.length; i++) {
+      const combination = result[i];
+      const set = bitFieldToSet(combination, nodes);
+      const inversion = invertBitField(combination, bitmask);
+      const inversionSet = bitFieldToSet(inversion, nodes);
+      console.log(
+        `combination: ${binaryToString(combination, nodes.length)}, set: ${arrayToString([
+          ...set,
+        ])} inversion: ${binaryToString(
+          inversion,
+          nodes.length
+        )}, inversionSet: ${arrayToString([...inversionSet])}`
+      );
+    }
+
+    return 1234;
+  };
+})();
