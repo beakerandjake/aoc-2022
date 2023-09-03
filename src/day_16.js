@@ -3,8 +3,8 @@
  * Puzzle Description: https://adventofcode.com/2022/day/16
  */
 import { toNumber } from './util/string.js';
-import { binaryToString } from './util/bitwise.js';
-import { arrayToString, toSet } from './util/array.js';
+import { isBitSet, bitmask } from './util/bitwise.js';
+import { range, toSet } from './util/array.js';
 
 /**
  * Return the node data represented by the line.
@@ -100,7 +100,12 @@ const hashCode = (currentNodeKey, pressure, time, opened, nodeKeys) =>
 /**
  * Returns the maximum pressure that can be released in the given time starting from the start node.
  */
-const findMaximumPressure = ({ graph, keys, travelCosts }, startNodeKey, totalTime) => {
+const findMaximumPressure = (
+  { graph, keys, travelCosts },
+  startNodeKey,
+  totalTime,
+  initialOpened = new Set()
+) => {
   // object which will map a state to its maximum value.
   const memo = {};
 
@@ -132,7 +137,7 @@ const findMaximumPressure = ({ graph, keys, travelCosts }, startNodeKey, totalTi
     return maxPressure;
   };
 
-  return topDown(startNodeKey, totalTime, 0, new Set());
+  return topDown(startNodeKey, totalTime, 0, initialOpened);
 };
 
 /**
@@ -158,48 +163,44 @@ export const levelTwo = (() => {
    * Assuming that a and b can split up and visit nodes separately.
    * In each bit field a one means the node is visited by a, and a zero means the node is visited by b.
    */
-  const combinations = (nodeCount) => {
-    const toReturn = [];
-    const permutationCount = 2 ** (nodeCount - 1);
-    for (let i = 0; i < permutationCount; i++) {
-      toReturn.push(i);
-    }
-    return toReturn;
-  };
+  const combinations = (nodeCount) => range(2 ** (nodeCount - 1));
 
   /**
    * Creates a new set of keys using the bit field.
    * The set is populated with keys whose index matches each set bit (index 0 corresponds to the lsb).
    */
   const bitFieldToSet = (bitField, keys) =>
-    toSet(keys.filter((_, index) => bitField & (1 << index)));
+    toSet(keys.filter((_, index) => isBitSet(bitField, index)));
 
   /**
    * Inverts the bitfield and discards irrelevant bits using the mask.
    */
   const invertBitField = (bitField, inversionMask) => inversionMask & ~bitField;
 
+  const filterPositiveFlowNodes = ({ graph, keys }) =>
+    keys.filter((key) => graph[key].flowRate > 0);
+
   return ({ lines }) => {
-    console.log();
     const graph = augmentGraph(parseLines(lines));
-    const nodes = ['AA', 'BB', 'CC', 'DD'];
-    const result = combinations(nodes.length);
-    const bitmask = (1 << nodes.length) - 1;
-    for (let i = 0; i < result.length; i++) {
-      const combination = result[i];
-      const set = bitFieldToSet(combination, nodes);
-      const inversion = invertBitField(combination, bitmask);
-      const inversionSet = bitFieldToSet(inversion, nodes);
-      console.log(
-        `combination: ${binaryToString(combination, nodes.length)}, set: ${arrayToString([
-          ...set,
-        ])} inversion: ${binaryToString(
-          inversion,
-          nodes.length
-        )}, inversionSet: ${arrayToString([...inversionSet])}`
-      );
+    const positiveFlowNodes = filterPositiveFlowNodes(graph);
+    const visitCombinations = combinations(positiveFlowNodes.length);
+    const myNodes = visitCombinations.map((bitField) =>
+      bitFieldToSet(bitField, positiveFlowNodes)
+    );
+    const inversionMask = bitmask(positiveFlowNodes.length);
+    const elephantNodes = visitCombinations.map((bitField) =>
+      bitFieldToSet(invertBitField(bitField, inversionMask), positiveFlowNodes)
+    );
+
+    const results = [];
+    for (let i = 0; i < myNodes.length; i++) {
+      const mine = myNodes[i];
+      const elephant = elephantNodes[i];
+      const myPressure = findMaximumPressure(graph, 'AA', 26, elephant);
+      const elephantPressure = findMaximumPressure(graph, 'AA', 26, mine);
+      results[i] = myPressure + elephantPressure;
     }
 
-    return 1234;
+    return Math.max(...results);
   };
 })();
