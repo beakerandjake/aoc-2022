@@ -130,11 +130,6 @@ const findMaximumPressure = (
       return memo[stateHash];
     }
 
-    if (!travelCosts[currentNodeKey]) {
-      console.log(currentNodeKey);
-      return 0;
-    }
-
     // recursively find the max value by visiting unopened nodes.
     const maxPressure = travelCosts[currentNodeKey].keys
       .filter((key) => !opened.has(key))
