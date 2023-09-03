@@ -94,21 +94,17 @@ const parseGraph = (() => {
 })();
 
 /**
- * Returns a hash code for the given set of opened nodes.
+ * Returns a bit field which represents the set.
+ * Iterates each item of the array, if the item is in the set then
+ * the bit field will have a one at that position (lsb = index 0)
  */
-const hashNodes = (opened, graphKeys) =>
-  graphKeys.reduce((acc, key, index) => {
-    if (opened.has(key)) {
+const setToBitField = (set, array) =>
+  array.reduce((acc, item, index) => {
+    if (set.has(item)) {
       return acc | (1 << index);
     }
     return acc;
   }, 0);
-
-/**
- * Return a hash code representing the state defined by the arguments.
- */
-const hashCode = (currentNodeKey, pressure, time, opened, nodeKeys) =>
-  `${currentNodeKey}_${pressure}_${time}_${hashNodes(opened, nodeKeys)}`;
 
 /**
  * Returns the maximum pressure that can be released in the given time starting from the start node.
@@ -122,32 +118,42 @@ const findMaximumPressure = (
   // object which will map a state to its maximum value.
   const memo = {};
 
+  /**
+   * Return a hash code representing the state defined by the arguments.
+   */
+  const hashCode = (currentNodeKey, pressure, time, nodeHash) =>
+    `${currentNodeKey}_${pressure}_${time}_${nodeHash}`;
+
   // recursively find the max value in a top down manner
   const topDown = (currentNodeKey, time, pressure, opened) => {
     // return value if already memoized.
-    const stateHash = hashCode(currentNodeKey, pressure, time, opened, keys);
+    const nodeHash = setToBitField(opened, keys);
+    const stateHash = hashCode(currentNodeKey, pressure, time, nodeHash);
     if (stateHash in memo) {
       return memo[stateHash];
     }
 
     // recursively find the max value by visiting unopened nodes.
-    const maxPressure = travelCosts[currentNodeKey].keys
+    const result = travelCosts[currentNodeKey].keys
       .filter((key) => !opened.has(key))
-      .reduce((max, targetKey) => {
-        const newTime = time - travelCosts[currentNodeKey][targetKey] - 1;
-        if (newTime >= 0) {
-          const newPressure = graph[targetKey].flowRate * newTime + pressure;
-          const newOpened = new Set([...opened, targetKey]);
-          const result = topDown(targetKey, newTime, newPressure, newOpened);
-          return result > max ? result : max;
-        }
-        return max;
-      }, pressure);
+      .reduce(
+        (max, targetKey) => {
+          const newTime = time - travelCosts[currentNodeKey][targetKey] - 1;
+          if (newTime >= 0) {
+            const newPressure = graph[targetKey].flowRate * newTime + pressure;
+            const newOpened = new Set([...opened, targetKey]);
+            const newResult = topDown(targetKey, newTime, newPressure, newOpened);
+            return newResult.value > max.value ? newResult : max;
+          }
+          return max;
+        },
+        { value: pressure, opened: nodeHash }
+      );
 
     // memoize the pressure released by this state so we don't have to recalculate it.
-    memo[stateHash] = maxPressure;
+    memo[stateHash] = result;
 
-    return maxPressure;
+    return result;
   };
 
   return topDown(startNodeKey, totalTime, 0, initialOpened);
@@ -163,7 +169,7 @@ const findMaximumPressure = (
 export const levelOne = ({ lines }) => {
   const graph = parseGraph(lines, 'AA');
   // console.log(graph.travelCosts);
-  return findMaximumPressure(graph, 'AA', 30);
+  return findMaximumPressure(graph, 'AA', 30).value;
 };
 
 /**
