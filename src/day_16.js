@@ -74,7 +74,7 @@ const parseGraph = (() => {
    * Compresses the augmented graph data to effectively ignore nodes with a zero flow rate.
    * Does not actually remove these nodes from the graph since computations are done through the helper data.
    */
-  const compress = ({ graph, keys, travelCosts }, startNodeKey) => {
+  const compressGraph = ({ graph, keys, travelCosts }, startNodeKey) => {
     const positiveFlowKeys = keys.filter((key) => graph[key].flowRate > 0);
     const positiveFlowLookup = toSet(positiveFlowKeys);
     return {
@@ -89,33 +89,25 @@ const parseGraph = (() => {
           acc[fromKey] = value;
           return acc;
         }, {}),
+      bitmaskLookup: positiveFlowKeys.reduce((acc, key, index) => {
+        acc[key] = 1 << index;
+        return acc;
+      }, {}),
     };
   };
 
-  return (lines, startNodeKey) => compress(augmentGraph(parseLines(lines)), startNodeKey);
+  return (lines, startNodeKey) =>
+    compressGraph(augmentGraph(parseLines(lines)), startNodeKey);
 })();
-
-/**
- * Returns a bit field which represents the set.
- * Iterates each item of the array, if the item is in the set then
- * the bit field will have a one at that position (lsb = index 0)
- */
-const setToBitField = (set, array) =>
-  array.reduce((acc, item, index) => {
-    if (set.has(item)) {
-      return acc | (1 << index);
-    }
-    return acc;
-  }, 0);
 
 /**
  * Returns the maximum pressure that can be released in the given time starting from the start node.
  */
 const maxPressure = (
-  { graph, keys, travelCosts },
+  { graph, travelCosts, bitmaskLookup },
   startNodeKey,
   totalTime,
-  initialOpened = new Set()
+  initialOpened = 0
 ) => {
   // object which will map a state to its maximum value.
   const memo = {};
@@ -123,33 +115,32 @@ const maxPressure = (
   /**
    * Return a hash code representing the state defined by the arguments.
    */
-  const hashCode = (currentNodeKey, pressure, time, nodeHash) =>
-    `${currentNodeKey}_${pressure}_${time}_${nodeHash}`;
+  const hashCode = (currentNodeKey, pressure, time, opened) =>
+    `${currentNodeKey}_${pressure}_${time}_${opened}`;
 
   // recursively find the max value in a top down manner
   const topDown = (currentNodeKey, time, pressure, opened) => {
     // return value if already memoized.
-    const nodeHash = setToBitField(opened, keys);
-    const stateHash = hashCode(currentNodeKey, pressure, time, nodeHash);
+    const stateHash = hashCode(currentNodeKey, pressure, time, opened);
     if (stateHash in memo) {
       return memo[stateHash];
     }
 
     // recursively find the max value by visiting unopened nodes.
     const result = travelCosts[currentNodeKey].keys
-      .filter((key) => !opened.has(key))
+      .filter((key) => !(opened & bitmaskLookup[key]))
       .reduce(
         (max, targetKey) => {
           const newTime = time - travelCosts[currentNodeKey][targetKey] - 1;
           if (newTime >= 0) {
             const newPressure = graph[targetKey].flowRate * newTime + pressure;
-            const newOpened = new Set([...opened, targetKey]);
+            const newOpened = opened | bitmaskLookup[targetKey];
             const newResult = topDown(targetKey, newTime, newPressure, newOpened);
             return newResult.value > max.value ? newResult : max;
           }
           return max;
         },
-        { value: pressure, opened: nodeHash }
+        { value: pressure, opened }
       );
 
     // memoize the pressure released by this state so we don't have to recalculate it.
@@ -185,54 +176,33 @@ export const levelTwo = (() => {
   const combinations = (nodeCount) => range(2 ** (nodeCount - 1));
 
   /**
-   * Creates a new set of keys using the bit field.
-   * The set is populated with keys whose index matches each set bit (index 0 corresponds to the lsb).
-   */
-  const bitFieldToSet = (bitField, keys) =>
-    toSet(keys.filter((_, index) => isBitSet(bitField, index)));
-
-  /**
    * Inverts the bitfield and discards irrelevant bits using the mask.
    */
   const invertBitField = (bitField, inversionMask) => inversionMask & ~bitField;
 
-  const filterPositiveFlowNodes = ({ graph, keys }) =>
-    keys.filter((key) => graph[key].flowRate > 0);
-
   return ({ lines }) => {
     const graph = parseGraph(lines, defaultStartNode);
     const solo = maxPressure(graph, defaultStartNode, 26, new Set());
-    const memo = {};
-
-    const elephantTarget = maxPressure(
-      graph,
-      defaultStartNode,
-      26,
-      bitFieldToSet(solo.opened, graph.keys),
-      memo
-    );
+    const elephantTarget = maxPressure(graph, defaultStartNode, 26, solo.opened);
 
     const inversionMask = bitmask(graph.keys.length);
     const betterElephantBranches = [];
     const soloCombinations = combinations(graph.keys.length);
     for (let index = 0; index < soloCombinations.length; index++) {
-      const openedByMe = bitFieldToSet(soloCombinations[index], graph.keys);
+      const openedByMe = soloCombinations[index];
       const elephantResult = maxPressure(graph, defaultStartNode, 26, openedByMe);
       if (elephantResult.value >= elephantTarget.value) {
         betterElephantBranches.push({
           value: elephantResult.value,
-          opened: invertBitField(soloCombinations[index], inversionMask, memo),
+          opened: invertBitField(openedByMe, inversionMask),
         });
       }
     }
 
     const values = [solo.value + elephantTarget.value];
     for (let index = 0; index < betterElephantBranches.length; index++) {
-      const openedByElephant = bitFieldToSet(
-        betterElephantBranches[index].opened,
-        graph.keys
-      );
-      const soloResult = maxPressure(graph, defaultStartNode, 26, openedByElephant, memo);
+      const openedByElephant = betterElephantBranches[index].opened;
+      const soloResult = maxPressure(graph, defaultStartNode, 26, openedByElephant);
       values.push(soloResult.value + betterElephantBranches[index].value);
     }
 
