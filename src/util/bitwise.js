@@ -13,16 +13,15 @@ export const isBitSet = (value, index) => (value & (1 << index)) !== 0;
 export const setBit = (value, index) => value | (1 << index);
 
 /**
- * Shift the bits one to the left.
- * @param {Number} value
+ * Returns a bitmask with n bits set to one starting from the least significant bit.
+ * @param {Number} length
  */
-export const leftShift = (value) => value << 1;
-
-/**
- * Shift the bits one to the right.
- * @param {Number} value
- */
-export const rightShift = (value) => value >> 1;
+export const bitmask = (length) => {
+  if (length < 1) {
+    throw new RangeError('length must be at least one');
+  }
+  return (1 << length) - 1;
+};
 
 /**
  * Returns a string representation of the number in binary.
