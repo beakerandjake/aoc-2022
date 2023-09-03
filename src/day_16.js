@@ -94,22 +94,6 @@ const parseGraph = (() => {
 })();
 
 /**
- * Removes entries for any nodes which do not not have a flow rate of at least 1.
- */
-const pickNodesWithPositiveFlow = (graph, distances) =>
-  Object.keys(distances).reduce((acc, key) => {
-    if (graph[key].flowRate > 0) {
-      acc[key] = distances[key];
-    }
-    return acc;
-  }, {});
-
-const filterPositiveFlowNodes = (graph, keys) =>
-  keys.filter((key) => graph[key].flowRate > 0);
-
-const compressGraph = ({ graph, keys, travelCosts }) => {};
-
-/**
  * Returns a hash code for the given set of opened nodes.
  */
 const hashNodes = (opened, graphKeys) =>
