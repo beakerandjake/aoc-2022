@@ -101,95 +101,72 @@ const parseGraph = (() => {
 })();
 
 /**
- * Returns the solution for level one of this puzzle.
+ * Returns the maximum pressure that can be released in the given time starting from the start node.
  */
-export const levelOne = (() => {
-  /**
-   * Returns the maximum pressure that can be released in the given time starting from the start node.
-   */
-  const maxPressure = (
-    { graph, travelCosts, bitmaskLookup },
-    startNodeKey,
-    totalTime
-  ) => {
-    // recursively find the max value in a top down manner
-    const topDown = (currentNodeKey, time, pressure, opened) => {
-      let max = pressure;
-      const nodeTravelCosts = travelCosts[currentNodeKey];
-      for (let i = nodeTravelCosts.keys.length; i--; ) {
-        const key = nodeTravelCosts.keys[i];
-        if (opened & bitmaskLookup[key]) {
-          continue;
-        }
-        const newTime = time - nodeTravelCosts[key] - 1;
-        if (newTime > 0) {
-          const newPressure = graph[key].flowRate * newTime + pressure;
-          const newOpened = opened | bitmaskLookup[key];
-          const result = topDown(key, newTime, newPressure, newOpened);
-          if (result > max) {
-            max = result;
-          }
+const maxPressure = (
+  graph,
+  startNode,
+  totalTime,
+  initialOpened = 0,
+  shortCircuitFn = () => false
+) => {
+  const { graph: nodes, travelCosts, bitmaskLookup } = graph;
+
+  const topDown = (currentNodeKey, time, pressure, opened) => {
+    // quit this branch early if possible.
+    if (shortCircuitFn(graph, currentNodeKey, time, pressure, opened)) {
+      return { value: pressure, opened };
+    }
+    let max = { value: pressure, opened };
+    const nodeTravelCosts = travelCosts[currentNodeKey];
+    // recursively search each opened node and find the one which gives the max value.
+    for (let i = nodeTravelCosts.keys.length; i--; ) {
+      const key = nodeTravelCosts.keys[i];
+      // skip node if already opened.
+      if (opened & bitmaskLookup[key]) {
+        continue;
+      }
+      // skip node if not enough time left to reach and open it.
+      const newTime = time - nodeTravelCosts[key] - 1;
+      if (newTime > 0) {
+        const newPressure = nodes[key].flowRate * newTime + pressure;
+        const newOpened = opened | bitmaskLookup[key];
+        const result = topDown(key, newTime, newPressure, newOpened);
+        if (result.value > max.value) {
+          max = result;
         }
       }
-      return max;
-    };
-
-    return topDown(startNodeKey, totalTime, 0, 0);
+    }
+    return max;
   };
+  return topDown(startNode, totalTime, 0, initialOpened);
+};
 
-  return ({ lines }) =>
-    maxPressure(parseGraph(lines, defaultStartNode), defaultStartNode, 30);
-})();
+/**
+ * Returns the solution for level one of this puzzle.
+ */
+export const levelOne = ({ lines }) =>
+  maxPressure(parseGraph(lines, defaultStartNode), defaultStartNode, 30).value;
 
 /**
  * Returns the solution for level two of this puzzle.
  */
 export const levelTwo = (() => {
   /**
-   * Returns the maximum pressure that can be released in the given time starting from the start node.
+   * Short circuit function for finding max value.
+   * Assumes we could magically open every remaining unopened value.
+   * If the total pressure released can't even beat the current best
+   * then the branch is a dead end, short circuit it.
    */
-  const maxPressure = (
-    { graph, keys, travelCosts, bitmaskLookup },
-    startNodeKey,
-    totalTime,
-    initialOpened = 0,
-    best = 0
-  ) => {
-    // recursively find the max value in a top down manner
-    const topDown = (currentNodeKey, time, pressure, opened) => {
-      // assume we could magically open every unopened value
-      // if the total resulting pressure released can't even beat
-      // the current best, then this branch is a dead end.
+  const quitIfCantBeatBest =
+    (best) =>
+    ({ keys, bitmaskLookup, graph }, _, time, pressure, opened) => {
       const closed = ~opened;
       const optimisticBest = keys
         .filter((key) => closed & bitmaskLookup[key])
         .reduce((total, key) => total + graph[key].flowRate * (time - 1), pressure);
-      if (optimisticBest < best) {
-        return { value: pressure, opened };
-      }
-
-      let max = { value: pressure, opened };
-      const nodeTravelCosts = travelCosts[currentNodeKey];
-      for (let i = nodeTravelCosts.keys.length; i--; ) {
-        const key = nodeTravelCosts.keys[i];
-        if (opened & bitmaskLookup[key]) {
-          continue;
-        }
-        const newTime = time - nodeTravelCosts[key] - 1;
-        if (newTime > 0) {
-          const newPressure = graph[key].flowRate * newTime + pressure;
-          const newOpened = opened | bitmaskLookup[key];
-          const result = topDown(key, newTime, newPressure, newOpened);
-          if (result.value > max.value) {
-            max = result;
-          }
-        }
-      }
-      return max;
+      return optimisticBest < best;
     };
-
-    return topDown(startNodeKey, totalTime, 0, initialOpened);
-  };
 
   /**
    * Returns an array of bit fields.
@@ -208,7 +185,8 @@ export const levelTwo = (() => {
   return ({ lines }) => {
     const graph = parseGraph(lines, defaultStartNode);
     const solo = maxPressure(graph, defaultStartNode, 26);
-    const elephantTarget = maxPressure(graph, defaultStartNode, 26, solo.opened);
+    const elephant = maxPressure(graph, defaultStartNode, 26, solo.opened);
+    const shortCircuit = quitIfCantBeatBest(elephant.value);
 
     const inversionMask = bitmask(graph.keys.length);
     const betterElephantBranches = [];
@@ -220,9 +198,9 @@ export const levelTwo = (() => {
         defaultStartNode,
         26,
         openedByMe,
-        elephantTarget.value
+        shortCircuit
       );
-      if (elephantResult.value >= elephantTarget.value) {
+      if (elephantResult.value >= elephant.value) {
         betterElephantBranches.push({
           value: elephantResult.value,
           opened: invertBitField(openedByMe, inversionMask),
@@ -230,7 +208,7 @@ export const levelTwo = (() => {
       }
     }
 
-    const values = [solo.value + elephantTarget.value];
+    const values = [solo.value + elephant.value];
     for (let index = 0; index < betterElephantBranches.length; index++) {
       const openedByElephant = betterElephantBranches[index].opened;
       const soloResult = maxPressure(graph, defaultStartNode, 26, openedByElephant);
