@@ -168,7 +168,7 @@ export const levelOne = ({ lines }) =>
 /**
  * Returns the solution for level two of this puzzle.
  */
-export const levelTwo = (() => {
+export const levelTwo = ({ lines }) => {
   /**
    * Short circuit function for finding max value.
    * Assumes we could magically open every remaining unopened value.
@@ -234,11 +234,9 @@ export const levelTwo = (() => {
     return Math.max(...values);
   };
 
-  return ({ lines }) => {
-    const graph = parseGraph(lines, defaultStartNode);
-    const solo = maxPressure(graph, defaultStartNode, 26);
-    const elephant = maxPressure(graph, defaultStartNode, 26, solo.opened);
-    const potentialResults = getBestElephantResults(graph, elephant.value);
-    return findBestCombination(graph, potentialResults, solo.value + elephant.value);
-  };
-})();
+  const graph = parseGraph(lines, defaultStartNode);
+  const solo = maxPressure(graph, defaultStartNode, 26);
+  const elephant = maxPressure(graph, defaultStartNode, 26, solo.opened);
+  const potentialResults = getBestElephantResults(graph, elephant.value);
+  return findBestCombination(graph, potentialResults, solo.value + elephant.value);
+};
