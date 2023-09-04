@@ -114,7 +114,10 @@ const parseGraph = (lines, startNodeKey) => {
     };
   }
 
-  return augmented;
+  return {
+    nodes: augmented,
+    nodeCount: productiveNodes.length,
+  };
 };
 
 /**
@@ -136,7 +139,7 @@ const maxPressure = (
     // recursively search each opened node and find the one which gives the max value.
     for (let i = node.edges.length; i--; ) {
       const edge = node.edges[i];
-      const targetNode = graph[edge.key];
+      const targetNode = graph.nodes[edge.key];
       // only consider node if not already opened.
       if (!(opened & targetNode.bitmask)) {
         const newTime = time - edge.cost - 1;
@@ -153,7 +156,7 @@ const maxPressure = (
     }
     return max;
   };
-  return topDown(graph[startNodeKey], totalTime, 0, initialOpened);
+  return topDown(graph.nodes[startNodeKey], totalTime, 0, initialOpened);
 };
 
 /**
@@ -172,13 +175,15 @@ export const levelTwo = (() => {
    * If the total pressure released can't even beat the current best
    * then the branch is a dead end, short circuit it.
    */
-  const quitIfCantBeatBest = (best) => (graph, node, time, pressure, opened) => {
-    const closed = ~opened;
-    const optimisticBest = node.edges
-      .filter(({ key }) => closed & graph[key].bitmask)
-      .reduce((total, { key }) => total + graph[key].flowRate * (time - 1), pressure);
-    return optimisticBest < best;
-  };
+  const quitIfCantBeatBest =
+    (best) =>
+    ({ nodes }, node, time, pressure, opened) => {
+      const closed = ~opened;
+      const optimisticBest = node.edges
+        .filter(({ key }) => closed & nodes[key].bitmask)
+        .reduce((total, { key }) => total + nodes[key].flowRate * (time - 1), pressure);
+      return optimisticBest < best;
+    };
 
   /**
    * Returns an array of bit fields.
@@ -194,39 +199,46 @@ export const levelTwo = (() => {
    */
   const invertBitField = (bitField, inversionMask) => inversionMask & ~bitField;
 
+  /**
+   * Simulate all possible combinations of the elephant opening valves
+   * Return only those which result in a pressure greater than the target result.
+   */
+  const getBestElephantResults = (graph, bestPressure) => {
+    const shortCircuit = quitIfCantBeatBest(bestPressure);
+    const inversionMask = bitmask(graph.nodeCount);
+    const toReturn = [];
+    const openedByMe = combinations(graph.nodeCount);
+    for (let index = 0; index < openedByMe.length; index++) {
+      const opened = openedByMe[index];
+      const result = maxPressure(graph, defaultStartNode, 26, opened, shortCircuit);
+      if (result.value >= bestPressure) {
+        toReturn.push({
+          value: result.value,
+          opened: invertBitField(opened, inversionMask) & result.opened,
+        });
+      }
+    }
+    return toReturn;
+  };
+
+  /**
+   * Returns the max pressure which can be achieved working with the elephant.
+   */
+  const findBestCombination = (graph, elephantResults, bestPressure) => {
+    const values = [bestPressure];
+    for (let index = 0; index < elephantResults.length; index++) {
+      const openedByElephant = elephantResults[index].opened;
+      const soloResult = maxPressure(graph, defaultStartNode, 26, openedByElephant);
+      values.push(soloResult.value + elephantResults[index].value);
+    }
+    return Math.max(...values);
+  };
+
   return ({ lines }) => {
     const graph = parseGraph(lines, defaultStartNode);
     const solo = maxPressure(graph, defaultStartNode, 26);
     const elephant = maxPressure(graph, defaultStartNode, 26, solo.opened);
-    const shortCircuit = quitIfCantBeatBest(elephant.value);
-    const nodeCount = Object.keys(graph).filter((key) => 'bitmask' in graph[key]).length;
-    const inversionMask = bitmask(nodeCount);
-    const betterElephantBranches = [];
-    const soloCombinations = combinations(nodeCount);
-    for (let index = 0; index < soloCombinations.length; index++) {
-      const openedByMe = soloCombinations[index];
-      const elephantResult = maxPressure(
-        graph,
-        defaultStartNode,
-        26,
-        openedByMe,
-        shortCircuit
-      );
-      if (elephantResult.value >= elephant.value) {
-        betterElephantBranches.push({
-          value: elephantResult.value,
-          opened: invertBitField(openedByMe, inversionMask),
-        });
-      }
-    }
-
-    const values = [solo.value + elephant.value];
-    for (let index = 0; index < betterElephantBranches.length; index++) {
-      const openedByElephant = betterElephantBranches[index].opened;
-      const soloResult = maxPressure(graph, defaultStartNode, 26, openedByElephant);
-      values.push(soloResult.value + betterElephantBranches[index].value);
-    }
-
-    return Math.max(...values);
+    const potentialResults = getBestElephantResults(graph, elephant.value);
+    return findBestCombination(graph, potentialResults, solo.value + elephant.value);
   };
 })();
