@@ -39,17 +39,19 @@ const parseGraph = (lines, startNodeKey) => {
   const nodeDistances = (graph, rootKey) => {
     // use BFS to find the shortest path to other nodes.
     const queue = [rootKey];
-    const history = {};
+    const history = { [rootKey]: 0 };
     while (queue.length) {
       const current = queue.shift();
       graph[current].neighbors
         .filter((key) => !(key in history))
         .forEach((key) => {
-          history[key] = (history[current] || 0) + 1;
+          history[key] = history[current] + 1;
           queue.push(key);
         });
     }
-    return history;
+    // remove the root key from the returned object.
+    const { [rootKey]: _, ...toReturn } = history;
+    return toReturn;
   };
 
   /**
@@ -65,40 +67,57 @@ const parseGraph = (lines, startNodeKey) => {
     nodes.filter((node) => graph[node].flowRate > 0);
 
   /**
-   * Remove costs for any nodes which are not included in the nodes list.
+   * Returns a new travel costs object with only the specified nodes.
    */
-  const compressTravelCosts = (costs, nodes) => {
-    const compress = (object) => {
-      const picked = pick(object, nodes);
-      return { ...picked, keys: Object.keys(picked) };
-    };
-
-    return nodes.reduce(
-      (acc, key) => ({
-        ...acc,
-        [key]: compress(costs[key], nodes),
-      }),
-      // ensure start node is always present.
-      { [startNodeKey]: compress(costs[startNodeKey], nodes) }
-    );
-  };
+  const compressTravelCosts = (travelCosts, nodesToKeep) =>
+    nodesToKeep
+      // edge case, skip self which wont exist in travel costs.
+      .filter((neighbor) => neighbor in travelCosts)
+      .map((neighbor) => ({
+        key: neighbor,
+        distance: travelCosts[neighbor],
+      }));
 
   /**
-   * Maps a node key to a mask which can be to represent that node in a bitmask.
+   * Returns a new graph with only the specified nodes.
    */
-  const createBitmaskLookup = (nodes) =>
-    nodes.reduce((acc, key, index) => ({ ...acc, [key]: 1 << index }), {});
+  const compressGraph = (graph, travelCosts, nodesToKeep) =>
+    nodesToKeep.reduce((acc, node) => {
+      acc[node] = {
+        ...graph[node],
+        neighbors: compressTravelCosts(travelCosts[node], nodesToKeep),
+      };
+      return acc;
+    }, {});
+
+  /**
+   * Returns a new graph with additional helper data added to specified nodes.
+   */
+  const augmentGraph = (graph, nodes) =>
+    nodes.reduce(
+      (acc, node, index) => ({ ...acc, [node]: { ...graph[node], bitmask: 1 << index } }),
+      {}
+    );
 
   const graph = parseLines();
   const allNodes = Object.keys(graph);
   const travelCosts = getTravelCosts(graph, allNodes);
   const productiveNodes = filterUnproductiveNodes(graph, allNodes);
+  const compressed = compressGraph(graph, travelCosts, productiveNodes);
+  const augmented = augmentGraph(compressed, productiveNodes);
+
+  // handle edge case where start node is not a productive node.
+  if (!(startNodeKey in augmented)) {
+    // creates a 'directed' which allows you to leave start node but not 'return'.
+    // this is because all nodes don't have start node as a neighbor.
+    augmented[startNodeKey] = {
+      neighbors: compressTravelCosts(travelCosts[startNodeKey], productiveNodes),
+    };
+  }
 
   return {
-    graph,
+    nodes: augmented,
     keys: productiveNodes,
-    travelCosts: compressTravelCosts(travelCosts, productiveNodes),
-    bitmaskLookup: createBitmaskLookup(productiveNodes),
   };
 };
 
@@ -147,8 +166,12 @@ const maxPressure = (
 /**
  * Returns the solution for level one of this puzzle.
  */
-export const levelOne = ({ lines }) =>
-  maxPressure(parseGraph(lines, defaultStartNode), defaultStartNode, 30).value;
+export const levelOne = ({ lines }) => {
+  const z = parseGraph(lines, defaultStartNode);
+  console.log(z);
+  return 1234;
+};
+// maxPressure(parseGraph(lines, defaultStartNode), defaultStartNode, 30).value;
 
 /**
  * Returns the solution for level two of this puzzle.
