@@ -12,6 +12,107 @@ const defaultStartNode = 'AA';
 /**
  * Parses the input and returns an object containing the graph and additional helper data.
  */
+const parseGraph2 = (lines, startNodeKey) => {
+  /**
+   * Return the node data represented by the line.
+   */
+  const parseLine = (line) => {
+    const [lhs, rhs] = line.split(';');
+    return {
+      name: lhs.slice(6, 8),
+      flowRate: toNumber(lhs.slice(23)),
+      neighbors: rhs.match(/[A-Z]{2}/g),
+    };
+  };
+
+  /**
+   * Returns a graph constructed from the input lines.
+   */
+  const parseLines = () =>
+    lines
+      .map((line) => parseLine(line))
+      .reduce((acc, { name, ...nodeData }) => ({ ...acc, [name]: nodeData }), {});
+
+  /**
+   * Returns an object which maps each node to the length of the shortest path from that node to all other nodes.
+   */
+  const nodeDistances = (graph, rootKey) => {
+    // use BFS to find the shortest path to other nodes.
+    const queue = [rootKey];
+    const history = {};
+    while (queue.length) {
+      const current = queue.shift();
+      graph[current].neighbors
+        .filter((key) => !(key in history))
+        .forEach((key) => {
+          history[key] = (history[current] || 0) + 1;
+          queue.push(key);
+        });
+    }
+    return history;
+  };
+
+  /**
+   * Returns map of a nodes key to the the distances to each node.
+   */
+  const getTravelCosts = (graph, keys) =>
+    keys.reduce((acc, key) => ({ ...acc, [key]: nodeDistances(graph, key) }), {});
+
+  /**
+   * Filters out any nodes whose flow rate is zero.
+   */
+  const filterUnproductiveNodes = (graph, nodes) =>
+    nodes.filter((node) => graph[node].flowRate > 0);
+
+  /**
+   * Remove costs for any nodes which are not included in the nodes list.
+   */
+  const compressTravelCosts = (costs, nodes) => {
+    const compress = (object) => {
+      const picked = pick(object, nodes);
+      return { ...picked, keys: Object.keys(picked) };
+    };
+
+    return nodes.reduce(
+      (acc, key) => ({
+        ...acc,
+        [key]: compress(costs[key], nodes),
+      }),
+      // ensure start node is always present.
+      { [startNodeKey]: compress(costs[startNodeKey], nodes) }
+    );
+  };
+
+  /**
+   * Maps a node key to a mask which can be to represent that node in a bitmask.
+   */
+  const createBitmaskLookup = (nodes) =>
+    nodes.reduce((acc, key, index) => ({ ...acc, [key]: 1 << index }), {});
+
+  const graph = parseLines();
+  const allNodes = Object.keys(graph);
+  const travelCosts = getTravelCosts(graph, allNodes);
+  const productiveNodes = filterUnproductiveNodes(graph, allNodes);
+
+  // console.log('graph', graph);
+  // console.log('all nodes', allNodes);
+  // console.log('travel costs', travelCosts);
+  // console.log('productive nodes', productiveNodes);
+
+  const toReturn = {
+    graph,
+    keys: productiveNodes,
+    travelCosts: compressTravelCosts(travelCosts, productiveNodes),
+    bitmaskLookup: createBitmaskLookup(productiveNodes),
+  };
+
+  // console.log(JSON.stringify(toReturn));
+  return toReturn;
+};
+
+/**
+ * Parses the input and returns an object containing the graph and additional helper data.
+ */
 const parseGraph = (() => {
   /**
    * Return the node data represented by the line.
@@ -146,7 +247,7 @@ const maxPressure = (
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) =>
-  maxPressure(parseGraph(lines, defaultStartNode), defaultStartNode, 30).value;
+  maxPressure(parseGraph2(lines, defaultStartNode), defaultStartNode, 30).value;
 
 /**
  * Returns the solution for level two of this puzzle.
