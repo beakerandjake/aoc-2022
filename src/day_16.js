@@ -3,7 +3,7 @@
  * Puzzle Description: https://adventofcode.com/2022/day/16
  */
 import { toNumber } from './util/string.js';
-import { isBitSet, bitmask, binaryToString } from './util/bitwise.js';
+import { bitmask } from './util/bitwise.js';
 import { range, toSet } from './util/array.js';
 import { pick } from './util/object.js';
 
@@ -182,7 +182,7 @@ export const levelTwo = (() => {
 
   return ({ lines }) => {
     const graph = parseGraph(lines, defaultStartNode);
-    const solo = maxPressure(graph, defaultStartNode, 26, new Set());
+    const solo = maxPressure(graph, defaultStartNode, 26);
     const elephantTarget = maxPressure(graph, defaultStartNode, 26, solo.opened);
 
     const inversionMask = bitmask(graph.keys.length);
