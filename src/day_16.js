@@ -12,7 +12,7 @@ const defaultStartNode = 'AA';
 /**
  * Parses the input and returns an object containing the graph and additional helper data.
  */
-const parseGraph2 = (lines, startNodeKey) => {
+const parseGraph = (lines, startNodeKey) => {
   /**
    * Return the node data represented by the line.
    */
@@ -94,112 +94,13 @@ const parseGraph2 = (lines, startNodeKey) => {
   const travelCosts = getTravelCosts(graph, allNodes);
   const productiveNodes = filterUnproductiveNodes(graph, allNodes);
 
-  // console.log('graph', graph);
-  // console.log('all nodes', allNodes);
-  // console.log('travel costs', travelCosts);
-  // console.log('productive nodes', productiveNodes);
-
-  const toReturn = {
+  return {
     graph,
     keys: productiveNodes,
     travelCosts: compressTravelCosts(travelCosts, productiveNodes),
     bitmaskLookup: createBitmaskLookup(productiveNodes),
   };
-
-  // console.log(JSON.stringify(toReturn));
-  return toReturn;
 };
-
-/**
- * Parses the input and returns an object containing the graph and additional helper data.
- */
-const parseGraph = (() => {
-  /**
-   * Return the node data represented by the line.
-   */
-  const parseLine = (line) => {
-    const [lhs, rhs] = line.split(';');
-    return {
-      name: lhs.slice(6, 8),
-      flowRate: toNumber(lhs.slice(23)),
-      neighbors: rhs.match(/[A-Z]{2}/g),
-    };
-  };
-
-  /**
-   * Returns a graph constructed from the input lines.
-   */
-  const parseLines = (lines) =>
-    lines
-      .map((line) => parseLine(line))
-      .reduce((acc, { name, ...nodeData }) => ({ ...acc, [name]: nodeData }), {});
-
-  /**
-   * Returns an object which maps each node to the length of the shortest path from that node to all other nodes.
-   */
-  const nodeDistances = (graph, rootKey) => {
-    // use BFS to find the shortest path to other nodes.
-    const queue = [rootKey];
-    const history = {};
-    while (queue.length) {
-      const current = queue.shift();
-      graph[current].neighbors
-        .filter((key) => !(key in history))
-        .forEach((key) => {
-          history[key] = (history[current] || 0) + 1;
-          queue.push(key);
-        });
-    }
-    return history;
-  };
-
-  /**
-   * Returns map of a nodes key to the the distances to each node.
-   */
-  const getTravelCosts = (graph, keys) =>
-    keys.reduce((acc, key) => ({ ...acc, [key]: nodeDistances(graph, key) }), {});
-
-  /**
-   * Return a new object which wraps the graph with additional data to make computations easier.
-   */
-  const augmentGraph = (graph) => {
-    const keys = Object.keys(graph);
-    return {
-      graph,
-      keys,
-      travelCosts: getTravelCosts(graph, keys),
-    };
-  };
-
-  /**
-   * Compresses the augmented graph data to effectively ignore nodes with a zero flow rate.
-   * Does not actually remove these nodes from the graph since computations are done through the helper data.
-   */
-  const compressGraph = ({ graph, keys, travelCosts }, startNodeKey) => {
-    const positiveFlowKeys = keys.filter((key) => graph[key].flowRate > 0);
-    const positiveFlowLookup = toSet(positiveFlowKeys);
-    return {
-      graph,
-      keys: positiveFlowKeys,
-      travelCosts: keys
-        .filter((fromKey) => startNodeKey === fromKey || positiveFlowLookup.has(fromKey))
-        .reduce((acc, fromKey) => {
-          const value = pick(travelCosts[fromKey], positiveFlowKeys);
-          // cache the keys because travel costs are iterated a lot.
-          value.keys = Object.keys(value);
-          acc[fromKey] = value;
-          return acc;
-        }, {}),
-      bitmaskLookup: positiveFlowKeys.reduce((acc, key, index) => {
-        acc[key] = 1 << index;
-        return acc;
-      }, {}),
-    };
-  };
-
-  return (lines, startNodeKey) =>
-    compressGraph(augmentGraph(parseLines(lines)), startNodeKey);
-})();
 
 /**
  * Returns the maximum pressure that can be released in the given time starting from the start node.
@@ -247,7 +148,7 @@ const maxPressure = (
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) =>
-  maxPressure(parseGraph2(lines, defaultStartNode), defaultStartNode, 30).value;
+  maxPressure(parseGraph(lines, defaultStartNode), defaultStartNode, 30).value;
 
 /**
  * Returns the solution for level two of this puzzle.
