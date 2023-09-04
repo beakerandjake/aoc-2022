@@ -107,78 +107,36 @@ const hashCode = (currentNodeKey, pressure, time, opened) =>
   `${currentNodeKey}${pressure * time * opened}`;
 
 /**
- * Returns the maximum pressure that can be released in the given time starting from the start node.
- */
-const maxPressure = ({ graph, travelCosts, bitmaskLookup }, startNodeKey, totalTime) => {
-  // recursively find the max value in a top down manner
-  const topDown = (currentNodeKey, time, pressure, opened) => {
-    let max = pressure;
-    const nodeTravelCosts = travelCosts[currentNodeKey];
-    for (let i = nodeTravelCosts.keys.length; i--; ) {
-      const key = nodeTravelCosts.keys[i];
-      if (opened & bitmaskLookup[key]) {
-        continue;
-      }
-      const newTime = time - nodeTravelCosts[key] - 1;
-      if (newTime > 0) {
-        const newPressure = graph[key].flowRate * newTime + pressure;
-        const newOpened = opened | bitmaskLookup[key];
-        const result = topDown(key, newTime, newPressure, newOpened);
-        if (result > max) {
-          max = result;
-        }
-      }
-    }
-    return max;
-  };
-
-  return topDown(startNodeKey, totalTime, 0, 0);
-};
-
-/**
  * Returns the solution for level one of this puzzle.
- * @param {Object} args - Provides both raw and split input.
- * @param {String} args.input - The original, unparsed input string.
- * @param {String[]} args.lines - Array containing each line of the input string.
- * @returns {Number|String}
  */
 export const levelOne = (() => {
   /**
    * Returns the maximum pressure that can be released in the given time starting from the start node.
    */
-  const maxPressure1 = (
+  const maxPressure = (
     { graph, travelCosts, bitmaskLookup },
     startNodeKey,
     totalTime
   ) => {
-    // object which will memoize the result of previous recursions so we don't have to recalculate.
-    const memo = {};
-
     // recursively find the max value in a top down manner
     const topDown = (currentNodeKey, time, pressure, opened) => {
-      // return value if already memoized.
-      const stateHash = hashCode(currentNodeKey, pressure, time, opened);
-      if (stateHash in memo) {
-        return memo[stateHash];
-      }
-
-      // recursively find the max value by visiting unopened nodes.
-      const max = travelCosts[currentNodeKey].keys
-        .filter((key) => !(opened & bitmaskLookup[key]))
-        .reduce((currentMax, targetKey) => {
-          const newTime = time - travelCosts[currentNodeKey][targetKey] - 1;
-          if (newTime >= 0) {
-            const newPressure = graph[targetKey].flowRate * newTime + pressure;
-            const newOpened = opened | bitmaskLookup[targetKey];
-            const result = topDown(targetKey, newTime, newPressure, newOpened);
-            return result > currentMax ? result : currentMax;
+      let max = pressure;
+      const nodeTravelCosts = travelCosts[currentNodeKey];
+      for (let i = nodeTravelCosts.keys.length; i--; ) {
+        const key = nodeTravelCosts.keys[i];
+        if (opened & bitmaskLookup[key]) {
+          continue;
+        }
+        const newTime = time - nodeTravelCosts[key] - 1;
+        if (newTime > 0) {
+          const newPressure = graph[key].flowRate * newTime + pressure;
+          const newOpened = opened | bitmaskLookup[key];
+          const result = topDown(key, newTime, newPressure, newOpened);
+          if (result > max) {
+            max = result;
           }
-          return currentMax;
-        }, pressure);
-
-      // memoize the pressure released by this state so we don't have to recalculate it.
-      memo[stateHash] = max;
-
+        }
+      }
       return max;
     };
 
@@ -203,17 +161,8 @@ export const levelTwo = (() => {
     initialOpened = 0,
     best = 0
   ) => {
-    // // object which will memoize the result of previous recursions so we don't have to recalculate.
-    // const memo = {};
-
     // recursively find the max value in a top down manner
     const topDown = (currentNodeKey, time, pressure, opened) => {
-      // // return value if already memoized.
-      // const stateHash = hashCode(currentNodeKey, pressure, time, opened);
-      // if (stateHash in memo) {
-      //   return memo[stateHash];
-      // }
-
       // assume we could magically open every unopened value
       // if the total resulting pressure released can't even beat
       // the current best, then this branch is a dead end.
@@ -222,7 +171,6 @@ export const levelTwo = (() => {
         .filter((key) => closed & bitmaskLookup[key])
         .reduce((total, key) => total + graph[key].flowRate * (time - 1), pressure);
       if (optimisticBest < best) {
-        // memo[stateHash] = pressure;
         return { value: pressure, opened };
       }
 
