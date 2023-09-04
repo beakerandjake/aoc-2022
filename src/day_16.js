@@ -104,10 +104,11 @@ const parseGraph = (() => {
  * Returns the maximum pressure that can be released in the given time starting from the start node.
  */
 const maxPressure = (
-  { graph, travelCosts, bitmaskLookup },
+  { graph, keys, travelCosts, bitmaskLookup },
   startNodeKey,
   totalTime,
-  initialOpened = 0
+  initialOpened = 0,
+  best = 0
 ) => {
   // object which will memoize the result of previous recursions so we don't have to recalculate.
   const memo = {};
@@ -124,6 +125,18 @@ const maxPressure = (
     const stateHash = hashCode(currentNodeKey, pressure, time, opened);
     if (stateHash in memo) {
       return memo[stateHash];
+    }
+
+    // assume we could magically open every unopened value
+    // if the total resulting pressure released can't even beat
+    // the current best, then this branch is a dead end.
+    const closed = ~opened;
+    const optimisticBest = keys
+      .filter((key) => closed & bitmaskLookup[key])
+      .reduce((total, key) => total + graph[key].flowRate * (time - 1), pressure);
+    if (optimisticBest < best) {
+      memo[stateHash] = pressure;
+      return { value: pressure, opened };
     }
 
     // recursively find the max value by visiting unopened nodes.
@@ -190,7 +203,13 @@ export const levelTwo = (() => {
     const soloCombinations = combinations(graph.keys.length);
     for (let index = 0; index < soloCombinations.length; index++) {
       const openedByMe = soloCombinations[index];
-      const elephantResult = maxPressure(graph, defaultStartNode, 26, openedByMe);
+      const elephantResult = maxPressure(
+        graph,
+        defaultStartNode,
+        26,
+        openedByMe,
+        elephantTarget.value
+      );
       if (elephantResult.value >= elephantTarget.value) {
         betterElephantBranches.push({
           value: elephantResult.value,
