@@ -4,8 +4,7 @@
  */
 import { toNumber } from './util/string.js';
 import { bitmask } from './util/bitwise.js';
-import { range, toSet } from './util/array.js';
-import { pick } from './util/object.js';
+import { range } from './util/array.js';
 
 const defaultStartNode = 'AA';
 
@@ -72,10 +71,10 @@ const parseGraph = (lines, startNodeKey) => {
   const compressTravelCosts = (travelCosts, nodesToKeep) =>
     nodesToKeep
       // edge case, skip self which wont exist in travel costs.
-      .filter((neighbor) => neighbor in travelCosts)
-      .map((neighbor) => ({
-        key: neighbor,
-        distance: travelCosts[neighbor],
+      .filter((edge) => edge in travelCosts)
+      .map((edge) => ({
+        key: edge,
+        cost: travelCosts[edge],
       }));
 
   /**
@@ -85,7 +84,7 @@ const parseGraph = (lines, startNodeKey) => {
     nodesToKeep.reduce((acc, node) => {
       acc[node] = {
         ...graph[node],
-        neighbors: compressTravelCosts(travelCosts[node], nodesToKeep),
+        edges: compressTravelCosts(travelCosts[node], nodesToKeep),
       };
       return acc;
     }, {});
@@ -109,16 +108,13 @@ const parseGraph = (lines, startNodeKey) => {
   // handle edge case where start node is not a productive node.
   if (!(startNodeKey in augmented)) {
     // creates a 'directed' which allows you to leave start node but not 'return'.
-    // this is because all nodes don't have start node as a neighbor.
+    // this is because all nodes don't have start node as an edge.
     augmented[startNodeKey] = {
-      neighbors: compressTravelCosts(travelCosts[startNodeKey], productiveNodes),
+      edges: compressTravelCosts(travelCosts[startNodeKey], productiveNodes),
     };
   }
 
-  return {
-    nodes: augmented,
-    keys: productiveNodes,
-  };
+  return augmented;
 };
 
 /**
@@ -126,52 +122,45 @@ const parseGraph = (lines, startNodeKey) => {
  */
 const maxPressure = (
   graph,
-  startNode,
+  startNodeKey,
   totalTime,
   initialOpened = 0,
-  shortCircuitFn = () => false
+  shortCircuitFn = null
 ) => {
-  const { graph: nodes, travelCosts, bitmaskLookup } = graph;
-
-  const topDown = (currentNodeKey, time, pressure, opened) => {
+  const topDown = (node, time, pressure, opened) => {
     // quit this branch early if possible.
-    if (shortCircuitFn(graph, currentNodeKey, time, pressure, opened)) {
+    if (shortCircuitFn && shortCircuitFn(graph, node, time, pressure, opened)) {
       return { value: pressure, opened };
     }
     let max = { value: pressure, opened };
-    const nodeTravelCosts = travelCosts[currentNodeKey];
     // recursively search each opened node and find the one which gives the max value.
-    for (let i = nodeTravelCosts.keys.length; i--; ) {
-      const key = nodeTravelCosts.keys[i];
-      // skip node if already opened.
-      if (opened & bitmaskLookup[key]) {
-        continue;
-      }
-      // skip node if not enough time left to reach and open it.
-      const newTime = time - nodeTravelCosts[key] - 1;
-      if (newTime > 0) {
-        const newPressure = nodes[key].flowRate * newTime + pressure;
-        const newOpened = opened | bitmaskLookup[key];
-        const result = topDown(key, newTime, newPressure, newOpened);
-        if (result.value > max.value) {
-          max = result;
+    for (let i = node.edges.length; i--; ) {
+      const edge = node.edges[i];
+      const targetNode = graph[edge.key];
+      // only consider node if not already opened.
+      if (!(opened & targetNode.bitmask)) {
+        const newTime = time - edge.cost - 1;
+        // only consider node if enough time left to reach and open it.
+        if (newTime > 0) {
+          const newPressure = targetNode.flowRate * newTime + pressure;
+          const newOpened = opened | targetNode.bitmask;
+          const result = topDown(targetNode, newTime, newPressure, newOpened);
+          if (result.value > max.value) {
+            max = result;
+          }
         }
       }
     }
     return max;
   };
-  return topDown(startNode, totalTime, 0, initialOpened);
+  return topDown(graph[startNodeKey], totalTime, 0, initialOpened);
 };
 
 /**
  * Returns the solution for level one of this puzzle.
  */
-export const levelOne = ({ lines }) => {
-  const z = parseGraph(lines, defaultStartNode);
-  console.log(z);
-  return 1234;
-};
-// maxPressure(parseGraph(lines, defaultStartNode), defaultStartNode, 30).value;
+export const levelOne = ({ lines }) =>
+  maxPressure(parseGraph(lines, defaultStartNode), defaultStartNode, 30).value;
 
 /**
  * Returns the solution for level two of this puzzle.
@@ -183,15 +172,13 @@ export const levelTwo = (() => {
    * If the total pressure released can't even beat the current best
    * then the branch is a dead end, short circuit it.
    */
-  const quitIfCantBeatBest =
-    (best) =>
-    ({ keys, bitmaskLookup, graph }, _, time, pressure, opened) => {
-      const closed = ~opened;
-      const optimisticBest = keys
-        .filter((key) => closed & bitmaskLookup[key])
-        .reduce((total, key) => total + graph[key].flowRate * (time - 1), pressure);
-      return optimisticBest < best;
-    };
+  const quitIfCantBeatBest = (best) => (graph, node, time, pressure, opened) => {
+    const closed = ~opened;
+    const optimisticBest = node.edges
+      .filter(({ key }) => closed & graph[key].bitmask)
+      .reduce((total, { key }) => total + graph[key].flowRate * (time - 1), pressure);
+    return optimisticBest < best;
+  };
 
   /**
    * Returns an array of bit fields.
@@ -212,10 +199,10 @@ export const levelTwo = (() => {
     const solo = maxPressure(graph, defaultStartNode, 26);
     const elephant = maxPressure(graph, defaultStartNode, 26, solo.opened);
     const shortCircuit = quitIfCantBeatBest(elephant.value);
-
-    const inversionMask = bitmask(graph.keys.length);
+    const nodeCount = Object.keys(graph).filter((key) => 'bitmask' in graph[key]).length;
+    const inversionMask = bitmask(nodeCount);
     const betterElephantBranches = [];
-    const soloCombinations = combinations(graph.keys.length);
+    const soloCombinations = combinations(nodeCount);
     for (let index = 0; index < soloCombinations.length; index++) {
       const openedByMe = soloCombinations[index];
       const elephantResult = maxPressure(
