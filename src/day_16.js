@@ -107,6 +107,35 @@ const hashCode = (currentNodeKey, pressure, time, opened) =>
   `${currentNodeKey}${pressure * time * opened}`;
 
 /**
+ * Returns the maximum pressure that can be released in the given time starting from the start node.
+ */
+const maxPressure = ({ graph, travelCosts, bitmaskLookup }, startNodeKey, totalTime) => {
+  // recursively find the max value in a top down manner
+  const topDown = (currentNodeKey, time, pressure, opened) => {
+    let max = pressure;
+    const nodeTravelCosts = travelCosts[currentNodeKey];
+    for (let i = nodeTravelCosts.keys.length; i--; ) {
+      const key = nodeTravelCosts.keys[i];
+      if (opened & bitmaskLookup[key]) {
+        continue;
+      }
+      const newTime = time - nodeTravelCosts[key] - 1;
+      if (newTime > 0) {
+        const newPressure = graph[key].flowRate * newTime + pressure;
+        const newOpened = opened | bitmaskLookup[key];
+        const result = topDown(key, newTime, newPressure, newOpened);
+        if (result > max) {
+          max = result;
+        }
+      }
+    }
+    return max;
+  };
+
+  return topDown(startNodeKey, totalTime, 0, 0);
+};
+
+/**
  * Returns the solution for level one of this puzzle.
  * @param {Object} args - Provides both raw and split input.
  * @param {String} args.input - The original, unparsed input string.
@@ -117,7 +146,7 @@ export const levelOne = (() => {
   /**
    * Returns the maximum pressure that can be released in the given time starting from the start node.
    */
-  const maxPressure = (
+  const maxPressure1 = (
     { graph, travelCosts, bitmaskLookup },
     startNodeKey,
     totalTime
