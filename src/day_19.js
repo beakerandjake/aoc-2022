@@ -2,7 +2,7 @@
  * Contains solutions for Day 19
  * Puzzle Description: https://adventofcode.com/2022/day/19
  */
-import { arraysEqual, sum, updateAt } from './util/array.js';
+import { arraysEqual, sum, updateAt, arrayToString } from './util/array.js';
 import { writeToFile } from './util/io.js';
 import { toNumber } from './util/string.js';
 
@@ -11,6 +11,9 @@ import { toNumber } from './util/string.js';
  */
 const digitRegex = /(\d+)/g;
 
+const blueprintToString = ({ id, costs }) =>
+  `id: ${id}, costs: [${costs.map((cost) => arrayToString(cost)).join(', ')}]`;
+
 /**
  * Parse a blueprint from the input.
  */
@@ -18,7 +21,7 @@ const parseLine = (line) => {
   const matches = line.match(digitRegex).map(toNumber);
   return {
     id: matches[0],
-    robots: [
+    costs: [
       [matches[1], 0, 0, 0], // Ore
       [matches[2], 0, 0, 0], // Clay
       [matches[3], matches[4], 0, 0], // Obsidian
@@ -30,7 +33,7 @@ const parseLine = (line) => {
 /**
  * Parse a blueprint from each line of the input.
  */
-const parseLines = (lines) => lines.map(parseLine);
+const parseBlueprints = (lines) => lines.map(parseLine);
 
 /**
  * Returns the element in the ore position.
@@ -82,6 +85,16 @@ const canAffordRobot = (resources, buildCost) =>
 const buildNewRobot = (robots, typeIndex) =>
   updateAt(robots, typeIndex, robots[typeIndex] + 1);
 
+const solve = (time, robots, resources) => {
+  if (time <= 0) {
+    return resources;
+  }
+
+  const resourcesThisTurn = add(resources, gather(robots));
+
+  return solve(time - 1, robots, resourcesThisTurn);
+};
+
 /**
  * Returns the solution for level one of this puzzle.
  * @param {Object} args - Provides both raw and split input.
@@ -90,7 +103,11 @@ const buildNewRobot = (robots, typeIndex) =>
  * @returns {Number|String}
  */
 export const levelOne = ({ lines }) => {
-  const blueprints = parseLines(lines);
+  const blueprints = parseBlueprints(lines);
+  const robots = [1, 0, 0, 0];
+  const resources = [0, 0, 0, 0];
+  const result = solve(24, robots, resources);
+  console.log(result);
   return 1234;
 };
 
