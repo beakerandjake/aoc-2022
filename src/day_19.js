@@ -71,7 +71,7 @@ const subtract = (lhs, rhs) => lhs.map((x, index) => x - rhs[index]);
 const gather = (robots) => [...robots];
 
 const buildRobot = (robots, index) =>
-  robots.map((count, i) => (i === index ? count + 1 : index));
+  robots.map((count, i) => (i === index ? count + 1 : count));
 
 /**
  * Are there enough resources to build the robot?
@@ -107,28 +107,29 @@ const solve = (totalTime, startingRobots, startingResources, costs) => {
   const recurse = (time, robots, resources) => {
     // const hash = `${time}.${robots.join('.')}.${resources.join('.')}`;
     // const hash = `${time}.${robots.join('.')}`;
-    // if (memo[hash]) {
+    // if (hash in memo) {
     //   return memo[hash];
     // }
+
     if (time <= 0) {
-      return { value: resources, robots };
+      // memo[hash] = resources;
+      return resources;
     }
-    const gatheredThisTurn = gather(robots);
-    const results = [recurse(time - 1, robots, add(resources, gatheredThisTurn))];
+    const results = [recurse(time - 1, robots, add(robots, resources))];
     if (time > 1) {
       for (let i = 0; i < costs.length; i++) {
-        const cost = costs[i];
-        if (canAffordRobot(resources, cost)) {
+        const robotCost = costs[i];
+        if (canAffordRobot(resources, robotCost)) {
           const newRobots = buildRobot(robots, i);
-          const newResources = add(gatheredThisTurn, subtract(resources, cost));
-          // results.push(recurse(time - 1, newRobots, newResources));
+          const newResources = add(robots, subtract(resources, robotCost));
+          results.push(recurse(time - 1, newRobots, newResources));
         }
       }
     }
 
-    const best = results.sort((a, b) => compareResources(a.value, b.value))[0];
-    // memo[hash] = best;
-    return best;
+    const result = results.sort(compareResources)[0];
+    // memo[hash] = result;
+    return result;
   };
 
   return recurse(totalTime, startingRobots, startingResources);
@@ -138,17 +139,21 @@ const scale = (array, value) => array.map((x) => x * value);
 
 /**
  * Returns the solution for level one of this puzzle.
- * @param {Object} args - Provides both raw and split input.
- * @param {String} args.input - The original, unparsed input string.
- * @param {String[]} args.lines - Array containing each line of the input string.
- * @returns {Number|String}
  */
 export const levelOne = ({ lines }) => {
   const blueprints = parseBlueprints(lines);
+
+  // const startingResources = [2, 0, 0, 0];
+  // const startingRobots = [1, 0, 0, 0];
+  // const cost = [2, 0, 0, 0];
+
+  // const one = add(startingRobots, subtract(startingResources, cost));
+  // console.log(one);
+
   const robots = [1, 0, 0, 0];
   const resources = [0, 0, 0, 0];
   const result = solve(24, robots, resources, blueprints[0].costs);
-  console.log(result);
+  console.log(JSON.stringify(result));
   return 1234;
 };
 
