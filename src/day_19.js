@@ -132,6 +132,14 @@ const solve = (totalTime, startRobots, startResources, { costs }) => {
       continue;
     }
 
+    if (
+      firstGeodeTime &&
+      current.time > firstGeodeTime &&
+      geodes(current.resources) === 1
+    ) {
+      firstGeodeTime = current.time;
+    }
+
     if (!firstGeodeTime && geodes(current.resources) === 1) {
       firstGeodeTime = current.time;
     }
