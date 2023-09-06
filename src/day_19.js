@@ -109,7 +109,6 @@ const pruneBasedOnFirstGeodeTime = () => {
   return ({ time, resources }) => {
     const geodeCount = geodes(resources);
 
-    // if we have never seen a geode then don't prune any branches.
     if (earliest === null) {
       // this is the first geode we've seen, the current time is earliest.
       if (geodeCount === 1) {
@@ -132,10 +131,37 @@ const pruneBasedOnFirstGeodeTime = () => {
   };
 };
 
+const pruneBasedOnBestGeodeCount = () => {
+  let mostGeodesSeen = 0;
+  return ({ time, resources, robots }) => {
+    const geodeCount = geodes(resources);
+    // don't start pruning until a geode is encountered.
+    if (!mostGeodesSeen && !geodeCount) {
+      return false;
+    }
+    // this is the highest geode count seen, cache it.
+    if (geodeCount > mostGeodesSeen) {
+      mostGeodesSeen = geodeCount;
+      return false;
+    }
+    // optimistically assume branch could build a geode robot every minute
+    // this is the max possible geodes for this branch.
+    let bestPossible = geodeCount;
+    let geodeRobots = geodes(robots);
+    for (let t = time; t--; ) {
+      bestPossible += geodeRobots;
+      geodeRobots++;
+    }
+
+    // prune branch if it cant possible reach geode count in remaining time.
+    // optimistically assumes the branch could produce a geode each remaining minute.
+    return bestPossible < mostGeodesSeen;
+  };
+};
+
 const solve = (totalTime, startRobots, startResources, { costs }, pruners) => {
   const queue = [{ time: totalTime, resources: startResources, robots: startRobots }];
   let best;
-  let pruned = 0;
   while (queue.length) {
     // use a priority queue
     // for now pop instead of shift because shift is o(n) instead of o(1) for pop.
@@ -152,7 +178,6 @@ const solve = (totalTime, startRobots, startResources, { costs }, pruners) => {
 
     // kill this branch if a pruner fn decides it's not worth continuing.
     if (pruners.some((fn) => fn(current))) {
-      pruned++;
       continue;
     }
 
@@ -160,12 +185,8 @@ const solve = (totalTime, startRobots, startResources, { costs }, pruners) => {
     // don't build robots on the last turn since it won't result in any new resources.
     if (current.time > 1) {
       queue.push(...buildRobots(current, costs));
-    } else {
-      pruned++;
     }
   }
-
-  console.log('pruned', pruned);
 
   return best;
 };
@@ -176,7 +197,7 @@ const solve = (totalTime, startRobots, startResources, { costs }, pruners) => {
 export const levelOne = ({ lines }) => {
   // console.log();
   const blueprints = parseBlueprints(lines);
-  const pruners = [pruneBasedOnFirstGeodeTime()];
+  const pruners = [pruneBasedOnFirstGeodeTime(), pruneBasedOnBestGeodeCount()];
   const result = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0], pruners);
   console.log('result', result);
 
