@@ -123,7 +123,11 @@ const solve = (totalTime, startRobots, startResources, { costs }) => {
       continue;
     }
 
-    if (firstGeodeTime && geodes(current.resources) < 1) {
+    if (
+      firstGeodeTime &&
+      current.time < firstGeodeTime &&
+      geodes(current.resources) < 1
+    ) {
       pruned++;
       continue;
     }
@@ -153,7 +157,7 @@ export const levelOne = ({ lines }) => {
   // console.log();
   const blueprints = parseBlueprints(lines);
   const result = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0]);
-  // console.log('result', result);
+  console.log('result', result);
 
   return 1234;
 };
