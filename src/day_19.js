@@ -9,8 +9,6 @@ import { toNumber } from './util/string.js';
 const blueprintToString = ({ id, costs }) =>
   `id: ${id}, costs: [${costs.map((cost) => arrayToString(cost)).join(', ')}]`;
 
-
-
 /**
  * Parse the puzzle input and return an array of blueprints.
  */
@@ -143,32 +141,39 @@ const canAffordRobot = (resources, robotCost) =>
 /**
  * If generating enough resources every turn to cover the robots build costs then is no need to build it.
  */
-const robotIsRedundant = (robots, robotCost) =>
-  robots.every((robot, index) => robot >= robotCost[index]);
+const robotIsRedundant = (robots, maxCosts, type) => robots[type] >= maxCosts[type];
 
-const getBuildChoices = ({ time, robots, resources }, { costs, max }) => {
+const minsUntilCanBuild = () => {};
+
+const getBuildChoices = ({ time, robots, resources }, { costs, maxCosts }) => {
   // need at least two minutes (one minute to build and one minute to collect)
   if (time <= 1) {
-    console.log('not enough time', time);
+    console.log('not enough time to build anything', time);
     return [];
   }
 
-  return costs
-    .map((cost, index) => ({ cost, index }))
-    .filter(({ cost, index }) => {
-      const canAfford = canAffordRobot(resources, cost);
-      console.log(`robot: ${index}, can afford: ${canAfford}`);
-      return canAfford;
-    })
-    .filter(({ cost, index }) => {
-      if (index === 3) {
-        console.log(`geode is never redundant`);
-        return true;
-      }
-      const redundant = robotIsRedundant(robots, cost);
-      console.log(`robot: ${index}, is redundant: ${redundant}`);
-      return redundant;
-    });
+  for (let type = 0; type < costs.length; type++) {
+    const robotCost = costs[type];
+    if (robotIsRedundant(robotCost, maxCosts, type)) {
+      console.log(`robot: ${type} is redundant`);
+      continue;
+    }
+    const timeAfterBuild = time - minsUntilCanBuild() - 1;
+    if (timeAfterBuild <= 0) {
+      console.log(`not enough time to build robot: ${type}`);
+      continue;
+    }
+  }
+
+  // return (
+  //   costs
+  //     // retain original type (index) in case filtered out.
+  //     .map((cost, type) => ({ cost, type }))
+  //     // remove any choices that are redundant
+  //     .filter(({ type }) => type === 3 || !robotIsRedundant(robots, maxCosts, type))
+  //     // calculate time which will pass before can afford to build.
+  //     .map(({ cost, type }) => ({ ...cost, timeToAfford: minsUntilCanBuild() }))
+  // );
 };
 
 const solve = (totalTime, startRobots, startResources, costs) => {
@@ -282,54 +287,8 @@ const solve = (totalTime, startRobots, startResources, costs) => {
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
-  // console.log();
+  console.log();
   const blueprints = parseBlueprints(lines);
-  console.log(blueprints);
-
-  // const robots = [1, 0, 0, 0];
-  // const resources = [0, 0, 0, 0];
-  // const cost = [19, 0, 0, 0];
-  // const time = 24;
-  // const mins = minsUntilCanAfford({ time, robots, resources }, cost);
-  // console.log(`mins until can afford: ${mins}`);
-  // if (mins !== -1) {
-  //   const newTime = time - mins - 1;
-  //   const newResources = subtract(add(resources, scale(robots, mins + 1)), cost);
-  //   const newRobots = addNewRobot(robots, 0);
-  //   console.log(`new time: ${time - newTime + 1}`);
-  //   console.log(`new resources: ${newResources}`);
-  //   console.log(`new robots: ${newRobots}`);
-  // }
-
-  // const robots = [1, 0, 0, 0];
-  // const resources = [1, 0, 0, 0];
-  // const result = solve(24, robots, resources, blueprints[0].costs);
-  // console.log('result', result);
-
-  // const result = getBuildChoices(
-  //   {
-  //     time: 2,
-  //     robots: [3, 0, 0, 0],
-  //     resources: [4, 14, 7, 0],
-  //   },
-  //   {
-  //     costs: blueprints[1].costs,
-  //     max: blueprints[1].costs.reduce((acc, _, index) => {
-  //       acc.push(Math.max(...blueprints[1].costs.map((cost) => cost[index])));
-  //       return acc;
-  //     }, []),
-  //   }
-  // );
-
-  // console.log('result', result);
-
-  // const estimateTest = [
-  //   { time: 4, robots: [1, 2, 1, 1], resources: [12, 20, 2, 1] },
-  //   { time: 6, robots: [1, 4, 2, 1], resources: [2, 17, 3, 0] },
-  // ];
-
-  // console.log('estimates', estimateTest.map(estimate));
-
   return 1234;
 };
 
