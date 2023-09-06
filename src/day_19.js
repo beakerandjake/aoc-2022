@@ -2,7 +2,7 @@
  * Contains solutions for Day 19
  * Puzzle Description: https://adventofcode.com/2022/day/19
  */
-import { arraysEqual, sum, updateAt, arrayToString } from './util/array.js';
+import { arraysEqual, sum, updateAt, arrayToString, indexOfMax } from './util/array.js';
 import { writeToFile } from './util/io.js';
 import { toNumber } from './util/string.js';
 
@@ -41,24 +41,9 @@ const parseBlueprints = (lines) => {
 };
 
 /**
- * Returns the number of ore.
- */
-const ore = (items) => items[0];
-
-/**
- * Returns the number of clay.
- */
-const clay = (items) => items[1];
-
-/**
- * Returns the number of obsidian.
- */
-const obsidian = (items) => items[2];
-
-/**
  * Returns the number of geodes.
  */
-const geode = (items) => items[3];
+const geodes = (items) => items[3];
 
 /**
  * Returns a new array by adding each element of lhs to each corresponding element of rhs.
@@ -75,212 +60,69 @@ const subtract = (lhs, rhs) => lhs.map((x, index) => x - rhs[index]);
  */
 const scale = (array, value) => array.map((x) => x * value);
 
-/**
- * Returns a new array with the specified robot incremented by one.
- */
-const buildNewRobot = (robots, index) =>
-  robots.map((count, i) => (i === index ? count + 1 : count));
+const increment = (array, type) => array.map((x, i) => (i === type ? x + 1 : x));
 
-/**
- * Compares the two resource arrays.
- * Returns > 0 if b is greater than a.
- * Returns < 0 if b is less than a.
- * Returns 0 if b is equal to a.
- */
-const compareResources = (a, b) => {
-  for (let i = 4; i--; ) {
-    if (b[i] === a[i]) {
-      continue;
-    }
-    return b[i] - a[i];
-  }
-  return 0;
-};
-
-const minsUntilCanAfford = ({ time, robots, resources }, costs) => {
-  // not worth building if no time for new robot to collect any resources.
-  if (time <= 1) {
-    return -1;
-  }
-  let toReturn = 0;
-  for (let i = costs.length; i--; ) {
-    // can never afford if don't have the robot to make this resource
-    if (costs[i] > 0 && robots[i] === 0) {
-      return -1;
-    }
-    if (costs[i] > resources[i]) {
-      const mins = Math.ceil((costs[i] - resources[i]) / robots[i]);
-      if (mins > toReturn) {
-        toReturn = mins;
-      }
-    }
-  }
-  return toReturn;
-};
+const canAfford = (resources, buildCost) =>
+  resources.every((resource, type) => resource >= buildCost[type]);
 
 const doNothing = ({ time, robots, resources }) => ({
   time: time - 1,
   robots,
-  resources: add(robots, resources),
+  resources: add(resources, robots),
 });
 
-const buildRobot = ({ time, robots, resources }, cost, robotIndex) => ({
+const buildRobot = ({ time, robots, resources }, buildCost, type) => ({
   time: time - 1,
-  resources: add(robots, subtract(resources, cost)),
-  robots: buildNewRobot(robots, robotIndex),
+  robots: increment(robots, type),
+  resources: add(robots, subtract(resources, buildCost)),
 });
 
-const estimate = ({ time, robots, resources }) => add(scale(robots, time), resources);
-
 /**
- * Returns true if there are enough resources to cover the cost of building the robot.
+ * Compares two resource or robot arrays
+ * Returns > 0 if b is greater than a.
+ * Returns < 0 if a is greater than b.
+ * Returns 0 if a is equal to b.
  */
-const canAffordRobot = (resources, robotCost) =>
-  resources.every((resource, index) => resource >= robotCost[index]);
-
-/**
- * If generating enough resources every turn to cover the robots build costs then is no need to build it.
- */
-const robotIsRedundant = (robots, maxCosts, type) => robots[type] >= maxCosts[type];
-
-const minsUntilCanBuild = () => {};
-
-const getBuildChoices = ({ time, robots, resources }, { costs, maxCosts }) => {
-  // need at least two minutes (one minute to build and one minute to collect)
-  if (time <= 1) {
-    console.log('not enough time to build anything', time);
-    return [];
-  }
-
-  for (let type = 0; type < costs.length; type++) {
-    const robotCost = costs[type];
-    if (robotIsRedundant(robotCost, maxCosts, type)) {
-      console.log(`robot: ${type} is redundant`);
+const compare = (lhs, rhs) => {
+  for (let type = lhs.length; type--; ) {
+    if (lhs[type] === rhs[type]) {
       continue;
     }
-    const timeAfterBuild = time - minsUntilCanBuild() - 1;
-    if (timeAfterBuild <= 0) {
-      console.log(`not enough time to build robot: ${type}`);
-      continue;
-    }
+    return rhs[type] - lhs[type];
   }
-
-  // return (
-  //   costs
-  //     // retain original type (index) in case filtered out.
-  //     .map((cost, type) => ({ cost, type }))
-  //     // remove any choices that are redundant
-  //     .filter(({ type }) => type === 3 || !robotIsRedundant(robots, maxCosts, type))
-  //     // calculate time which will pass before can afford to build.
-  //     .map(({ cost, type }) => ({ ...cost, timeToAfford: minsUntilCanBuild() }))
-  // );
+  return 0;
 };
 
-const solve = (totalTime, startRobots, startResources, costs) => {
-  const queue = [
-    {
-      time: totalTime,
-      robots: startRobots,
-      resources: startResources,
-    },
-  ];
-  let iter = 0;
-  let earliestGeode = Number.MIN_SAFE_INTEGER;
-  let earliestEstimate = [0, 0, 0, 0];
-  let killed = 0;
-  let skipped = 0;
-  const results = [
-    { time: 0, resources: scale(startRobots, totalTime), robots: startRobots },
-  ];
+const solve = (totalTime, startRobots, startResources, { costs }) => {
+  const queue = [{ time: totalTime, resources: startResources, robots: startRobots }];
+  let best;
   while (queue.length) {
-    // if (iter++ > 200_000_000) {
-    //   console.log('kill', queue.length, results.length, killed, earliestGeode, skipped);
-    //   console.log(
-    //     'maxim',
-    //     results
-    //       .map((x) => {
-    //         if (!x || !x.resources) {
-    //           console.log('wtf');
-    //           return 0;
-    //         }
-    //         return geode(x.resources);
-    //       })
-    //       .sort((a, b) => b - a)[0]
-    //   );
-    //   break;
-    // }
+    const current = queue.shift();
 
-    // todo, sort queue or use heap
-    const current = queue.pop();
-
-    // if hit first geode with less time than best, kill the branch.
-    if (geode(current.resources) === 1) {
-      if (current.time < earliestGeode) {
-        killed++;
-        continue;
-      }
-      // getting first geode with more time remaining is always better.
-      earliestGeode = current.time;
-      earliestEstimate = estimate(current);
-      // console.log('better', earliestGeode, 'estimate', earliestEstimate);
-    }
-
-    // kill if current geode count doesn't even beat the earliest geode count.
-    if (
-      geode(estimate(current)) > 1 &&
-      geode(estimate(current)) < geode(earliestEstimate)
-    ) {
-      killed++;
-      continue;
-    }
-
-    if (current.time <= 0) {
-      if (geode(current.resources) > 0) {
-        results.push(current);
+    // hit the end of this branch
+    if (current.time === 0) {
+      // check if hit a new best result.
+      if (!best || compare(best.resources, current.resources) > 0) {
+        best = current;
       }
       continue;
     }
 
-    // if (current.time === 1) {
-    //   if (geode(current.resources) > 0) {
-    //     results.push(current);
-    //   }
-    //   continue;
-    // }
-
-    // always add do nothing.
+    // always an option to do nothing.
     queue.push(doNothing(current));
-
-    // build each affordable robot.
-    for (let i = 0; i < costs.length; i++) {
-      const robotCost = costs[i];
-
-      if (skipRobotBuild(current.robots, robotCost, i)) {
-        skipped++;
-        continue;
-      }
-
-      const minsUntilBuild = minsUntilCanAfford(current, robotCost);
-      if (minsUntilBuild >= 0) {
-        const newTime = current.time - minsUntilBuild - 1;
-        if (newTime > 0) {
-          const newResources = subtract(
-            add(current.resources, scale(current.robots, minsUntilBuild + 1)),
-            robotCost
-          );
-          const newRobots = buildNewRobot(current.robots, i);
-          queue.push({
-            time: newTime,
-            robots: newRobots,
-            resources: newResources,
-          });
+    // no sense building new robot if not enough time to collect resources from it.
+    if (current.time > 1) {
+      for (let type = 0; type < costs.length; type++) {
+        const buildCost = costs[type];
+        // can't build robot if can't afford it.
+        if (canAfford(current.resources, buildCost)) {
+          queue.push(buildRobot(current, buildCost, type));
         }
       }
     }
   }
 
-  console.log('hit the end', skipped, killed, results.length);
-  return results.sort((a, b) => compareResources(a.resources, b.resources))[0];
+  return best;
 };
 
 /**
@@ -289,6 +131,8 @@ const solve = (totalTime, startRobots, startResources, costs) => {
 export const levelOne = ({ lines }) => {
   console.log();
   const blueprints = parseBlueprints(lines);
+  const result = solve(15, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0]);
+  console.log('result', result);
   return 1234;
 };
 
