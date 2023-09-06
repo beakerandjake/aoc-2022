@@ -164,14 +164,12 @@ const priority = ({ time, resources, robots }) => {
 };
 
 const solve = (totalTime, startRobots, startResources, { costs }, pruners) => {
-  // const queue = [{ time: totalTime, resources: startResources, robots: startRobots }];
-  const heap = maxHeap();
-  heap.push({ time: totalTime, resources: startResources, robots: startRobots }, 1);
+  const queue = [{ time: totalTime, resources: startResources, robots: startRobots }];
   let best;
-  while (!heap.isEmpty()) {
+  while (queue.length) {
     // use a priority queue
     // for now pop instead of shift because shift is o(n) instead of o(1) for pop.
-    const { element: current } = heap.pop();
+    const current = queue.pop();
 
     // hit the end of this branch
     if (current.time === 0) {
@@ -187,15 +185,11 @@ const solve = (totalTime, startRobots, startResources, { costs }, pruners) => {
       continue;
     }
 
-    const choices = [doNothing(current)];
+    queue.push(doNothing(current));
     // don't build robots on the last turn since it won't result in any new resources.
     if (current.time > 1) {
-      choices.push(...buildRobots(current, costs));
+      queue.push(...buildRobots(current, costs));
     }
-
-    choices.forEach((choice) => {
-      heap.push(choice, priority(choice));
-    });
   }
 
   return best;
@@ -207,7 +201,7 @@ const solve = (totalTime, startRobots, startResources, { costs }, pruners) => {
 export const levelOne = ({ lines }) => {
   // console.log();
   const blueprints = parseBlueprints(lines);
-  const pruners = [pruneBasedOnFirstGeodeTime(), pruneBasedOnGeodeHistory()];
+  const pruners = [pruneBasedOnFirstGeodeTime()];
   const result = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0], pruners);
   console.log('result', result);
 
