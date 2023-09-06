@@ -104,10 +104,37 @@ const buildRobots = (currentState, costs) => {
   return toReturn;
 };
 
-const solve = (totalTime, startRobots, startResources, { costs }) => {
+const pruneBasedOnFirstGeodeTime = () => {
+  let earliest = null;
+  return ({ time, resources }) => {
+    const geodeCount = geodes(resources);
+
+    // if we have never seen a geode then don't prune any branches.
+    if (earliest === null) {
+      // this is the first geode we've seen, the current time is earliest.
+      if (geodeCount === 1) {
+        earliest = time;
+      }
+      return false;
+    }
+
+    // if past earliest time without geode then prune this branch.
+    if (time < earliest && geodeCount === 0) {
+      return true;
+    }
+
+    // if before earliest time and have a geode, then update earliest time.
+    if (time > earliest && geodeCount === 1) {
+      earliest = time;
+    }
+
+    return false;
+  };
+};
+
+const solve = (totalTime, startRobots, startResources, { costs }, pruners) => {
   const queue = [{ time: totalTime, resources: startResources, robots: startRobots }];
   let best;
-  let firstGeodeTime;
   let pruned = 0;
   while (queue.length) {
     // use a priority queue
@@ -123,25 +150,10 @@ const solve = (totalTime, startRobots, startResources, { costs }) => {
       continue;
     }
 
-    if (
-      firstGeodeTime &&
-      current.time < firstGeodeTime &&
-      geodes(current.resources) < 1
-    ) {
+    // kill this branch if a pruner fn decides it's not worth continuing.
+    if (pruners.some((fn) => fn(current))) {
       pruned++;
       continue;
-    }
-
-    if (
-      firstGeodeTime &&
-      current.time > firstGeodeTime &&
-      geodes(current.resources) === 1
-    ) {
-      firstGeodeTime = current.time;
-    }
-
-    if (!firstGeodeTime && geodes(current.resources) === 1) {
-      firstGeodeTime = current.time;
     }
 
     queue.push(doNothing(current));
@@ -164,7 +176,8 @@ const solve = (totalTime, startRobots, startResources, { costs }) => {
 export const levelOne = ({ lines }) => {
   // console.log();
   const blueprints = parseBlueprints(lines);
-  const result = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0]);
+  const pruners = [pruneBasedOnFirstGeodeTime()];
+  const result = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0], pruners);
   console.log('result', result);
 
   return 1234;
