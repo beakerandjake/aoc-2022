@@ -3,6 +3,7 @@
  * Puzzle Description: https://adventofcode.com/2022/day/19
  */
 import { arrayToString } from './util/array.js';
+import { maxHeap } from './util/heap.js';
 import { toNumber } from './util/string.js';
 
 const blueprintToString = ({ id, costs }) =>
@@ -131,32 +132,35 @@ const pruneBasedOnFirstGeodeTime = () => {
   };
 };
 
-const pruneBasedOnBestGeodeCount = () => {
-  let mostGeodesSeen = 0;
-  return ({ time, resources, robots }) => {
-    const geodeCount = geodes(resources);
-    // don't start pruning until a geode is encountered.
-    if (!mostGeodesSeen && !geodeCount) {
+const pruneBasedOnGeodeHistory = () => {
+  const history = {};
+  return ({ time, robots }) => {
+    const count = geodes(robots);
+    if (count === 0) {
       return false;
-    }
-    // this is the highest geode count seen, cache it.
-    if (geodeCount > mostGeodesSeen) {
-      mostGeodesSeen = geodeCount;
-      return false;
-    }
-    // optimistically assume branch could build a geode robot every minute
-    // this is the max possible geodes for this branch.
-    let bestPossible = geodeCount;
-    let geodeRobots = geodes(robots);
-    for (let t = time; t--; ) {
-      bestPossible += geodeRobots;
-      geodeRobots++;
     }
 
-    // prune branch if it cant possible reach geode count in remaining time.
-    // optimistically assumes the branch could produce a geode each remaining minute.
-    return bestPossible < mostGeodesSeen;
+    if (!history[time]) {
+      history[time] = count;
+      return false;
+    }
+
+    if (count === history[time]) {
+      return false;
+    }
+
+    if (count > history[time]) {
+      history[time] = count;
+      return false;
+    }
+
+    return true;
   };
+};
+
+const priority = ({ time, resources, robots }) => {
+  const potential = add(resources, scale(robots, time));
+  return potential.reduce((total, amount, index) => 1000 ** index * amount + total, 0);
 };
 
 const solve = (totalTime, startRobots, startResources, { costs }, pruners) => {
@@ -197,9 +201,21 @@ const solve = (totalTime, startRobots, startResources, { costs }, pruners) => {
 export const levelOne = ({ lines }) => {
   // console.log();
   const blueprints = parseBlueprints(lines);
-  const pruners = [pruneBasedOnFirstGeodeTime(), pruneBasedOnBestGeodeCount()];
-  const result = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0], pruners);
-  console.log('result', result);
+  // const pruners = [pruneBasedOnFirstGeodeTime(), pruneBasedOnGeodeHistory()];
+  // const result = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[1], pruners);
+  // console.log('result', result);
+
+  const heap = maxHeap();
+
+  const elements = [
+    { time: 14, robots: [1, 3, 1, 0], resources: [2, 4, 0, 5] },
+    { time: 2, robots: [1, 4, 2, 2], resources: [4, 33, 4, 5] },
+    { time: 6, robots: [1, 4, 2, 1], resources: [2, 17, 3, 0] },
+  ];
+
+  elements.forEach((element) => heap.push(element, priority(element)));
+
+  console.log(heap.peek());
 
   return 1234;
 };
