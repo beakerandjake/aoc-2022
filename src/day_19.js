@@ -2,8 +2,7 @@
  * Contains solutions for Day 19
  * Puzzle Description: https://adventofcode.com/2022/day/19
  */
-import { arraysEqual, sum, updateAt, arrayToString, indexOfMax } from './util/array.js';
-import { writeToFile } from './util/io.js';
+import { arrayToString } from './util/array.js';
 import { toNumber } from './util/string.js';
 
 const blueprintToString = ({ id, costs }) =>
@@ -84,6 +83,7 @@ const buildRobot = ({ time, robots, resources }, buildCost, type) => ({
  * Returns 0 if a is equal to b.
  */
 const compare = (lhs, rhs) => {
+  // compare from most valuable resource (geode) to least (ore)
   for (let type = lhs.length; type--; ) {
     if (lhs[type] === rhs[type]) {
       continue;
@@ -110,14 +110,11 @@ const solve = (totalTime, startRobots, startResources, { costs }) => {
 
     // always an option to do nothing.
     queue.push(doNothing(current));
-    // no sense building new robot if not enough time to collect resources from it.
-    if (current.time > 1) {
-      for (let type = 0; type < costs.length; type++) {
-        const buildCost = costs[type];
-        // can't build robot if can't afford it.
-        if (canAfford(current.resources, buildCost)) {
-          queue.push(buildRobot(current, buildCost, type));
-        }
+    for (let type = 0; type < costs.length; type++) {
+      const buildCost = costs[type];
+      // can't build robot if can't afford it.
+      if (canAfford(current.resources, buildCost)) {
+        queue.push(buildRobot(current, buildCost, type));
       }
     }
   }
@@ -131,7 +128,7 @@ const solve = (totalTime, startRobots, startResources, { costs }) => {
 export const levelOne = ({ lines }) => {
   console.log();
   const blueprints = parseBlueprints(lines);
-  const result = solve(15, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0]);
+  const result = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0]);
   console.log('result', result);
   return 1234;
 };
