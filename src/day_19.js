@@ -108,7 +108,7 @@ const solve = (totalTime, startRobots, startResources, { costs }) => {
   const queue = [{ time: totalTime, resources: startResources, robots: startRobots }];
   let best;
   while (queue.length) {
-    // use a priority queue 
+    // use a priority queue
     // for now pop instead of shift because shift is o(n) instead of o(1) for pop.
     const current = queue.pop();
 
@@ -120,9 +120,12 @@ const solve = (totalTime, startRobots, startResources, { costs }) => {
       }
       continue;
     }
-
+  
     queue.push(doNothing(current));
-    queue.push(...buildRobots(current, costs));
+    // don't build robots on the last turn since it won't result in any new resources.
+    if (current.time > 1) {
+      queue.push(...buildRobots(current, costs));
+    }
   }
 
   return best;
