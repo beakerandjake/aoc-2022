@@ -164,12 +164,14 @@ const priority = ({ time, resources, robots }) => {
 };
 
 const solve = (totalTime, startRobots, startResources, { costs }, pruners) => {
-  const queue = [{ time: totalTime, resources: startResources, robots: startRobots }];
+  // const queue = [{ time: totalTime, resources: startResources, robots: startRobots }];
+  const heap = maxHeap();
+  heap.push({ time: totalTime, resources: startResources, robots: startRobots }, 1);
   let best;
-  while (queue.length) {
+  while (!heap.isEmpty()) {
     // use a priority queue
     // for now pop instead of shift because shift is o(n) instead of o(1) for pop.
-    const current = queue.pop();
+    const { element: current } = heap.pop();
 
     // hit the end of this branch
     if (current.time === 0) {
@@ -185,11 +187,15 @@ const solve = (totalTime, startRobots, startResources, { costs }, pruners) => {
       continue;
     }
 
-    queue.push(doNothing(current));
+    const choices = [doNothing(current)];
     // don't build robots on the last turn since it won't result in any new resources.
     if (current.time > 1) {
-      queue.push(...buildRobots(current, costs));
+      choices.push(...buildRobots(current, costs));
     }
+
+    choices.forEach((choice) => {
+      heap.push(choice, priority(choice));
+    });
   }
 
   return best;
@@ -201,21 +207,9 @@ const solve = (totalTime, startRobots, startResources, { costs }, pruners) => {
 export const levelOne = ({ lines }) => {
   // console.log();
   const blueprints = parseBlueprints(lines);
-  // const pruners = [pruneBasedOnFirstGeodeTime(), pruneBasedOnGeodeHistory()];
-  // const result = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[1], pruners);
-  // console.log('result', result);
-
-  const heap = maxHeap();
-
-  const elements = [
-    { time: 14, robots: [1, 3, 1, 0], resources: [2, 4, 0, 5] },
-    { time: 2, robots: [1, 4, 2, 2], resources: [4, 33, 4, 5] },
-    { time: 6, robots: [1, 4, 2, 1], resources: [2, 17, 3, 0] },
-  ];
-
-  elements.forEach((element) => heap.push(element, priority(element)));
-
-  console.log(heap.peek());
+  const pruners = [pruneBasedOnFirstGeodeTime(), pruneBasedOnGeodeHistory()];
+  const result = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0], pruners);
+  console.log('result', result);
 
   return 1234;
 };
