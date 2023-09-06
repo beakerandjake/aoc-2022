@@ -9,74 +9,79 @@ import { toNumber } from './util/string.js';
 const blueprintToString = ({ id, costs }) =>
   `id: ${id}, costs: [${costs.map((cost) => arrayToString(cost)).join(', ')}]`;
 
+
+
 /**
- * Parse a blueprint from each line of the input.
+ * Parse the puzzle input and return an array of blueprints.
  */
 const parseBlueprints = (lines) => {
-  /**
-   * Parse a blueprint from the input.
-   */
+  // parse data from a single line of input.
   const parseLine = (line) => {
     const matches = line.match(/(\d+)/g).map(toNumber);
     return {
       id: matches[0],
       costs: [
-        [matches[1], 0, 0, 0], // Ore
-        [matches[2], 0, 0, 0], // Clay
-        [matches[3], matches[4], 0, 0], // Obsidian
-        [matches[5], 0, matches[6], 0], // Geode
+        [matches[1], 0, 0, 0], // ore
+        [matches[2], 0, 0, 0], // clay
+        [matches[3], matches[4], 0, 0], // obsidian
+        [matches[5], 0, matches[6], 0], // geode
       ],
     };
   };
 
-  return lines.map(parseLine);
+  // find the max cost of each resource type in the blueprint.
+  const maxCosts = (costs) =>
+    costs.map((_, index) => Math.max(...costs.map((cost) => cost[index])));
+
+  // add additional information to the blueprint that will aid in solving the puzzle
+  const augmentBlueprint = (blueprint) => ({
+    ...blueprint,
+    maxCosts: maxCosts(blueprint.costs),
+  });
+
+  return lines.map(parseLine).map(augmentBlueprint);
 };
 
 /**
- * Returns the element in the ore position.
+ * Returns the number of ore.
  */
 const ore = (items) => items[0];
 
 /**
- * Returns the element in the clay position.
+ * Returns the number of clay.
  */
 const clay = (items) => items[1];
 
 /**
- * Returns the element in the obsidian position.
+ * Returns the number of obsidian.
  */
 const obsidian = (items) => items[2];
 
 /**
- * Returns the element in the geode position.
+ * Returns the number of geodes.
  */
 const geode = (items) => items[3];
 
 /**
- * Returns a new resource array containing the lhs resource array plus the rhs resource array.
+ * Returns a new array by adding each element of lhs to each corresponding element of rhs.
  */
 const add = (lhs, rhs) => lhs.map((x, index) => x + rhs[index]);
 
 /**
- * Returns a new resource array containing the lhs resource array minus the rhs resource array.
+ * Returns a new array by subtracting each element of rhs from each corresponding element of lhs.
  */
 const subtract = (lhs, rhs) => lhs.map((x, index) => x - rhs[index]);
 
+/**
+ * Returns a new array by multiplying each element of the array by the scalar value.
+ */
 const scale = (array, value) => array.map((x) => x * value);
 
 /**
- * Returns an array containing the resources gathered by the robots in a minute.
+ * Returns a new array with the specified robot incremented by one.
  */
-const gather = (robots) => [...robots];
-
-const addNewRobot = (robots, index) =>
+const buildNewRobot = (robots, index) =>
   robots.map((count, i) => (i === index ? count + 1 : count));
-
-/**
- * Are there enough resources to build the robot?
- */
-const canAffordRobot = (resources, buildCost) =>
-  buildCost.every((cost, index) => cost <= resources[index]);
 
 /**
  * Compares the two resource arrays.
@@ -124,13 +129,47 @@ const doNothing = ({ time, robots, resources }) => ({
 const buildRobot = ({ time, robots, resources }, cost, robotIndex) => ({
   time: time - 1,
   resources: add(robots, subtract(resources, cost)),
-  robots: addNewRobot(robots, robotIndex),
+  robots: buildNewRobot(robots, robotIndex),
 });
 
 const estimate = ({ time, robots, resources }) => add(scale(robots, time), resources);
 
-const skipRobotBuild = (robots, robotCost, robotIndex) =>
-  robotIndex !== 3 && robotCost.every((cost, index) => robots[index] >= cost);
+/**
+ * Returns true if there are enough resources to cover the cost of building the robot.
+ */
+const canAffordRobot = (resources, robotCost) =>
+  resources.every((resource, index) => resource >= robotCost[index]);
+
+/**
+ * If generating enough resources every turn to cover the robots build costs then is no need to build it.
+ */
+const robotIsRedundant = (robots, robotCost) =>
+  robots.every((robot, index) => robot >= robotCost[index]);
+
+const getBuildChoices = ({ time, robots, resources }, { costs, max }) => {
+  // need at least two minutes (one minute to build and one minute to collect)
+  if (time <= 1) {
+    console.log('not enough time', time);
+    return [];
+  }
+
+  return costs
+    .map((cost, index) => ({ cost, index }))
+    .filter(({ cost, index }) => {
+      const canAfford = canAffordRobot(resources, cost);
+      console.log(`robot: ${index}, can afford: ${canAfford}`);
+      return canAfford;
+    })
+    .filter(({ cost, index }) => {
+      if (index === 3) {
+        console.log(`geode is never redundant`);
+        return true;
+      }
+      const redundant = robotIsRedundant(robots, cost);
+      console.log(`robot: ${index}, is redundant: ${redundant}`);
+      return redundant;
+    });
+};
 
 const solve = (totalTime, startRobots, startResources, costs) => {
   const queue = [
@@ -145,7 +184,6 @@ const solve = (totalTime, startRobots, startResources, costs) => {
   let earliestEstimate = [0, 0, 0, 0];
   let killed = 0;
   let skipped = 0;
-  // console.log('floor', floor);
   const results = [
     { time: 0, resources: scale(startRobots, totalTime), robots: startRobots },
   ];
@@ -198,12 +236,12 @@ const solve = (totalTime, startRobots, startResources, costs) => {
       continue;
     }
 
-    if (current.time === 1) {
-      if (geode(current.resources) > 0) {
-        results.push(current);
-      }
-      continue;
-    }
+    // if (current.time === 1) {
+    //   if (geode(current.resources) > 0) {
+    //     results.push(current);
+    //   }
+    //   continue;
+    // }
 
     // always add do nothing.
     queue.push(doNothing(current));
@@ -225,7 +263,7 @@ const solve = (totalTime, startRobots, startResources, costs) => {
             add(current.resources, scale(current.robots, minsUntilBuild + 1)),
             robotCost
           );
-          const newRobots = addNewRobot(current.robots, i);
+          const newRobots = buildNewRobot(current.robots, i);
           queue.push({
             time: newTime,
             robots: newRobots,
@@ -244,8 +282,9 @@ const solve = (totalTime, startRobots, startResources, costs) => {
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
-  console.log();
+  // console.log();
   const blueprints = parseBlueprints(lines);
+  console.log(blueprints);
 
   // const robots = [1, 0, 0, 0];
   // const resources = [0, 0, 0, 0];
@@ -262,10 +301,27 @@ export const levelOne = ({ lines }) => {
   //   console.log(`new robots: ${newRobots}`);
   // }
 
-  const robots = [1, 0, 0, 0];
-  const resources = [1, 0, 0, 0];
-  const result = solve(24, robots, resources, blueprints[0].costs);
-  console.log('result', result);
+  // const robots = [1, 0, 0, 0];
+  // const resources = [1, 0, 0, 0];
+  // const result = solve(24, robots, resources, blueprints[0].costs);
+  // console.log('result', result);
+
+  // const result = getBuildChoices(
+  //   {
+  //     time: 2,
+  //     robots: [3, 0, 0, 0],
+  //     resources: [4, 14, 7, 0],
+  //   },
+  //   {
+  //     costs: blueprints[1].costs,
+  //     max: blueprints[1].costs.reduce((acc, _, index) => {
+  //       acc.push(Math.max(...blueprints[1].costs.map((cost) => cost[index])));
+  //       return acc;
+  //     }, []),
+  //   }
+  // );
+
+  // console.log('result', result);
 
   // const estimateTest = [
   //   { time: 4, robots: [1, 2, 1, 1], resources: [12, 20, 2, 1] },
