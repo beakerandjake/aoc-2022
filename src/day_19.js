@@ -107,6 +107,8 @@ const buildRobots = (currentState, costs) => {
 const solve = (totalTime, startRobots, startResources, { costs }) => {
   const queue = [{ time: totalTime, resources: startResources, robots: startRobots }];
   let best;
+  let firstGeodeTime;
+  let pruned = 0;
   while (queue.length) {
     // use a priority queue
     // for now pop instead of shift because shift is o(n) instead of o(1) for pop.
@@ -120,13 +122,26 @@ const solve = (totalTime, startRobots, startResources, { costs }) => {
       }
       continue;
     }
-  
+
+    if (firstGeodeTime && geodes(current.resources) < 1) {
+      pruned++;
+      continue;
+    }
+
+    if (!firstGeodeTime && geodes(current.resources) === 1) {
+      firstGeodeTime = current.time;
+    }
+
     queue.push(doNothing(current));
     // don't build robots on the last turn since it won't result in any new resources.
     if (current.time > 1) {
       queue.push(...buildRobots(current, costs));
+    } else {
+      pruned++;
     }
   }
+
+  console.log('pruned', pruned);
 
   return best;
 };
@@ -135,10 +150,10 @@ const solve = (totalTime, startRobots, startResources, { costs }) => {
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
-  console.log();
+  // console.log();
   const blueprints = parseBlueprints(lines);
   const result = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0]);
-  console.log('result', result);
+  // console.log('result', result);
 
   return 1234;
 };
