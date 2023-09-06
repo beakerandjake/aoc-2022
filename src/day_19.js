@@ -61,21 +61,6 @@ const scale = (array, value) => array.map((x) => x * value);
 
 const increment = (array, type) => array.map((x, i) => (i === type ? x + 1 : x));
 
-const canAfford = (resources, buildCost) =>
-  resources.every((resource, type) => resource >= buildCost[type]);
-
-const doNothing = ({ time, robots, resources }) => ({
-  time: time - 1,
-  robots,
-  resources: add(resources, robots),
-});
-
-const buildRobot = ({ time, robots, resources }, buildCost, type) => ({
-  time: time - 1,
-  robots: increment(robots, type),
-  resources: add(robots, subtract(resources, buildCost)),
-});
-
 /**
  * Compares two resource or robot arrays
  * Returns > 0 if b is greater than a.
@@ -93,11 +78,39 @@ const compare = (lhs, rhs) => {
   return 0;
 };
 
+const canAfford = (resources, buildCost) =>
+  resources.every((resource, type) => resource >= buildCost[type]);
+
+const doNothing = ({ time, robots, resources }) => ({
+  time: time - 1,
+  robots,
+  resources: add(resources, robots),
+});
+
+const buildRobot = ({ time, robots, resources }, buildCost, type) => ({
+  time: time - 1,
+  robots: increment(robots, type),
+  resources: add(robots, subtract(resources, buildCost)),
+});
+
+const buildRobots = (currentState, costs) => {
+  const toReturn = [];
+  for (let type = 0; type < costs.length; type++) {
+    const buildCost = costs[type];
+    if (canAfford(currentState.resources, buildCost)) {
+      toReturn.push(buildRobot(currentState, buildCost, type));
+    }
+  }
+  return toReturn;
+};
+
 const solve = (totalTime, startRobots, startResources, { costs }) => {
   const queue = [{ time: totalTime, resources: startResources, robots: startRobots }];
   let best;
   while (queue.length) {
-    const current = queue.shift();
+    // use a priority queue 
+    // for now pop instead of shift because shift is o(n) instead of o(1) for pop.
+    const current = queue.pop();
 
     // hit the end of this branch
     if (current.time === 0) {
@@ -108,15 +121,8 @@ const solve = (totalTime, startRobots, startResources, { costs }) => {
       continue;
     }
 
-    // always an option to do nothing.
     queue.push(doNothing(current));
-    for (let type = 0; type < costs.length; type++) {
-      const buildCost = costs[type];
-      // can't build robot if can't afford it.
-      if (canAfford(current.resources, buildCost)) {
-        queue.push(buildRobot(current, buildCost, type));
-      }
-    }
+    queue.push(...buildRobots(current, costs));
   }
 
   return best;
@@ -130,6 +136,7 @@ export const levelOne = ({ lines }) => {
   const blueprints = parseBlueprints(lines);
   const result = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0]);
   console.log('result', result);
+
   return 1234;
 };
 
