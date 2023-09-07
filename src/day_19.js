@@ -167,6 +167,20 @@ const pruneBasedOnGeodeHistory = () => {
   };
 };
 
+const pruneTest = (current, best) => {
+  if (!best || !geodes(best.resources)) {
+    return false;
+  }
+
+  let geodeRobots = geodes(current.robots);
+  let estimated = geodes(current.resources);
+  for (let i = 0; i < current.time; i++) {
+    estimated += geodeRobots;
+    geodeRobots++;
+  }
+  return estimated < geodes(best.resources);
+};
+
 const priority = ({ time, resources, robots }) => {
   const potential = add(resources, scale(robots, time));
   return potential.reduce((total, amount, index) => 1000 ** index * amount + total, 0);
@@ -192,8 +206,8 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
       continue;
     }
 
-    // kill this branch if a pruner fn decides it's not worth continuing.
-    if (pruners.some((fn) => fn(current))) {
+    // // kill this branch if a pruner fn decides it's not worth continuing.
+    if (pruners.some((fn) => fn(current, best))) {
       continue;
     }
 
@@ -218,7 +232,7 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
 export const levelOne = async ({ lines }) => {
   // console.log();
   const blueprints = parseBlueprints(lines);
-  const pruners = [pruneBasedOnFirstGeodeTime(), pruneBasedOnGeodeHistory()];
+  const pruners = [pruneBasedOnFirstGeodeTime(), pruneBasedOnGeodeHistory(), pruneTest];
   const { best, results } = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0], pruners);
   console.log('result', best);
 
