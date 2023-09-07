@@ -201,7 +201,7 @@ const pruneOnOptimisticGeodeCount = (current, best) => {
     estimated += geodeRobots;
     geodeRobots++;
   }
-  return estimated < geodes(best.resources);
+  return estimated <= geodes(best.resources);
 };
 
 const pruneIfEncountered = () => {
@@ -259,16 +259,17 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
 export const levelOne = ({ lines }) => {
   const blueprints = parseBlueprints(lines);
   const values = blueprints.map((blueprint) => {
-    const pruners = [pruneIfEncountered(), pruneOnOptimisticGeodeCount];
+    const pruners = [pruneOnOptimisticGeodeCount, pruneIfWorse(), pruneIfEncountered()];
     const { resources } = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprint, pruners);
     return blueprint.id * geodes(resources);
   });
   return sum(values);
   // const blueprints = parseBlueprints(lines);
-  // const pruners = [pruneBasedOnRobotsAtTime(), pruneBasedOnOptimisticGeodeCount];
-  // const result = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[1], pruners);
+  // // caching last seems to be better, less things in cache is faster than more things in cache.
+  // const pruners = [pruneOnOptimisticGeodeCount, pruneIfWorse(), pruneIfEncountered()];
+  // const result = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0], pruners);
   // console.log(result);
-  return 1234;
+  // return 1234;
 };
 
 /**
@@ -281,7 +282,7 @@ export const levelOne = ({ lines }) => {
 export const levelTwo = ({ lines }) => {
   const blueprints = parseBlueprints(lines.slice(0, 3));
   const values = blueprints.map((blueprint) => {
-    const pruners = [pruneIfEncountered(), pruneOnOptimisticGeodeCount];
+    const pruners = [pruneOnOptimisticGeodeCount, pruneIfWorse(), pruneIfEncountered()];
     const { resources } = solve(32, [1, 0, 0, 0], [0, 0, 0, 0], blueprint, pruners);
     return geodes(resources);
   });
