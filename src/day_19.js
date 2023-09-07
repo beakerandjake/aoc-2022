@@ -167,7 +167,7 @@ const pruneBasedOnGeodeHistory = () => {
   };
 };
 
-const pruneTest = (current, best) => {
+const pruneBasedOnOptimisticGeodeCount = (current, best) => {
   if (!best || !geodes(best.resources)) {
     return false;
   }
@@ -222,14 +222,18 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
-  // console.log();
+  // const blueprints = parseBlueprints(lines);
+  // const values = blueprints.map((blueprint) => {
+  //   const pruners = [pruneBasedOnFirstGeodeTime(), pruneBasedOnGeodeHistory(), pruneTest];
+  //   const { resources } = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprint, pruners);
+  //   return blueprint.id * geodes(resources);
+  // });
+  // return sum(values);
   const blueprints = parseBlueprints(lines);
-  const values = blueprints.map((blueprint) => {
-    const pruners = [pruneBasedOnFirstGeodeTime(), pruneBasedOnGeodeHistory(), pruneTest];
-    const { resources } = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprint, pruners);
-    return blueprint.id * geodes(resources);
-  });
-  return sum(values);
+  const pruners = [pruneBasedOnOptimisticGeodeCount];
+  const { resources } = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0], pruners);
+  console.log(resources);
+  return 1234;
 };
 
 /**
