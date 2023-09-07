@@ -177,7 +177,7 @@ const pruneBasedOnGeodeHistory = () => {
 const pruneIfWorse = () => {
   const memo = new Map();
   return ({ time, robots, resources }) => {
-    const hash = `${time}.${robots}`;
+    const hash = `${time}.${robots.join('.')}`;
     if (!memo.has(hash)) {
       memo.set(hash, resources);
       return false;
@@ -207,7 +207,7 @@ const pruneOnOptimisticGeodeCount = (current, best) => {
 const pruneIfEncountered = () => {
   const memo = new Set();
   return ({ time, robots, resources }) => {
-    const hash = `${time}.${robots}.${resources}`;
+    const hash = `${time}.${robots.join('.')}.${resources.join('.')}`;
     if (!memo.has(hash)) {
       memo.add(hash);
       return false;
