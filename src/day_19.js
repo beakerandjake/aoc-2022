@@ -181,6 +181,31 @@ const pruneBasedOnOptimisticGeodeCount = (current, best) => {
   return estimated < geodes(best.resources);
 };
 
+const pruneBasedOnRobotsAtTime = () => {
+  const memo = {};
+  return ({ time, robots, resources }) => {
+    if (geodes(resources) === 0) {
+      return false;
+    }
+
+    const hash = `${time}.${robots.join('.')}`;
+    if (!(hash in memo)) {
+      memo[hash] = resources;
+      return false;
+    }
+
+    const previousBest = memo[hash];
+    const comparison = compare(previousBest, resources);
+
+    if (comparison > 0) {
+      memo[hash] = resources;
+      return false;
+    }
+
+    return comparison < 0;
+  };
+};
+
 const priority = ({ time, resources, robots }) => {
   const potential = add(resources, scale(robots, time));
   return potential.reduce((total, amount, index) => 1000 ** index * amount + total, 0);
@@ -222,18 +247,18 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
-  // const blueprints = parseBlueprints(lines);
-  // const values = blueprints.map((blueprint) => {
-  //   const pruners = [pruneBasedOnFirstGeodeTime(), pruneBasedOnGeodeHistory(), pruneTest];
-  //   const { resources } = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprint, pruners);
-  //   return blueprint.id * geodes(resources);
-  // });
-  // return sum(values);
   const blueprints = parseBlueprints(lines);
-  const pruners = [pruneBasedOnOptimisticGeodeCount];
-  const { resources } = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0], pruners);
-  console.log(resources);
-  return 1234;
+  const values = blueprints.map((blueprint) => {
+    const pruners = [pruneBasedOnRobotsAtTime(), pruneBasedOnOptimisticGeodeCount];
+    const { resources } = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprint, pruners);
+    return blueprint.id * geodes(resources);
+  });
+  return sum(values);
+  // const blueprints = parseBlueprints(lines);
+  // const pruners = [pruneBasedOnRobotsAtTime(), pruneBasedOnOptimisticGeodeCount];
+  // const { resources } = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[1], pruners);
+  // console.log(resources);
+  // return 1234;
 };
 
 /**
