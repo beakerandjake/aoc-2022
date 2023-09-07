@@ -88,18 +88,26 @@ const doNothing = ({ time, robots, resources }) => ({
   resources: add(resources, robots),
 });
 
-const buildRobot = ({ time, robots, resources }, buildCost, type) => ({
+const buildRobot = (time, robots, resources, buildCost, type) => ({
   time: time - 1,
   robots: increment(robots, type),
   resources: add(robots, subtract(resources, buildCost)),
 });
 
-const buildRobots = (currentState, costs) => {
+const robotIsMaxedOut = (robots, maxCosts, type) => {
+  // never enough geode robots.
+  if (type === 3) {
+    return false;
+  }
+  return robots[type] >= maxCosts[type];
+};
+
+const buildRobots = ({ time, robots, resources }, { costs, maxCosts }) => {
   const toReturn = [];
   for (let type = 0; type < costs.length; type++) {
     const buildCost = costs[type];
-    if (canAfford(currentState.resources, buildCost)) {
-      toReturn.push(buildRobot(currentState, buildCost, type));
+    if (canAfford(resources, buildCost) && !robotIsMaxedOut(robots, maxCosts, type)) {
+      toReturn.push(buildRobot(time, robots, resources, buildCost, type));
     }
   }
   return toReturn;
@@ -163,9 +171,10 @@ const priority = ({ time, resources, robots }) => {
   return potential.reduce((total, amount, index) => 1000 ** index * amount + total, 0);
 };
 
-const solve = (totalTime, startRobots, startResources, { costs }, pruners) => {
+const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
   const queue = [{ time: totalTime, resources: startResources, robots: startRobots }];
   let best;
+  let iterations = 0;
   while (queue.length) {
     // use a priority queue
     // for now pop instead of shift because shift is o(n) instead of o(1) for pop.
@@ -185,12 +194,17 @@ const solve = (totalTime, startRobots, startResources, { costs }, pruners) => {
       continue;
     }
 
+    iterations++;
     queue.push(doNothing(current));
     // don't build robots on the last turn since it won't result in any new resources.
     if (current.time > 1) {
-      queue.push(...buildRobots(current, costs));
+      const z = buildRobots(current, blueprint);
+      iterations += z.length;
+      queue.push(...z);
     }
   }
+  
+  console.log(iterations);
 
   return best;
 };
@@ -204,6 +218,7 @@ export const levelOne = ({ lines }) => {
   const pruners = [pruneBasedOnFirstGeodeTime()];
   const result = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0], pruners);
   console.log('result', result);
+  // console.log(blueprints);
 
   return 1234;
 };
