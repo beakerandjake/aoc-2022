@@ -4,6 +4,7 @@
  */
 import { arrayToString } from './util/array.js';
 import { maxHeap } from './util/heap.js';
+import { writeArrayToFile } from './util/io.js';
 import { toNumber } from './util/string.js';
 
 const blueprintToString = ({ id, costs }) =>
@@ -127,7 +128,7 @@ const pruneBasedOnFirstGeodeTime = () => {
     }
 
     // if past earliest time without geode then prune this branch.
-    if (time < earliest && geodeCount === 0) {
+    if (time <= earliest && geodeCount === 0) {
       return true;
     }
 
@@ -175,6 +176,7 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
   const queue = [{ time: totalTime, resources: startResources, robots: startRobots }];
   let best;
   let iterations = 0;
+  const results = [];
   while (queue.length) {
     // use a priority queue
     // for now pop instead of shift because shift is o(n) instead of o(1) for pop.
@@ -186,6 +188,7 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
       if (!best || compare(best.resources, current.resources) > 0) {
         best = current;
       }
+      results.push(current);
       continue;
     }
 
@@ -203,21 +206,26 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
       queue.push(...z);
     }
   }
-  
+
   console.log(iterations);
 
-  return best;
+  return { best, results };
 };
 
 /**
  * Returns the solution for level one of this puzzle.
  */
-export const levelOne = ({ lines }) => {
+export const levelOne = async ({ lines }) => {
   // console.log();
   const blueprints = parseBlueprints(lines);
   const pruners = [pruneBasedOnFirstGeodeTime()];
-  const result = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0], pruners);
-  console.log('result', result);
+  const { best, results } = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0], pruners);
+  console.log('result', best);
+
+  // await writeArrayToFile(
+  //   results.map((x) => JSON.stringify(x)),
+  //   './results.json'
+  // );
   // console.log(blueprints);
 
   return 1234;
