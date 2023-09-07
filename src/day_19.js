@@ -2,7 +2,7 @@
  * Contains solutions for Day 19
  * Puzzle Description: https://adventofcode.com/2022/day/19
  */
-import { arrayToString, sum } from './util/array.js';
+import { arrayToString, product, sum } from './util/array.js';
 import { maxHeap } from './util/heap.js';
 import { writeArrayToFile } from './util/io.js';
 import { toNumber } from './util/string.js';
@@ -221,7 +221,7 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
 /**
  * Returns the solution for level one of this puzzle.
  */
-export const levelOne = async ({ lines }) => {
+export const levelOne = ({ lines }) => {
   // console.log();
   const blueprints = parseBlueprints(lines);
   const values = blueprints.map((blueprint) => {
@@ -239,6 +239,12 @@ export const levelOne = async ({ lines }) => {
  * @param {String[]} args.lines - Array containing each line of the input string.
  * @returns {Number|String}
  */
-export const levelTwo = ({ input, lines }) => {
-  // your code here
+export const levelTwo = ({ lines }) => {
+  const blueprints = parseBlueprints(lines.slice(0, 3));
+  const values = blueprints.map((blueprint) => {
+    const pruners = [pruneTest];
+    const { resources } = solve(32, [1, 0, 0, 0], [0, 0, 0, 0], blueprint, pruners);
+    return geodes(resources);
+  });
+  return product(values);
 };
