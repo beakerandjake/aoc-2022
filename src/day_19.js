@@ -2,7 +2,7 @@
  * Contains solutions for Day 19
  * Puzzle Description: https://adventofcode.com/2022/day/19
  */
-import { arrayToString } from './util/array.js';
+import { arrayToString, sum } from './util/array.js';
 import { maxHeap } from './util/heap.js';
 import { writeArrayToFile } from './util/io.js';
 import { toNumber } from './util/string.js';
@@ -189,8 +189,6 @@ const priority = ({ time, resources, robots }) => {
 const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
   const queue = [{ time: totalTime, resources: startResources, robots: startRobots }];
   let best;
-  let iterations = 0;
-  const results = [];
   while (queue.length) {
     // use a priority queue
     // for now pop instead of shift because shift is o(n) instead of o(1) for pop.
@@ -202,7 +200,6 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
       if (!best || compare(best.resources, current.resources) > 0) {
         best = current;
       }
-      results.push(current);
       continue;
     }
 
@@ -211,19 +208,14 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
       continue;
     }
 
-    iterations++;
     queue.push(doNothing(current));
     // don't build robots on the last turn since it won't result in any new resources.
     if (current.time > 1) {
-      const z = buildRobots(current, blueprint);
-      iterations += z.length;
-      queue.push(...z);
+      queue.push(...buildRobots(current, blueprint));
     }
   }
 
-  console.log(iterations);
-
-  return { best, results };
+  return best;
 };
 
 /**
@@ -232,17 +224,12 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
 export const levelOne = async ({ lines }) => {
   // console.log();
   const blueprints = parseBlueprints(lines);
-  const pruners = [pruneBasedOnFirstGeodeTime(), pruneBasedOnGeodeHistory(), pruneTest];
-  const { best, results } = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0], pruners);
-  console.log('result', best);
-
-  // await writeArrayToFile(
-  //   results.map((x) => JSON.stringify(x)),
-  //   './results.json'
-  // );
-  // console.log(blueprints);
-
-  return 1234;
+  const values = blueprints.map((blueprint) => {
+    const pruners = [pruneBasedOnFirstGeodeTime(), pruneBasedOnGeodeHistory(), pruneTest];
+    const { resources } = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprint, pruners);
+    return blueprint.id * geodes(resources);
+  });
+  return sum(values);
 };
 
 /**
