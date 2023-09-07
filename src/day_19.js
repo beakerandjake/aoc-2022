@@ -271,7 +271,7 @@ export const levelOne = ({ lines }) => {
 export const levelTwo = ({ lines }) => {
   const blueprints = parseBlueprints(lines.slice(0, 3));
   const values = blueprints.map((blueprint) => {
-    const pruners = [pruneTest];
+    const pruners = [pruneBasedOnRobotsAtTime(), pruneBasedOnOptimisticGeodeCount];
     const { resources } = solve(32, [1, 0, 0, 0], [0, 0, 0, 0], blueprint, pruners);
     return geodes(resources);
   });
