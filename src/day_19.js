@@ -142,28 +142,28 @@ const pruneBasedOnFirstGeodeTime = () => {
 };
 
 const pruneBasedOnGeodeHistory = () => {
-  const history = {};
-  return ({ time, robots }) => {
-    const count = geodes(robots);
+  const history = [];
+  return ({ time, resources }) => {
+    const count = geodes(resources);
     if (count === 0) {
       return false;
     }
+    const currentRecord = history[time];
 
-    if (!history[time]) {
+    if (!currentRecord) {
       history[time] = count;
       return false;
     }
 
-    if (count === history[time]) {
-      return false;
+    if (count < currentRecord) {
+      return true;
     }
 
-    if (count > history[time]) {
+    if (count > currentRecord) {
       history[time] = count;
-      return false;
     }
 
-    return true;
+    return false;
   };
 };
 
@@ -218,7 +218,7 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
 export const levelOne = async ({ lines }) => {
   // console.log();
   const blueprints = parseBlueprints(lines);
-  const pruners = [pruneBasedOnFirstGeodeTime()];
+  const pruners = [pruneBasedOnFirstGeodeTime(), pruneBasedOnGeodeHistory()];
   const { best, results } = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0], pruners);
   console.log('result', best);
 
