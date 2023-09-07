@@ -187,7 +187,7 @@ const pruneIfWorse = () => {
       memo.set(hash, resources);
       return false;
     }
-    return resources.every((resource, type) => memoized[type] > resource);
+    return resources.every((resource, type) => memoized[type] >= resource);
   };
 };
 
@@ -264,11 +264,24 @@ export const levelOne = ({ lines }) => {
     return blueprint.id * geodes(resources);
   });
   return sum(values);
+
   // const blueprints = parseBlueprints(lines);
   // // caching last seems to be better, less things in cache is faster than more things in cache.
   // const pruners = [pruneOnOptimisticGeodeCount, pruneIfWorse(), pruneIfEncountered()];
-  // const result = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[0], pruners);
-  // console.log(result);
+  // const { result, history } = solve(
+  //   24,
+  //   [1, 0, 0, 0],
+  //   [0, 0, 0, 0],
+  //   blueprints[0],
+  //   pruners
+  // );
+  console.log(result);
+
+  // await writeArrayToFile(
+  //   history.map((x) => JSON.stringify(x)),
+  //   './reuslts.json'
+  // );
+
   // return 1234;
 };
 
