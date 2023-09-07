@@ -103,6 +103,13 @@ const robotIsMaxedOut = (robots, maxCosts, type) => {
   return robots[type] >= maxCosts[type];
 };
 
+const resourceIsMaxedOut = (resources, time, maxCosts, type) => {
+  if (type === 3) {
+    return false;
+  }
+  return resources[type] >= maxCosts[type] * time;
+};
+
 const buildRobots = ({ time, robots, resources }, { costs, maxCosts }) => {
   const toReturn = [];
   for (let type = 0; type < costs.length; type++) {
@@ -164,6 +171,23 @@ const pruneBasedOnGeodeHistory = () => {
     }
 
     return false;
+  };
+};
+
+const pruneIfWorse = () => {
+  const memo = new Map();
+  return ({ time, robots, resources }) => {
+    const hash = `${time}.${robots}`;
+    if (!memo.has(hash)) {
+      memo.set(hash, resources);
+      return false;
+    }
+    const memoized = memo.get(hash);
+    if (compare(memoized, resources) > 1) {
+      memo.set(hash, resources);
+      return false;
+    }
+    return resources.every((resource, type) => memoized[type] > resource);
   };
 };
 
