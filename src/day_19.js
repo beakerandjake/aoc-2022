@@ -167,11 +167,10 @@ const pruneBasedOnGeodeHistory = () => {
   };
 };
 
-const pruneBasedOnOptimisticGeodeCount = (current, best) => {
+const pruneOnOptimisticGeodeCount = (current, best) => {
   if (!best || !geodes(best.resources)) {
     return false;
   }
-
   let geodeRobots = geodes(current.robots);
   let estimated = geodes(current.resources);
   for (let i = 0; i < current.time; i++) {
@@ -181,28 +180,15 @@ const pruneBasedOnOptimisticGeodeCount = (current, best) => {
   return estimated < geodes(best.resources);
 };
 
-const pruneBasedOnRobotsAtTime = () => {
-  const memo = {};
+const pruneIfMemoized = () => {
+  const memo = new Map();
   return ({ time, robots, resources }) => {
-    if (geodes(resources) === 0) {
+    const hash = `${time}.${robots.join('.')}.${resources.join('.')}`;
+    if (!memo.has(hash)) {
+      memo.set(hash, resources);
       return false;
     }
-
-    const hash = `${time}.${robots.join('.')}`;
-    if (!(hash in memo)) {
-      memo[hash] = resources;
-      return false;
-    }
-
-    const previousBest = memo[hash];
-    const comparison = compare(previousBest, resources);
-
-    if (comparison > 0) {
-      memo[hash] = resources;
-      return false;
-    }
-
-    return comparison < 0;
+    return true;
   };
 };
 
@@ -249,16 +235,16 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
 export const levelOne = ({ lines }) => {
   const blueprints = parseBlueprints(lines);
   const values = blueprints.map((blueprint) => {
-    const pruners = [pruneBasedOnRobotsAtTime(), pruneBasedOnOptimisticGeodeCount];
+    const pruners = [pruneIfMemoized(), pruneOnOptimisticGeodeCount];
     const { resources } = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprint, pruners);
     return blueprint.id * geodes(resources);
   });
   return sum(values);
   // const blueprints = parseBlueprints(lines);
   // const pruners = [pruneBasedOnRobotsAtTime(), pruneBasedOnOptimisticGeodeCount];
-  // const { resources } = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[1], pruners);
-  // console.log(resources);
-  // return 1234;
+  // const result = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprints[1], pruners);
+  // console.log(result);
+  return 1234;
 };
 
 /**
@@ -271,7 +257,7 @@ export const levelOne = ({ lines }) => {
 export const levelTwo = ({ lines }) => {
   const blueprints = parseBlueprints(lines.slice(0, 3));
   const values = blueprints.map((blueprint) => {
-    const pruners = [pruneBasedOnRobotsAtTime(), pruneBasedOnOptimisticGeodeCount];
+    const pruners = [pruneIfMemoized(), pruneOnOptimisticGeodeCount];
     const { resources } = solve(32, [1, 0, 0, 0], [0, 0, 0, 0], blueprint, pruners);
     return geodes(resources);
   });
