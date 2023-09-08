@@ -1,6 +1,6 @@
 import { EOL } from 'node:os';
 import { findBounds, toLookup, Vector2 } from './vector2.js';
-import { elementAt2d } from './array2d.js';
+import { forEach2d } from './array2d.js';
 import { range } from './array.js';
 
 /**
@@ -32,14 +32,9 @@ export const worldToString = (points, charset = { empty: '.', occupied: '#' }) =
  * @param {FlatArray} array - A flat 2d array.
  */
 export const array2dToString = (array) => {
-  const { height, width } = array.shape;
-  const rows = [];
-  for (let y = 0; y < height; y++) {
-    const row = [];
-    for (let x = 0; x < width; x++) {
-      row.push(elementAt2d(array, y, x));
-    }
-    rows.push(row);
-  }
-  return rows.map((row) => row.join('')).join(EOL);
+  const rows = [...Array(array.shape.height)].map(() => '');
+  forEach2d(array, (element, y, x) => {
+    rows[y] += element;
+  });
+  return rows.join(EOL);
 };
