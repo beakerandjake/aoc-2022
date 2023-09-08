@@ -95,28 +95,34 @@ export const elementAt2d = ({ items, shape: { width } }, y, x) =>
 /**
  * Returns all of the neighbors
  */
-const neighbors2d = (grid, { width, height }, y, x, neighborDeltas) =>
+const neighbors2d = ({ items, shape: { width, height } }, y, x, neighborDeltas) =>
   neighborDeltas.reduce((neighbors, delta) => {
     const dY = delta.y + y;
     const dX = delta.x + x;
     if (dY >= 0 && dY < height && dX >= 0 && dX < width) {
-      neighbors.push(grid[index2d(width, dY, dX)]);
+      neighbors.push(items[index2d(width, dY, dX)]);
     }
     return neighbors;
   }, []);
 
 /**
- * Returns all of the N,S,E,W neighbors of the element at [y,x]
+ * Array of offsets which can find a tiles N,S,E,W neighbors
  */
-export const cardinalNeighbors2d = (() => {
-  const deltas = [
-    { y: -1, x: 0 },
-    { y: 1, x: 0 },
-    { y: 0, x: -1 },
-    { y: 0, x: 1 },
-  ];
-  return (grid, shape, y, x) => neighbors2d(grid, shape, y, x, deltas);
-})();
+const cardinalNeighborDeltas = [
+  { y: -1, x: 0 },
+  { y: 1, x: 0 },
+  { y: 0, x: 1 },
+  { y: 0, x: -1 },
+];
+
+/**
+ * Returns all of the N,S,E,W neighbors of the element at [y,x]
+ * @param {FlatArray} array
+ * @param {Number} y
+ * @param {Number} x
+ */
+export const cardinalNeighbors2d = (array, y, x) =>
+  neighbors2d(array, y, x, cardinalNeighborDeltas);
 
 /**
  * Functional iteration over a *flat* 2d array.

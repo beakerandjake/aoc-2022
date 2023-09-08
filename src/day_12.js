@@ -82,19 +82,20 @@ const createEdge = (fromId, toId, weight) => ({
  * @param {String} input
  */
 const parseInput = (input) => {
-  const { items: graph, shape } = parse2dArray(input, (character, index) =>
+  const flattened = parse2dArray(input, (character, index) =>
     createNode(index, character, characterHeightMap[character])
   );
+  const { items, shape } = flattened;
 
-  for (let index = 0; index < graph.length; index++) {
-    const current = graph[index];
+  for (let index = 0; index < items.length; index++) {
+    const current = items[index];
     const { y, x } = indexToCoordinate2d(shape.width, index);
-    current.edges = cardinalNeighbors2d(graph, shape, y, x).map((neighbor) =>
+    current.edges = cardinalNeighbors2d(flattened, y, x).map((neighbor) =>
       createEdge(current.id, neighbor.id, edgeWeight(current.height, neighbor.height))
     );
   }
 
-  return graph;
+  return flattened.items;
 };
 
 /**
