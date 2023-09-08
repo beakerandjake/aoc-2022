@@ -174,9 +174,9 @@ const pruneIfEncountered = () => {
  * Prune any branch which has decided not to build robots quick enough.
  */
 const pruneIfIdledTooLong = (totalTime) => {
-  const buildSomethingCutoff = Math.floor(totalTime * 0.8);
-  const clayCutoff = Math.floor(totalTime * 0.7);
-  const obsidianCutoff = Math.floor(totalTime * 0.3);
+  const buildSomethingCutoff = Math.floor(totalTime * 0.83);
+  const clayCutoff = Math.floor(totalTime * 0.70);
+  const obsidianCutoff = Math.floor(totalTime * 0.41);
   return ({ time, robots }) => {
     // prune if not built any robot by the cutoff time.
     if (time <= buildSomethingCutoff && time > clayCutoff) {
