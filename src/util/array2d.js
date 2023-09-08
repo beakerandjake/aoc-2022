@@ -1,10 +1,19 @@
 /**
+ * @typedef {Object} FlatArray
+ * @property {Array} items - A one dimensional flattened array representing a 2d array in row-major order
+ * @property {Object} shape - An object containing the dimensions of the 2d array.
+ * @property {Number} shape.width - The width of the 2d array.
+ * @property {Number} shape.height - The height of the 2d array.
+ */
+
+/**
  * Returns a *flat* 2d array created from the input string.
  * Expects rows are separated by new line characters.
  * Expects the 2d array to be square that is length = width.
  * @param {String} input - The input string to parse into a 2 dimensional array.
  * @param {String} rowSeparator - The character in the input which separates rows.
  * @param {Function} characterMapFn - Optional map function applied to each character.
+ * @returns {FlatArray}
  */
 export const parse2dArray = (input, characterMapFn = null, rowSeparator = '\n') => {
   const toReturn = [];
@@ -33,6 +42,7 @@ export const parse2dArray = (input, characterMapFn = null, rowSeparator = '\n') 
  * Each string in the array is considered a row, and each character of that string is treated as a column.
  * @param {String[]} array - Array of equal length strings to convert to a flat 2d array.
  * @param {(char:String, y:Number, x:Number) => String} characterMapFn - Invoked on each char of the string, returns the value of the char in the output array.
+ * @returns {FlatArray}
  */
 export const convertTo2dArray = (array, characterMapFn = (char, y, x) => char) => {
   if (!array.length) {
