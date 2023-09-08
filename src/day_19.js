@@ -175,9 +175,14 @@ const pruneIfEncountered = () => {
  */
 const pruneIfIdledTooLong = (totalTime) => {
   const buildSomethingCutoff = Math.floor(totalTime * 0.83);
-  const clayCutoff = Math.floor(totalTime * 0.70);
+  const clayCutoff = Math.floor(totalTime * 0.7);
   const obsidianCutoff = Math.floor(totalTime * 0.41);
+  const geodeCutoff = 1;
   return ({ time, robots }) => {
+    // if haven't hit the idle cutoff don't prune any branches yet.
+    if (time > buildSomethingCutoff) {
+      return false;
+    }
     // prune if not built any robot by the cutoff time.
     if (time <= buildSomethingCutoff && time > clayCutoff) {
       return sum(robots) === 1;
@@ -187,10 +192,11 @@ const pruneIfIdledTooLong = (totalTime) => {
       return clay(robots) === 0;
     }
     // prune if not built an obsidian robot by the cutoff time.
-    if (time <= obsidianCutoff) {
+    if (time <= obsidianCutoff && time > geodeCutoff) {
       return obsidian(robots) === 0;
     }
-    return false;
+    // prune if don't have at least one geode robot by the last minute
+    return geodes(robots) === 0;
   };
 };
 
