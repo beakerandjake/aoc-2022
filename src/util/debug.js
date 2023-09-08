@@ -30,11 +30,12 @@ export const worldToString = (points, charset = { empty: '.', occupied: '#' }) =
 /**
  * Returns a string visualizing the flattened 2d array.
  * @param {FlatArray} array - A flat 2d array.
+ * @param {(element:any,y:number,x:number) => string} renderFn - Function invoked on each element in the array, returns the string to use to render this element.
  */
-export const array2dToString = (array) => {
+export const array2dToString = (array, renderFn = (element) => element) => {
   const rows = [...Array(array.shape.height)].map(() => '');
   forEach2d(array, (element, y, x) => {
-    rows[y] += element;
+    rows[y] += renderFn(element, y, x);
   });
   return rows.join(EOL);
 };
