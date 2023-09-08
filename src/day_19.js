@@ -2,13 +2,12 @@
  * Contains solutions for Day 19
  * Puzzle Description: https://adventofcode.com/2022/day/19
  */
-import { arrayToString, product, sum } from './util/array.js';
-import { maxHeap } from './util/heap.js';
-import { writeArrayToFile } from './util/io.js';
 import { toNumber } from './util/string.js';
 
-const blueprintToString = ({ id, costs }) =>
-  `id: ${id}, costs: [${costs.map((cost) => arrayToString(cost)).join(', ')}]`;
+/**
+ * Total number of resource types available.
+ */
+const resourceTypes = 4;
 
 /**
  * Parse the puzzle input and return an array of blueprints.
@@ -57,13 +56,9 @@ const add = (lhs, rhs) => lhs.map((x, index) => x + rhs[index]);
 const subtract = (lhs, rhs) => lhs.map((x, index) => x - rhs[index]);
 
 /**
- * Returns a new array by multiplying each element of the array by the scalar value.
+ * Returns a new array with the item of the corresponding resource type incremented by one.
  */
-const scale = (array, value) => array.map((x) => x * value);
-
 const increment = (array, type) => array.map((x, i) => (i === type ? x + 1 : x));
-
-const total = (items) => items[0] + items[1] + items[2] + items[3];
 
 /**
  * Compares two resource or robot arrays
@@ -73,108 +68,27 @@ const total = (items) => items[0] + items[1] + items[2] + items[3];
  */
 const compare = (lhs, rhs) => {
   // compare from most valuable resource (geode) to least (ore)
-  for (let type = lhs.length; type--; ) {
-    if (lhs[type] === rhs[type]) {
+  for (let type = resourceTypes; type--; ) {
+    const lhsValue = lhs[type];
+    const rhsValue = rhs[type];
+
+    if (lhsValue === rhsValue) {
       continue;
     }
-    return rhs[type] - lhs[type];
+    return rhsValue - lhsValue;
   }
   return 0;
 };
 
-const canAfford = (resources, buildCost) =>
-  resources.every((resource, type) => resource >= buildCost[type]);
+/**
+ * Creates a single prune branch function out of multiple prune branch functions.
+ */
+const buildBranchPruner = (prunerFunctions) => (current, best) =>
+  prunerFunctions.some((fn) => fn(current, best));
 
-const doNothing = ({ time, robots, resources }) => ({
-  time: time - 1,
-  robots,
-  resources: add(resources, robots),
-});
-
-const buildRobot = (time, robots, resources, buildCost, type) => ({
-  time: time - 1,
-  robots: increment(robots, type),
-  resources: add(robots, subtract(resources, buildCost)),
-});
-
-const robotIsMaxedOut = (robots, maxCosts, type) => robots[type] >= maxCosts[type];
-
-const resourceIsMaxedOut = (resources, time, maxCosts, type) =>
-  resources[type] >= maxCosts[type] * time;
-
-const buildRobots = ({ time, robots, resources }, { costs, maxCosts }) => {
-  // if can afford a geode robot then dont worry about other robots just build geode.
-  if (canAfford(resources, geodes(costs))) {
-    return [buildRobot(time, robots, resources, geodes(costs), 3)];
-  }
-
-  const toReturn = [];
-  for (let type = 0; type < 3; type++) {
-    const buildCost = costs[type];
-    if (
-      canAfford(resources, buildCost) &&
-      !robotIsMaxedOut(robots, maxCosts, type) &&
-      !resourceIsMaxedOut(resources, time, maxCosts, type)
-    ) {
-      toReturn.push(buildRobot(time, robots, resources, buildCost, type));
-    }
-  }
-  return toReturn;
-};
-
-const pruneBasedOnFirstGeodeTime = () => {
-  let earliest = null;
-  return ({ time, resources }) => {
-    const geodeCount = geodes(resources);
-
-    if (earliest === null) {
-      // this is the first geode we've seen, the current time is earliest.
-      if (geodeCount === 1) {
-        earliest = time;
-      }
-      return false;
-    }
-
-    // if past earliest time without geode then prune this branch.
-    if (time <= earliest && geodeCount === 0) {
-      return true;
-    }
-
-    // if before earliest time and have a geode, then update earliest time.
-    if (time > earliest && geodeCount === 1) {
-      earliest = time;
-    }
-
-    return false;
-  };
-};
-
-const pruneBasedOnGeodeHistory = () => {
-  const history = [];
-  return ({ time, resources }) => {
-    const count = geodes(resources);
-    if (count === 0) {
-      return false;
-    }
-    const currentRecord = history[time];
-
-    if (!currentRecord) {
-      history[time] = count;
-      return false;
-    }
-
-    if (count < currentRecord) {
-      return true;
-    }
-
-    if (count > currentRecord) {
-      history[time] = count;
-    }
-
-    return false;
-  };
-};
-
+/**
+ * Prunes any branches which have less resources in the given state than the memoized best.
+ */
 const pruneIfWorse = () => {
   const memo = new Map();
   return ({ time, robots, resources }) => {
@@ -184,18 +98,25 @@ const pruneIfWorse = () => {
       return false;
     }
     const memoized = memo.get(hash);
+    // update best if current resources are better than memoized.
     if (compare(memoized, resources) > 1) {
       memo.set(hash, resources);
       return false;
     }
+    // prune branch if every resource is worse than best.
     return resources.every((resource, type) => memoized[type] >= resource);
   };
 };
 
-const pruneOnOptimisticGeodeCount = (current, best) => {
+/**
+ * Prunes any branches which cannot possibly beat the geode count of the current best.
+ */
+const pruneIfCantProduceEnoughGeodes = (current, best) => {
   if (!best || !geodes(best.resources)) {
     return false;
   }
+  // optimistically assume this branch could build a new geode robot
+  // every minute for the remaining time.
   let geodeRobots = geodes(current.robots);
   let estimated = geodes(current.resources);
   for (let i = 0; i < current.time; i++) {
@@ -205,6 +126,9 @@ const pruneOnOptimisticGeodeCount = (current, best) => {
   return estimated <= geodes(best.resources);
 };
 
+/**
+ * Prune if any other branch has already produced this *exact* same state.
+ */
 const pruneIfEncountered = () => {
   const memo = new Set();
   return ({ time, robots, resources }) => {
@@ -217,6 +141,9 @@ const pruneIfEncountered = () => {
   };
 };
 
+/**
+ * Prune any branch which has decided not to build robots quick enough.
+ */
 const pruneIfIdledTooLong = (totalTime) => {
   const buildSomethingCutoff = Math.floor(totalTime * 0.8);
   const clayCutoff = Math.floor(totalTime * 0.7);
@@ -226,31 +153,80 @@ const pruneIfIdledTooLong = (totalTime) => {
     if (time <= buildSomethingCutoff && time > clayCutoff) {
       return robots[0] + robots[1] + robots[2] + robots[3] === 1;
     }
-
     // prune if not built a clay robot by the cutoff time.
     if (time <= clayCutoff && time > obsidianCutoff) {
       return robots[1] === 0;
     }
-
     // prune if not built an obsidian robot by the cutoff time.
     if (time <= obsidianCutoff) {
       return robots[2] === 0;
     }
-
     return false;
   };
 };
 
-const priority = ({ time, resources, robots }) => {
-  const potential = add(resources, scale(robots, time));
-  return potential.reduce((total, amount, index) => 1000 ** index * amount + total, 0);
+/**
+ * Returns true if have enough resources to cover the build cost.
+ */
+const canAfford = (resources, buildCost) =>
+  resources.every((resource, type) => resource >= buildCost[type]);
+
+/**
+ * Returns the new state which result from building nothing this turn.
+ */
+const doNothing = ({ time, robots, resources }) => ({
+  time: time - 1,
+  robots,
+  resources: add(resources, robots),
+});
+
+/**
+ * Returns the new state which results from building the specified robot this turn.
+ */
+const buildRobot = (time, robots, resources, buildCost, type) => ({
+  time: time - 1,
+  robots: increment(robots, type),
+  resources: add(robots, subtract(resources, buildCost)),
+});
+
+/**
+ * Returns true if currently have enough robots of this type to cover maximum required per turn.
+ */
+const robotIsMaxedOut = (robots, maxCosts, type) => robots[type] >= maxCosts[type];
+
+/**
+ * Returns true if has more of this resource stockpiled than can spend in the remaining time.
+ */
+const resourceIsMaxedOut = (resources, time, maxCosts, type) =>
+  resources[type] >= maxCosts[type] * time;
+
+/**
+ * Returns an array containing robots that can be built this turn and the resulting next state respectively.
+ */
+const buildRobots = ({ time, robots, resources }, { costs, maxCosts }) => {
+  // if can afford a geode robot then dont worry about other robots just build geode.
+  if (canAfford(resources, geodes(costs))) {
+    return [buildRobot(time, robots, resources, geodes(costs), 3)];
+  }
+
+  const toReturn = [];
+  for (let type = resourceTypes - 1; type--; ) {
+    const buildCost = costs[type];
+    if (
+      canAfford(resources, buildCost) &&
+      !robotIsMaxedOut(robots, maxCosts, type) &&
+      !resourceIsMaxedOut(resources, time, maxCosts, type)
+    ) {
+      toReturn.push(buildRobot(time, robots, resources, buildCost, type));
+    }
+  }
+  return toReturn;
 };
 
-const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
-  const queue = [{ time: totalTime, resources: startResources, robots: startRobots }];
+const solve = (blueprint, pruneBranchFn, totalTime) => {
+  const queue = [{ time: totalTime, resources: [0, 0, 0, 0], robots: [1, 0, 0, 0] }];
   let best;
   while (queue.length) {
-    // use a priority queue
     // for now pop instead of shift because shift is o(n) instead of o(1) for pop.
     const current = queue.pop();
 
@@ -263,8 +239,8 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
       continue;
     }
 
-    // // kill this branch if a pruner fn decides it's not worth continuing.
-    if (pruners.some((fn) => fn(current, best))) {
+    // kill this branch if a pruner fn decides it's not worth continuing.
+    if (pruneBranchFn(current, best)) {
       continue;
     }
 
@@ -275,7 +251,7 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
     }
   }
 
-  return best;
+  return best ? geodes(best.resources) : 0;
 };
 
 /**
@@ -283,36 +259,16 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
  */
 export const levelOne = ({ lines }) => {
   const blueprints = parseBlueprints(lines);
-  const values = blueprints.map((blueprint) => {
-    const pruners = [
-      pruneIfIdledTooLong(24),
-      pruneOnOptimisticGeodeCount,
+  const totalTime = 24;
+  return blueprints.reduce((total, blueprint) => {
+    const pruneFn = buildBranchPruner([
+      pruneIfIdledTooLong(totalTime),
+      pruneIfCantProduceEnoughGeodes,
       pruneIfEncountered(),
       pruneIfWorse(),
-    ];
-    const { resources } = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprint, pruners);
-    return blueprint.id * geodes(resources);
-  });
-  return sum(values);
-
-  // const blueprints = parseBlueprints(lines);
-  // // caching last seems to be better, less things in cache is faster than more things in cache.
-  // const pruners = [pruneOnOptimisticGeodeCount, pruneIfWorse(), pruneIfEncountered()];
-  // const { result, history } = solve(
-  //   24,
-  //   [1, 0, 0, 0],
-  //   [0, 0, 0, 0],
-  //   blueprints[0],
-  //   pruners
-  // );
-  // console.log(result);
-
-  // await writeArrayToFile(
-  //   history.map((x) => JSON.stringify(x)),
-  //   './reuslts.json'
-  // );
-
-  // return 1234;
+    ]);
+    return total + blueprint.id * solve(blueprint, pruneFn, totalTime);
+  }, 0);
 };
 
 /**
@@ -324,15 +280,14 @@ export const levelOne = ({ lines }) => {
  */
 export const levelTwo = ({ lines }) => {
   const blueprints = parseBlueprints(lines.slice(0, 3));
-  const values = blueprints.map((blueprint) => {
-    const pruners = [
-      pruneIfIdledTooLong(32),
-      pruneOnOptimisticGeodeCount,
-      pruneIfWorse(),
+  const totalTime = 32;
+  return blueprints.reduce((total, blueprint) => {
+    const pruneFn = buildBranchPruner([
+      pruneIfIdledTooLong(totalTime),
+      pruneIfCantProduceEnoughGeodes,
       pruneIfEncountered(),
-    ];
-    const { resources } = solve(32, [1, 0, 0, 0], [0, 0, 0, 0], blueprint, pruners);
-    return geodes(resources);
-  });
-  return product(values);
+      pruneIfWorse(),
+    ]);
+    return total * solve(blueprint, pruneFn, totalTime);
+  }, 1);
 };
