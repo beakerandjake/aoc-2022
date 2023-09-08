@@ -71,14 +71,14 @@ export const convertTo2dArray = (array, characterMapFn = (char, y, x) => char) =
  * @param {Number} y - The y (row) index.
  * @param {Number} x - The x (col) index.
  */
-export const index2d = (width, y, x) => width * y + x;
+const index2d = (width, y, x) => width * y + x;
 
 /**
  * Returns the coordinate (y,x) from the index of the element in a *flattened* representation of the 2d array.
  * @param {Number} width - The number of elements in each row of the 2d array.
  * @param {Number} index
  */
-export const indexToCoordinate2d = (width, index) => ({
+const indexToCoordinate2d = (width, index) => ({
   y: Math.floor(index / width),
   x: index % width,
 });
@@ -125,20 +125,33 @@ export const cardinalNeighbors2d = (array, y, x) =>
   neighbors2d(array, y, x, cardinalNeighborDeltas);
 
 /**
- * Functional iteration over a *flat* 2d array.
- * @param {Array} array
- * @param {Object} shape - The shape of the 2d array (width and height)
- * @param {Number} shape.width - The number of elements in each row of the 2d array.
- * @param {Number} shape.height - The number of elements in each column of the 2d array.
- * @param {Function} callbackFn - Function invoked for every element of the array.
+ * Executes the function once per array element.
+ * @param {FlatArray} array
+ * @param {(element:any, y:Number, x:Number) => boolean} callbackFn - Function invoked for every element of the array. Can explicitly return false to stop evaluation.
  */
-export const forEach2d = (array, { height, width }, callbackFn) => {
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const result = callbackFn(array[index2d(width, y, x)], y, x);
-      if (result === false) {
-        break;
-      }
+export const forEach2d = ({ items, shape: { width } }, callbackFn) => {
+  for (let index = 0; index < items.length; index++) {
+    const { y, x } = indexToCoordinate2d(width, index);
+    const result = callbackFn(items[index], y, x);
+    if (result === false) {
+      break;
     }
   }
+};
+
+/**
+ * Returns a new FlatArray object whose items have been populated with the results
+ * of calling the map function on every element in the original array.
+ * @param {FlatArray} array
+ * @param {(element:any, y:Number, x:Number) => any} callbackFn - Function invoked for every element of the array, returns the mapped value.
+ * @returns {FlatArray}
+ */
+export const map2d = (array, callbackFn) => {
+  const srcItems = array.items;
+  const destItems = Array(srcItems.length);
+  for (let index = 0; index < srcItems.length; index++) {
+    const { y, x } = indexToCoordinate2d(array.shape.width, index);
+    destItems[index] = callbackFn(srcItems[index], y, x);
+  }
+  return { ...array, items: destItems };
 };

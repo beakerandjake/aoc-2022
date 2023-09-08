@@ -1,9 +1,9 @@
 import {
   parse2dArray,
   cardinalNeighbors2d,
-  indexToCoordinate2d,
   lowercaseAlphabet,
   minHeap,
+  map2d,
 } from './util/index.js';
 
 /**
@@ -82,20 +82,17 @@ const createEdge = (fromId, toId, weight) => ({
  * @param {String} input
  */
 const parseInput = (input) => {
+  // parse into a flat 2d array and convert each character to a node.
   const flattened = parse2dArray(input, (character, index) =>
     createNode(index, character, characterHeightMap[character])
   );
-  const { items, shape } = flattened;
-
-  for (let index = 0; index < items.length; index++) {
-    const current = items[index];
-    const { y, x } = indexToCoordinate2d(shape.width, index);
-    current.edges = cardinalNeighbors2d(flattened, y, x).map((neighbor) =>
+  // update the edges of each node to have its N,S,E,W neighbors
+  return map2d(flattened, (current, y, x) => ({
+    ...current,
+    edges: cardinalNeighbors2d(flattened, y, x).map((neighbor) =>
       createEdge(current.id, neighbor.id, edgeWeight(current.height, neighbor.height))
-    );
-  }
-
-  return flattened.items;
+    ),
+  })).items;
 };
 
 /**
