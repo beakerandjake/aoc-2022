@@ -63,6 +63,8 @@ const scale = (array, value) => array.map((x) => x * value);
 
 const increment = (array, type) => array.map((x, i) => (i === type ? x + 1 : x));
 
+const total = (items) => items[0] + items[1] + items[2] + items[3];
+
 /**
  * Compares two resource or robot arrays
  * Returns > 0 if b is greater than a.
@@ -215,13 +217,27 @@ const pruneIfEncountered = () => {
   };
 };
 
-const pruneIfDoneNothing = (totalTime) => {
-  const cutoff = Math.floor(totalTime * 0.7);
+const pruneIfIdledTooLong = (totalTime) => {
+  const buildSomethingCutoff = Math.floor(totalTime * 0.8);
+  const clayCutoff = Math.floor(totalTime * 0.7);
+  const obsidianCutoff = Math.floor(totalTime * 0.3);
   return ({ time, robots }) => {
-    if (time > cutoff) {
-      return false;
+    // prune if not built any robot by the cutoff time.
+    if (time <= buildSomethingCutoff && time > clayCutoff) {
+      return robots[0] + robots[1] + robots[2] + robots[3] === 1;
     }
-    return sum(robots) === 1;
+
+    // prune if not built a clay robot by the cutoff time.
+    if (time <= clayCutoff && time > obsidianCutoff) {
+      return robots[1] === 0;
+    }
+
+    // prune if not built an obsidian robot by the cutoff time.
+    if (time <= obsidianCutoff) {
+      return robots[2] === 0;
+    }
+
+    return false;
   };
 };
 
@@ -268,7 +284,12 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
 export const levelOne = ({ lines }) => {
   const blueprints = parseBlueprints(lines);
   const values = blueprints.map((blueprint) => {
-    const pruners = [pruneOnOptimisticGeodeCount, pruneIfEncountered(), pruneIfWorse()];
+    const pruners = [
+      pruneIfIdledTooLong(24),
+      pruneOnOptimisticGeodeCount,
+      pruneIfEncountered(),
+      pruneIfWorse(),
+    ];
     const { resources } = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprint, pruners);
     return blueprint.id * geodes(resources);
   });
@@ -304,7 +325,12 @@ export const levelOne = ({ lines }) => {
 export const levelTwo = ({ lines }) => {
   const blueprints = parseBlueprints(lines.slice(0, 3));
   const values = blueprints.map((blueprint) => {
-    const pruners = [pruneOnOptimisticGeodeCount, pruneIfWorse(), pruneIfEncountered()];
+    const pruners = [
+      pruneIfIdledTooLong(32),
+      pruneOnOptimisticGeodeCount,
+      pruneIfWorse(),
+      pruneIfEncountered(),
+    ];
     const { resources } = solve(32, [1, 0, 0, 0], [0, 0, 0, 0], blueprint, pruners);
     return geodes(resources);
   });
