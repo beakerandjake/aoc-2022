@@ -51,20 +51,11 @@ const parseInput = (() => {
   const findMaxWidth = (rows) => Math.max(...rows.map((row) => row.length));
 
   /**
-   * Returns a new array that is padded to the target width with the pad item.
-   * Arrays which are longer than or equal to the target width are not modified.
-   */
-  const pad = (array, width, padItem) =>
-    array.length >= width
-      ? array
-      : [...array, ...Array(width - array.length).fill(padItem)];
-
-  /**
    * Returns a 2d array representing the map.
    */
   const parseMap = (lines) => {
     const maxWidth = findMaxWidth(lines);
-    const padded = lines.map((line) => pad([...line], maxWidth, ' '));
+    const padded = lines.map((line) => line.padEnd(maxWidth, ' '));
     return convertTo2dArray(padded);
   };
 
