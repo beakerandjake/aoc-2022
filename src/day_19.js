@@ -95,13 +95,7 @@ const buildRobot = (time, robots, resources, buildCost, type) => ({
   resources: add(robots, subtract(resources, buildCost)),
 });
 
-const robotIsMaxedOut = (robots, maxCosts, type) => {
-  // never enough geode robots.
-  if (type === 3) {
-    return false;
-  }
-  return robots[type] >= maxCosts[type];
-};
+const robotIsMaxedOut = (robots, maxCosts, type) => robots[type] >= maxCosts[type];
 
 const resourceIsMaxedOut = (resources, time, maxCosts, type) => {
   if (type === 3) {
@@ -111,8 +105,13 @@ const resourceIsMaxedOut = (resources, time, maxCosts, type) => {
 };
 
 const buildRobots = ({ time, robots, resources }, { costs, maxCosts }) => {
+  // if can afford a geode robot then dont worry about other robots just build geode.
+  if (canAfford(resources, geodes(costs))) {
+    return [buildRobot(time, robots, resources, geodes(costs), 3)];
+  }
+
   const toReturn = [];
-  for (let type = 0; type < costs.length; type++) {
+  for (let type = 0; type < 3; type++) {
     const buildCost = costs[type];
     if (canAfford(resources, buildCost) && !robotIsMaxedOut(robots, maxCosts, type)) {
       toReturn.push(buildRobot(time, robots, resources, buildCost, type));
