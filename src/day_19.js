@@ -234,7 +234,7 @@ const buildRobot = ({ time, robots, resources }, buildCost, type) => ({
  * Returns an array containing robots that can be built this turn and the resulting next state respectively.
  */
 const buildRobots = (state, blueprint) => {
-  // if can afford a geode robot then dont worry about other robots just build geode.
+  // if can afford a geode robot then don't worry about other robots just build geode.
   if (canAfford(state, geodes(blueprint.costs))) {
     return [buildRobot(state, geodes(blueprint.costs), indexes.geodes)];
   }
@@ -253,7 +253,10 @@ const buildRobots = (state, blueprint) => {
   return toReturn;
 };
 
-const solve = (blueprint, pruneBranchFn, totalTime) => {
+/**
+ * Returns the maximum number of geodes that can be built with the blueprint in the time limit.
+ */
+const maxGeodes = (blueprint, pruneBranchFn, totalTime) => {
   const queue = [{ time: totalTime, resources: [0, 0, 0, 0], robots: [1, 0, 0, 0] }];
   let best;
   while (queue.length) {
@@ -297,16 +300,12 @@ export const levelOne = ({ lines }) => {
       pruneIfEncountered(),
       pruneIfWorse(),
     ]);
-    return total + blueprint.id * solve(blueprint, pruneFn, totalTime);
+    return total + blueprint.id * maxGeodes(blueprint, pruneFn, totalTime);
   }, 0);
 };
 
 /**
  * Returns the solution for level two of this puzzle.
- * @param {Object} args - Provides both raw and split input.
- * @param {String} args.input - The original, unparsed input string.
- * @param {String[]} args.lines - Array containing each line of the input string.
- * @returns {Number|String}
  */
 export const levelTwo = ({ lines }) => {
   const blueprints = parseBlueprints(lines.slice(0, 3));
@@ -318,6 +317,6 @@ export const levelTwo = ({ lines }) => {
       pruneIfEncountered(),
       pruneIfWorse(),
     ]);
-    return total * solve(blueprint, pruneFn, totalTime);
+    return total * maxGeodes(blueprint, pruneFn, totalTime);
   }, 1);
 };
