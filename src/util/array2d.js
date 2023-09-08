@@ -29,22 +29,26 @@ export const parse2dArray = (input, characterMapFn = null, rowSeparator = '\n') 
 };
 
 /**
- * Convert a regular 2d array into a flat 2d array.
- * @param {any[][]} array
+ * Convert an array of strings into a flat 2d array.
+ * Each string in the array is considered a row, and each character of that string is treated as a column.
+ * @param {String[]} array - Array of equal length strings to convert to a flat 2d array.
+ * @param {(char:String, y:Number, x:Number) => String} characterMapFn - Invoked on each char of the string, returns the value of the char in the output array.
  */
-export const convertTo2dArray = (array) => {
+export const convertTo2dArray = (array, characterMapFn = (char, y, x) => char) => {
   if (!array.length) {
-    return { items: [], width: 0, height: 0 };
+    return { items: [], shape: { width: 0, height: 0 } };
   }
   const height = array.length;
   const width = array[0].length;
-  const toReturn = array.reduce((acc, row) => {
+  const toReturn = array.reduce((acc, row, y) => {
     if (row.length !== width) {
       throw new Error(
         `every row in 2d array must have the same width, expected: ${width} but received: ${row.width}`
       );
     }
-    acc.push(...row);
+    acc.push(
+      ...(characterMapFn ? [...row].map((char, x) => characterMapFn(char, y, x)) : row)
+    );
     return acc;
   }, []);
 
