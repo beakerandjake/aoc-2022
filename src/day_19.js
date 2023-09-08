@@ -259,7 +259,7 @@ const solve = (totalTime, startRobots, startResources, blueprint, pruners) => {
 export const levelOne = ({ lines }) => {
   const blueprints = parseBlueprints(lines);
   const values = blueprints.map((blueprint) => {
-    const pruners = [pruneOnOptimisticGeodeCount, pruneIfWorse(), pruneIfEncountered()];
+    const pruners = [pruneOnOptimisticGeodeCount, pruneIfEncountered(), pruneIfWorse()];
     const { resources } = solve(24, [1, 0, 0, 0], [0, 0, 0, 0], blueprint, pruners);
     return blueprint.id * geodes(resources);
   });
@@ -275,7 +275,7 @@ export const levelOne = ({ lines }) => {
   //   blueprints[0],
   //   pruners
   // );
-  console.log(result);
+  // console.log(result);
 
   // await writeArrayToFile(
   //   history.map((x) => JSON.stringify(x)),
