@@ -97,7 +97,8 @@ const buildRobot = (time, robots, resources, buildCost, type) => ({
 
 const robotIsMaxedOut = (robots, maxCosts, type) => robots[type] >= maxCosts[type];
 
-const resourceIsMaxedOut = (resources, time, maxCosts, type) => resources[type] >= maxCosts[type] * time;
+const resourceIsMaxedOut = (resources, time, maxCosts, type) =>
+  resources[type] >= maxCosts[type] * time;
 
 const buildRobots = ({ time, robots, resources }, { costs, maxCosts }) => {
   // if can afford a geode robot then dont worry about other robots just build geode.
@@ -211,6 +212,16 @@ const pruneIfEncountered = () => {
       return false;
     }
     return true;
+  };
+};
+
+const pruneIfDoneNothing = (totalTime) => {
+  const cutoff = Math.floor(totalTime * 0.7);
+  return ({ time, robots }) => {
+    if (time > cutoff) {
+      return false;
+    }
+    return sum(robots) === 1;
   };
 };
 
