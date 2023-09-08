@@ -2,8 +2,7 @@
  * Contains solutions for Day 22
  * Puzzle Description: https://adventofcode.com/2022/day/22
  */
-import { convertTo2dArray, index2d, elementAt2d } from './util/array2d.js';
-import { array2dToString } from './util/debug.js';
+import { convertTo2dArray, elementAt2d } from './util/array2d.js';
 import { Vector2, left, right, down, up, add, equals, one } from './util/vector2.js';
 import { toNumber } from './util/string.js';
 import { repeat } from './util/functions.js';
@@ -28,17 +27,6 @@ const directionIndexes = {
   down: 1,
   left: 2,
   up: 3,
-};
-
-/**
- * Print the map and move history to the console.
- */
-const render = ({ data, shape }, history) => {
-  const mapCopy = [...data];
-  history.forEach(({ position, facing }, index) => {
-    mapCopy[index2d(shape.width, position.y, position.x)] = directions[facing].display;
-  });
-  console.log(array2dToString(mapCopy, shape));
 };
 
 /**
