@@ -75,13 +75,12 @@ export const indexToCoordinate2d = (width, index) => ({
 
 /**
  * Returns the element at <y,x> in the *flattened* 2d array.
- * @param {Array} array -  The *flattened* 2d array.
- * @param {Object} shape - The shape of the 2d array (width and height)
- * @param {Number} shape.width - The number of elements in each row of the 2d array.
+ * @param {Array} array -  A *flattened* 2d array.
+ * @param {Number} width - The number of elements in each row of the 2d array.
  * @param {Number} y - The y (row) index.
  * @param {Number} x - The x (col) index.
  */
-export const elementAt2d = (array, { width }, y, x) => array[index2d(width, y, x)];
+export const elementAt2d = (array, width, y, x) => array[index2d(width, y, x)];
 
 /**
  * Returns all of the neighbors

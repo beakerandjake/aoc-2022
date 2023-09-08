@@ -55,16 +55,10 @@ const parseInput = (() => {
       .match(/\d+|\w/g)
       .map((match) => (match === 'L' || match === 'R' ? match : toNumber(match)));
 
-  return (lines) => {
-    const { items, shape } = parseMap(lines.slice(0, -2));
-    return {
-      map: {
-        data: items,
-        shape,
-      },
+  return (lines) => ({
+      map: parseMap(lines.slice(0, -2)),
       path: parseNotes(lines[lines.length - 1]),
-    };
-  };
+    });
 })();
 
 /**
@@ -88,7 +82,8 @@ const isWall = (tile) => tile === '#';
 /**
  * Returns the tile at the given position.
  */
-const getTile = (map, { x, y }) => elementAt2d(map.data, map.shape, y, x);
+const getTile = ({ items, shape: { width } }, { x, y }) =>
+  elementAt2d(items, width, y, x);
 
 /**
  * Calculates the final password based on the position and facing.
@@ -208,7 +203,7 @@ export const levelOne = (() => {
   return ({ lines }) => {
     const { map, path } = parseInput(lines);
     const initialState = {
-      position: new Vector2(findStartX(map.data), 0),
+      position: new Vector2(findStartX(map.items), 0),
       facing: directionIndexes.right,
     };
     return finalPassword(followPath(initialState, path, map));
@@ -463,7 +458,7 @@ export const levelTwo = (() => {
   return ({ lines }) => {
     const { map, path } = parseInput(lines);
     const initialState = {
-      position: new Vector2(findStartX(map.data), 0),
+      position: new Vector2(findStartX(map.items), 0),
       facing: directionIndexes.right,
     };
     const history = followPath(initialState, path, map);

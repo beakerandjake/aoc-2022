@@ -31,17 +31,14 @@ export const worldToString = (points, charset = { empty: '.', occupied: '#' }) =
  * Returns a string visualizing the flattened 2d array.
  * @param {Array} array - A flat 2d array.
  */
-export const array2dToString = (array, shape) => {
-  const { width, height } = shape;
+export const array2dToString = ({ items, shape: { width, height } }) => {
   const rows = [];
   for (let y = 0; y < height; y++) {
     const row = [];
     for (let x = 0; x < width; x++) {
-      row.push(elementAt2d(array, shape, y, x));
+      row.push(elementAt2d(items, width, y, x));
     }
     rows.push(row);
   }
   return rows.map((row) => row.join('')).join(EOL);
 };
-
-
