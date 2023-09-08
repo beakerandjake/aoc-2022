@@ -56,17 +56,17 @@ const parseInput = (() => {
       .map((match) => (match === 'L' || match === 'R' ? match : toNumber(match)));
 
   return (lines) => ({
-      map: parseMap(lines.slice(0, -2)),
-      path: parseNotes(lines[lines.length - 1]),
-    });
+    map: parseMap(lines.slice(0, -2)),
+    path: parseNotes(lines[lines.length - 1]),
+  });
 })();
 
 /**
  * Returns the index of the starting tile.
  */
-const findStartX = (map) =>
+const findStartX = (items) =>
   // this works only because there is a guaranteed open tile in the first row.
-  map.indexOf('.');
+  items.indexOf('.');
 
 /**
  * Returns the new facing direction after rotating in the direction (clockwise or counterclockwise).
@@ -82,8 +82,7 @@ const isWall = (tile) => tile === '#';
 /**
  * Returns the tile at the given position.
  */
-const getTile = ({ items, shape: { width } }, { x, y }) =>
-  elementAt2d(items, width, y, x);
+const getTile = (map, { x, y }) => elementAt2d(map, y, x);
 
 /**
  * Calculates the final password based on the position and facing.
