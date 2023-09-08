@@ -10,3 +10,14 @@ export const pick = (object, keys) =>
     }
     return acc;
   }, {});
+
+/**
+ * Creates an object composed of the inverted keys and values of object.
+ * If object contains duplicate values, subsequent values overwrite property assignments of previous values.
+ * @param {Object} object - The object to invert.
+ */
+export const invert = (object) =>
+  Object.keys(object).reduce((acc, key) => {
+    acc[object[key]] = key;
+    return acc;
+  }, {});
