@@ -71,14 +71,14 @@ export const convertTo2dArray = (array, characterMapFn = (char, y, x) => char) =
  * @param {Number} y - The y (row) index.
  * @param {Number} x - The x (col) index.
  */
-const index2d = (width, y, x) => width * y + x;
+export const index2d = (width, y, x) => width * y + x;
 
 /**
  * Returns the coordinate (y,x) from the index of the element in a *flattened* representation of the 2d array.
  * @param {Number} width - The number of elements in each row of the 2d array.
  * @param {Number} index
  */
-const indexToCoordinate2d = (width, index) => ({
+export const indexToCoordinate2d = (width, index) => ({
   y: Math.floor(index / width),
   x: index % width,
 });
