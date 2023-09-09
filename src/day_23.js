@@ -21,6 +21,11 @@ import {
 } from './util/vector2.js';
 import { filterDuplicates, arraysEqual } from './util/array.js';
 
+/**
+ * Each entry is an array containing
+ * The adjacent positions for the elf to look for other elves in.
+ * The proposed direction of movement if no elves are present in the adjacent positions.
+ */
 const defaultRules = [
   // all directions.
   [[up, down, left, right, upRight, upLeft, downRight, downLeft], zero],
@@ -47,9 +52,7 @@ const fastHash = ({ x, y }) => x + (y << 16);
 const includes = (pointLookup, point) => pointLookup.has(fastHash(point));
 
 const hasNeighbors = (elf, directions, elfLookup) =>
-  directions
-    .map((direction) => add(elf, direction))
-    .some((position) => includes(elfLookup, position));
+  directions.some((position) => includes(elfLookup, add(elf, position)));
 
 const roundFirstHalf = (elf, elfLookup, rules) => {
   const matchingRule = rules.find(
