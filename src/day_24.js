@@ -103,6 +103,7 @@ const minTimeToReachDestination = (map, start, target) => {
   const { width, height } = map.shape;
   const queue = [{ position: start, time: 0 }];
   let best;
+  const encountered = new Set();
   while (queue.length) {
     const current = queue.shift();
 
@@ -115,6 +116,13 @@ const minTimeToReachDestination = (map, start, target) => {
 
     if (best && current.time > best.time) {
       continue;
+    }
+
+    const hash = `${current.time}.${current.position.toString()}`;
+    if (encountered.has(hash)) {
+      continue;
+    } else {
+      encountered.add(hash);
     }
 
     const currentMap = blizzards[(current.time + 1) % blizzards.length];
@@ -144,7 +152,8 @@ export const levelOne = ({ lines }) => {
   const startPosition = new Vector2(0, -1);
   const targetPosition = new Vector2(map.shape.width - 1, map.shape.height - 1);
   const result = minTimeToReachDestination(map, startPosition, targetPosition);
-  return result ? result.time + 1 : 0;
+  // add one to end time since the "target" is one away from the real exit (which lies off the map)
+  return result ? result.time + 1 : undefined;
 };
 
 /**
