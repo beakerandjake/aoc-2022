@@ -6,6 +6,7 @@ import { convertTo2dArray, elementAt2d, map2d } from './util/array2d.js';
 import { array2dToString } from './util/debug.js';
 import { Vector2, add, equals } from './util/vector2.js';
 import { mod } from './util/math.js';
+import { arraysEqual } from './util/array.js';
 
 const mapToString = (() => {
   const bitToChar = {
@@ -26,7 +27,7 @@ const mapToString = (() => {
     0xe: 3,
     0xf: 4,
   };
-  return (map, expedition) =>
+  return (map, expedition = new Vector2(0, -1)) =>
     array2dToString(map, (char, y, x) =>
       y === expedition.y && x === expedition.x ? 'E' : bitToChar[char]
     );
@@ -83,9 +84,24 @@ const neighbors = [
   new Vector2(-1, 0),
 ];
 
+/**
+ * Create an array which can return the map at the current time
+ */
+const blizzardTimeMap = (map) => {
+  let current = moveBlizzards(map);
+  const toReturn = [map];
+  // blizzards move in a cycle, they will eventually repeat start state.
+  while (!arraysEqual(current.items, map.items)) {
+    toReturn.push(current);
+    current = moveBlizzards(current);
+  }
+  return toReturn;
+};
+
 const minTimeToReachDestination = (map, start, target) => {
+  const blizzards = blizzardTimeMap(map);
   const { width, height } = map.shape;
-  const queue = [{ map, position: start, time: 0 }];
+  const queue = [{ position: start, time: 0 }];
   let best;
   while (queue.length) {
     const current = queue.shift();
@@ -101,19 +117,19 @@ const minTimeToReachDestination = (map, start, target) => {
       continue;
     }
 
-    const newMap = moveBlizzards(current.map);
+    const currentMap = blizzards[(current.time + 1) % blizzards.length];
 
     // if there won't be a blizzard at the current position, it's a valid option to stay put.
-    if (!hasBlizzard(newMap, current.position)) {
-      queue.push({ ...current, map: newMap, time: current.time + 1 });
+    if (!hasBlizzard(currentMap, current.position)) {
+      queue.push({ ...current, time: current.time + 1 });
     }
 
     // each tile that won't be occupied by a blizzard next turn is a valid option.
     const openNeighbors = neighbors
       .map((delta) => add(current.position, delta))
       .filter(({ x, y }) => x >= 0 && x < width && y >= 0 && y < height)
-      .filter((position) => !hasBlizzard(newMap, position))
-      .map((position) => ({ map: newMap, position, time: current.time + 1 }));
+      .filter((position) => !hasBlizzard(currentMap, position))
+      .map((position) => ({ position, time: current.time + 1 }));
 
     queue.push(...openNeighbors);
   }
