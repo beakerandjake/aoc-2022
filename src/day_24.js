@@ -78,8 +78,8 @@ const blizzardTimeMap = (map) => {
   return toReturn;
 };
 
-const minTimeToReachDestination = (blizzards, start, target, time = 0) => {
-  const queue = [{ position: start, time }];
+const shortestPath = (blizzards, start, target, initialTime = 0) => {
+  const queue = [{ position: start, time: initialTime }];
   let bestTime;
   const encountered = new Set();
   while (queue.length) {
@@ -148,7 +148,7 @@ export const levelOne = ({ lines }) => {
   const blizzards = blizzardTimeMap(initialMap);
   const { start } = getWorldTargets(initialMap);
   const { goal } = getLocalTargets(initialMap);
-  const result = minTimeToReachDestination(blizzards, start, goal);
+  const result = shortestPath(blizzards, start, goal);
   // add one to end time since the "target" is one away from the real exit (which lies off the map)
   return result + 1;
 };
@@ -161,12 +161,9 @@ export const levelTwo = ({ input, lines }) => {
   const blizzards = blizzardTimeMap(initialMap);
   const localTargets = getLocalTargets(initialMap);
   const worldTargets = getWorldTargets(initialMap);
-  const one =
-    minTimeToReachDestination(blizzards, worldTargets.start, localTargets.goal) + 1;
-  const two =
-    minTimeToReachDestination(blizzards, worldTargets.goal, localTargets.start, one) + 1;
-  const three =
-    minTimeToReachDestination(blizzards, worldTargets.start, localTargets.goal, two) + 1;
+  const one = shortestPath(blizzards, worldTargets.start, localTargets.goal) + 1;
+  const two = shortestPath(blizzards, worldTargets.goal, localTargets.start, one) + 1;
+  const three = shortestPath(blizzards, worldTargets.start, localTargets.goal, two) + 1;
   // add one to end time since the "target" is one away from the real exit (which lies off the map)
   return one + (two - one) + (three - two);
 };
