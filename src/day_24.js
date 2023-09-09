@@ -75,7 +75,12 @@ const moveBlizzards = (map) => {
   });
 };
 
-const hasBlizzard = (map, { x, y }) => elementAt2d(map, y, x) !== 0;
+const hasBlizzard = (map, { x, y }) => {
+  if ((x < 0 && x >= map.shape.width) || y < 0 || y >= map.shape.height) {
+    return false;
+  }
+  return elementAt2d(map, y, x) !== 0;
+};
 
 const neighbors = [
   new Vector2(0, -1),
@@ -98,10 +103,10 @@ const blizzardTimeMap = (map) => {
   return toReturn;
 };
 
-const minTimeToReachDestination = (map, start, target) => {
+const minTimeToReachDestination = (map, start, target, time = 0) => {
   const blizzards = blizzardTimeMap(map);
   const { width, height } = map.shape;
-  const queue = [{ position: start, time: 0 }];
+  const queue = [{ position: start, time }];
   let best;
   const encountered = new Set();
   while (queue.length) {
@@ -119,7 +124,7 @@ const minTimeToReachDestination = (map, start, target) => {
     }
 
     const hash = `${current.time}.${current.position.toString()}`;
-    if (encountered.has(hash)) {
+    if (encountered.has(hash) && !equals(start, current.position)) {
       continue;
     } else {
       encountered.add(hash);
@@ -141,7 +146,7 @@ const minTimeToReachDestination = (map, start, target) => {
 
     queue.push(...openNeighbors);
   }
-  return best;
+  return best || { time: 0 };
 };
 
 /**
@@ -160,5 +165,18 @@ export const levelOne = ({ lines }) => {
  * Returns the solution for level two of this puzzle.
  */
 export const levelTwo = ({ input, lines }) => {
-  // your code here
+  const map = parseMap(lines);
+  const entrance = new Vector2(0, -1);
+  const goal = new Vector2(map.shape.width - 1, map.shape.height - 1);
+  const one = minTimeToReachDestination(map, entrance, goal).time + 1;
+  const two =
+    minTimeToReachDestination(
+      map,
+      new Vector2(map.shape.width - 1, map.shape.height),
+      new Vector2(0, 0),
+      one
+    ).time + 1;
+  const three = minTimeToReachDestination(map, entrance, goal, two).time + 1;
+  // add one to end time since the "target" is one away from the real exit (which lies off the map)
+  return one + (two - one) + (three - two);
 };
