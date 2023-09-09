@@ -123,7 +123,7 @@ const shortestPath = (blizzards, start, target, initialTime = 0) => {
     }
 
     if (equals(current.position, target)) {
-      return current.time;
+      return current.time - initialTime;
     }
 
     // get the state of the blizzards after they move this turn
@@ -166,8 +166,12 @@ export const levelTwo = ({ lines }) => {
   const blizzards = blizzardTimeMap(initialMap);
   const localTargets = getLocalTargets(initialMap);
   const worldTargets = getWorldTargets(initialMap);
-  const one = shortestPath(blizzards, worldTargets.start, localTargets.goal) + 1;
-  const two = shortestPath(blizzards, worldTargets.goal, localTargets.start, one) + 1;
-  const three = shortestPath(blizzards, worldTargets.start, localTargets.goal, two) + 1;
-  return one + (two - one) + (three - two);
+  return [
+    { start: worldTargets.start, goal: localTargets.goal },
+    { start: worldTargets.goal, goal: localTargets.start },
+    { start: worldTargets.start, goal: localTargets.goal },
+  ].reduce(
+    (total, { start, goal }) => total + shortestPath(blizzards, start, goal, total) + 1,
+    0
+  );
 };
