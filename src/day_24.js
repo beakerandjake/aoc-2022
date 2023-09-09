@@ -96,10 +96,26 @@ const neighbors = [
   new Vector2(-1, 0),
 ];
 
+/**
+ * Returns a function which memoizes states it has encountered before.
+ * When the returned function is invoked it returns true if the state has been previously encountered.
+ */
+const memoizeStates = () => {
+  const encountered = new Set();
+  return (current) => {
+    const hash = `${current.time}.${current.position}`;
+    if (encountered.has(hash)) {
+      return true;
+    }
+    encountered.add(hash);
+    return false;
+  };
+};
+
 const shortestPath = (blizzards, start, target, initialTime = 0) => {
   const queue = [{ position: start, time: initialTime }];
+  const encountered = memoizeStates();
   let bestTime;
-  const encountered = new Set();
   while (queue.length) {
     const current = queue.shift();
 
@@ -114,11 +130,8 @@ const shortestPath = (blizzards, start, target, initialTime = 0) => {
       continue;
     }
 
-    const hash = `${current.time}.${current.position.toString()}`;
-    if (encountered.has(hash)) {
+    if (encountered(current)) {
       continue;
-    } else {
-      encountered.add(hash);
     }
 
     const currentMap = blizzards[(current.time + 1) % blizzards.length];
