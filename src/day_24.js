@@ -11,6 +11,7 @@ import {
   mapPoints,
 } from './util/array2d.js';
 import { mod } from './util/math.js';
+import { Queue } from './util/queue.js';
 import { Vector2, add, equals } from './util/vector2.js';
 
 /**
@@ -113,7 +114,7 @@ const hasBlizzard = (map, { x, y }) => elementAt2d(map, y, x) !== 0;
  * Returns the fewest number of minutes needed to move from the start position to the target position.
  */
 const shortestPath = (blizzards, start, target, initialTime = 0) => {
-  const queue = [{ position: start, time: initialTime }];
+  const queue = new Queue({ position: start, time: initialTime });
   const encountered = memoizeStates();
   while (queue.length) {
     const current = queue.shift();
