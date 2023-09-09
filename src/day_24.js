@@ -80,19 +80,19 @@ const blizzardTimeMap = (map) => {
 
 const minTimeToReachDestination = (blizzards, start, target, time = 0) => {
   const queue = [{ position: start, time }];
-  let best;
+  let bestTime;
   const encountered = new Set();
   while (queue.length) {
     const current = queue.shift();
 
     if (equals(current.position, target)) {
-      if (!best || current.time < best.time) {
-        best = current;
+      if (!bestTime || current.time < bestTime) {
+        bestTime = current.time;
       }
       continue;
     }
 
-    if (best && current.time > best.time) {
+    if (bestTime && current.time > bestTime) {
       continue;
     }
 
@@ -119,7 +119,7 @@ const minTimeToReachDestination = (blizzards, start, target, time = 0) => {
 
     queue.push(...openNeighbors);
   }
-  return best || { time: 0 };
+  return bestTime;
 };
 
 /**
@@ -150,7 +150,7 @@ export const levelOne = ({ lines }) => {
   const { goal } = getLocalTargets(initialMap);
   const result = minTimeToReachDestination(blizzards, start, goal);
   // add one to end time since the "target" is one away from the real exit (which lies off the map)
-  return result.time + 1;
+  return result + 1;
 };
 
 /**
@@ -162,13 +162,11 @@ export const levelTwo = ({ input, lines }) => {
   const localTargets = getLocalTargets(initialMap);
   const worldTargets = getWorldTargets(initialMap);
   const one =
-    minTimeToReachDestination(blizzards, worldTargets.start, localTargets.goal).time + 1;
+    minTimeToReachDestination(blizzards, worldTargets.start, localTargets.goal) + 1;
   const two =
-    minTimeToReachDestination(blizzards, worldTargets.goal, localTargets.start, one)
-      .time + 1;
+    minTimeToReachDestination(blizzards, worldTargets.goal, localTargets.start, one) + 1;
   const three =
-    minTimeToReachDestination(blizzards, worldTargets.start, localTargets.goal, two)
-      .time + 1;
+    minTimeToReachDestination(blizzards, worldTargets.start, localTargets.goal, two) + 1;
   // add one to end time since the "target" is one away from the real exit (which lies off the map)
   return one + (two - one) + (three - two);
 };
