@@ -103,9 +103,7 @@ const blizzardTimeMap = (map) => {
   return toReturn;
 };
 
-const minTimeToReachDestination = (map, start, target, time = 0) => {
-  const blizzards = blizzardTimeMap(map);
-  const { width, height } = map.shape;
+const minTimeToReachDestination = (blizzards, start, target, time = 0) => {
   const queue = [{ position: start, time }];
   let best;
   const encountered = new Set();
@@ -140,7 +138,7 @@ const minTimeToReachDestination = (map, start, target, time = 0) => {
     // each tile that won't be occupied by a blizzard next turn is a valid option.
     const openNeighbors = neighbors
       .map((delta) => add(current.position, delta))
-      .filter(({ x, y }) => x >= 0 && x < width && y >= 0 && y < height)
+      .filter((position) => isInBounds(currentMap.shape, position))
       .filter((position) => !hasBlizzard(currentMap, position))
       .map((position) => ({ position, time: current.time + 1 }));
 
@@ -153,10 +151,14 @@ const minTimeToReachDestination = (map, start, target, time = 0) => {
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
-  const map = parseMap(lines);
+  const initialMap = parseMap(lines);
+  const blizzards = blizzardTimeMap(initialMap);
   const startPosition = new Vector2(0, -1);
-  const targetPosition = new Vector2(map.shape.width - 1, map.shape.height - 1);
-  const result = minTimeToReachDestination(map, startPosition, targetPosition);
+  const targetPosition = new Vector2(
+    initialMap.shape.width - 1,
+    initialMap.shape.height - 1
+  );
+  const result = minTimeToReachDestination(blizzards, startPosition, targetPosition);
   // add one to end time since the "target" is one away from the real exit (which lies off the map)
   return result ? result.time + 1 : undefined;
 };
@@ -165,18 +167,20 @@ export const levelOne = ({ lines }) => {
  * Returns the solution for level two of this puzzle.
  */
 export const levelTwo = ({ input, lines }) => {
-  const map = parseMap(lines);
+  const initialMap = parseMap(lines);
+  const blizzards = blizzardTimeMap(initialMap);
+
   const entrance = new Vector2(0, -1);
-  const goal = new Vector2(map.shape.width - 1, map.shape.height - 1);
-  const one = minTimeToReachDestination(map, entrance, goal).time + 1;
+  const goal = new Vector2(initialMap.shape.width - 1, initialMap.shape.height - 1);
+  const one = minTimeToReachDestination(blizzards, entrance, goal).time + 1;
   const two =
     minTimeToReachDestination(
-      map,
-      new Vector2(map.shape.width - 1, map.shape.height),
+      blizzards,
+      new Vector2(initialMap.shape.width - 1, initialMap.shape.height),
       new Vector2(0, 0),
       one
     ).time + 1;
-  const three = minTimeToReachDestination(map, entrance, goal, two).time + 1;
+  const three = minTimeToReachDestination(blizzards, entrance, goal, two).time + 1;
   // add one to end time since the "target" is one away from the real exit (which lies off the map)
   return one + (two - one) + (three - two);
 };
