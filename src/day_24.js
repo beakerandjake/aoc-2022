@@ -2,7 +2,7 @@
  * Contains solutions for Day 24
  * Puzzle Description: https://adventofcode.com/2022/day/24
  */
-import { convertTo2dArray, elementAt2d, map2d } from './util/array2d.js';
+import { convertTo2dArray, elementAt2d, mapPoints, isInBounds } from './util/array2d.js';
 import { array2dToString } from './util/debug.js';
 import { Vector2, add, equals } from './util/vector2.js';
 import { mod } from './util/math.js';
@@ -66,7 +66,7 @@ const parseMap = (lines) => {
  */
 const moveBlizzards = (map) => {
   const { width, height } = map.shape;
-  return map2d(map, (_, y, x) => {
+  return mapPoints(map, (_, y, x) => {
     const up = elementAt2d(map, mod(y - 1, height), x) & bits.blizzardDown;
     const down = elementAt2d(map, mod(y + 1, height), x) & bits.blizzardUp;
     const left = elementAt2d(map, y, mod(x - 1, width)) & bits.blizzardRight;

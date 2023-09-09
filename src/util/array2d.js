@@ -125,6 +125,15 @@ export const cardinalNeighbors2d = (array, y, x) =>
   neighbors2d(array, y, x, cardinalNeighborDeltas);
 
 /**
+ * Returns true if the point is is contained within the 2d array.
+ * @param {Object} shape - The shape of the 2d array.
+ * @param {Vector2} point - The point to test inclusion.
+ * @returns
+ */
+export const isInBounds = ({ width, height }, { x, y }) =>
+  x >= 0 && x < width && y >= 0 && y < height;
+
+/**
  * Executes the function once per array element.
  * @param {FlatArray} array
  * @param {(element:any, y:Number, x:Number) => boolean} callbackFn - Function invoked for every element of the array. Can explicitly return false to stop evaluation.
@@ -146,7 +155,7 @@ export const forEach2d = ({ items, shape: { width } }, callbackFn) => {
  * @param {(element:any, y:Number, x:Number) => any} callbackFn - Function invoked for every element of the array, returns the mapped value.
  * @returns {FlatArray}
  */
-export const map2d = (array, callbackFn) => {
+export const mapPoints = (array, callbackFn) => {
   const srcItems = array.items;
   const destItems = Array(srcItems.length);
   for (let index = 0; index < srcItems.length; index++) {

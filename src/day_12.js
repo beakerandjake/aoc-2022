@@ -3,7 +3,7 @@ import {
   cardinalNeighbors2d,
   lowercaseAlphabet,
   minHeap,
-  map2d,
+  mapPoints,
 } from './util/index.js';
 
 /**
@@ -87,7 +87,7 @@ const parseInput = (input) => {
     createNode(index, character, characterHeightMap[character])
   );
   // update the edges of each node to have its N,S,E,W neighbors
-  return map2d(flattened, (current, y, x) => ({
+  return mapPoints(flattened, (current, y, x) => ({
     ...current,
     edges: cardinalNeighbors2d(flattened, y, x).map((neighbor) =>
       createEdge(current.id, neighbor.id, edgeWeight(current.height, neighbor.height))
