@@ -3,7 +3,13 @@
  * Puzzle Description: https://adventofcode.com/2022/day/24
  */
 import { arraysEqual } from './util/array.js';
-import { convertTo2dArray, elementAt2d, isInBounds, mapPoints } from './util/array2d.js';
+import {
+  cardinalNeighborDeltas,
+  convertTo2dArray,
+  elementAt2d,
+  inBounds,
+  mapPoints,
+} from './util/array2d.js';
 import { mod } from './util/math.js';
 import { Vector2, add, equals } from './util/vector2.js';
 
@@ -82,20 +88,6 @@ const getWorldTargets = ({ shape: { width, height } }) => ({
   goal: new Vector2(width - 1, height),
 });
 
-const hasBlizzard = (map, { x, y }) => {
-  if ((x < 0 && x >= map.shape.width) || y < 0 || y >= map.shape.height) {
-    return false;
-  }
-  return elementAt2d(map, y, x) !== 0;
-};
-
-const neighbors = [
-  new Vector2(0, -1),
-  new Vector2(0, 1),
-  new Vector2(1, 0),
-  new Vector2(-1, 0),
-];
-
 /**
  * Returns a function which memoizes states it has encountered before.
  * When the returned function is invoked it returns true if the state has been previously encountered.
@@ -112,45 +104,45 @@ const memoizeStates = () => {
   };
 };
 
+/**
+ * Does the tile have a blizzard in it?
+ */
+const hasBlizzard = (map, { x, y }) => elementAt2d(map, y, x) !== 0;
+
+/**
+ * Returns the fewest number of minutes needed to move from the start position to the target position.
+ */
 const shortestPath = (blizzards, start, target, initialTime = 0) => {
   const queue = [{ position: start, time: initialTime }];
   const encountered = memoizeStates();
-  let bestTime;
   while (queue.length) {
     const current = queue.shift();
-
-    if (equals(current.position, target)) {
-      if (!bestTime || current.time < bestTime) {
-        bestTime = current.time;
-      }
-      continue;
-    }
-
-    if (bestTime && current.time > bestTime) {
-      continue;
-    }
 
     if (encountered(current)) {
       continue;
     }
 
-    const currentMap = blizzards[(current.time + 1) % blizzards.length];
+    if (equals(current.position, target)) {
+      return current.time;
+    }
+
+    // get the state of the blizzards after they move this turn
+    const map = blizzards[(current.time + 1) % blizzards.length];
 
     // if there won't be a blizzard at the current position, it's a valid option to stay put.
-    if (!hasBlizzard(currentMap, current.position)) {
+    if (equals(current.position, start) || !hasBlizzard(map, current.position)) {
       queue.push({ ...current, time: current.time + 1 });
     }
 
     // each tile that won't be occupied by a blizzard next turn is a valid option.
-    const openNeighbors = neighbors
+    const openNeighbors = cardinalNeighborDeltas
       .map((delta) => add(current.position, delta))
-      .filter((position) => isInBounds(currentMap.shape, position))
-      .filter((position) => !hasBlizzard(currentMap, position))
-      .map((position) => ({ position, time: current.time + 1 }));
-
+      .filter((neighbor) => inBounds(map.shape, neighbor) && !hasBlizzard(map, neighbor))
+      .map((neighbor) => ({ position: neighbor, time: current.time + 1 }));
     queue.push(...openNeighbors);
   }
-  return bestTime;
+
+  return undefined;
 };
 
 /**

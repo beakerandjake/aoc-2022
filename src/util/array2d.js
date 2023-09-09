@@ -108,12 +108,12 @@ const neighbors2d = ({ items, shape: { width, height } }, y, x, neighborDeltas) 
 /**
  * Array of offsets which can find a tiles N,S,E,W neighbors
  */
-const cardinalNeighborDeltas = [
+export const cardinalNeighborDeltas = Object.freeze([
   { y: -1, x: 0 },
   { y: 1, x: 0 },
   { y: 0, x: 1 },
   { y: 0, x: -1 },
-];
+]);
 
 /**
  * Returns all of the N,S,E,W neighbors of the element at [y,x]
@@ -130,7 +130,7 @@ export const cardinalNeighbors2d = (array, y, x) =>
  * @param {Vector2} point - The point to test inclusion.
  * @returns
  */
-export const isInBounds = ({ width, height }, { x, y }) =>
+export const inBounds = ({ width, height }, { x, y }) =>
   x >= 0 && x < width && y >= 0 && y < height;
 
 /**
