@@ -211,12 +211,8 @@ export const swap = (array, lhsIndex, rhsIndex) =>
 export const filterDuplicates = (array, hashFn = (x) => x) => {
   const counts = array.reduce((acc, item) => {
     const hashed = hashFn(item);
-    if (acc[hashed]) {
-      acc[hashed] += 1;
-    } else {
-      acc[hashed] = 1;
-    }
-    return acc;
-  }, {});
-  return array.filter((item) => counts[hashFn(item)] > 1);
+    const stored = acc.get(hashed) || 0;
+    return acc.set(hashed, stored + 1);
+  }, new Map());
+  return array.filter((item) => counts.get(hashFn(item)) > 1);
 };
