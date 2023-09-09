@@ -2,36 +2,10 @@
  * Contains solutions for Day 24
  * Puzzle Description: https://adventofcode.com/2022/day/24
  */
-import { convertTo2dArray, elementAt2d, mapPoints, isInBounds } from './util/array2d.js';
-import { array2dToString } from './util/debug.js';
-import { Vector2, add, equals } from './util/vector2.js';
-import { mod } from './util/math.js';
 import { arraysEqual } from './util/array.js';
-
-const mapToString = (() => {
-  const bitToChar = {
-    0x0: '.',
-    0x1: '^',
-    0x2: 'v',
-    0x3: 2,
-    0x4: '>',
-    0x5: 2,
-    0x6: 2,
-    0x7: 3,
-    0x8: '<',
-    0x9: 2,
-    0xa: 2,
-    0xb: 3,
-    0xc: 2,
-    0xd: 3,
-    0xe: 3,
-    0xf: 4,
-  };
-  return (map, expedition = new Vector2(0, -1)) =>
-    array2dToString(map, (char, y, x) =>
-      y === expedition.y && x === expedition.x ? 'E' : bitToChar[char]
-    );
-})();
+import { convertTo2dArray, elementAt2d, isInBounds, mapPoints } from './util/array2d.js';
+import { mod } from './util/math.js';
+import { Vector2, add, equals } from './util/vector2.js';
 
 /**
  * The bit masks used to represent the various characters on the map.
@@ -57,6 +31,7 @@ const parseMap = (lines) => {
     '<': bits.blizzardLeft,
   };
   // create a new array removing the bordering tiles on the outer edge of the map.
+  // trimming this layer makes moving the blizzards easier but makes handing start/goal positions annoying.
   const trimmed = lines.slice(1, -1).map((line) => line.slice(1, -1));
   return convertTo2dArray(trimmed, (char) => inputCharMap[char]);
 };
@@ -122,7 +97,7 @@ const minTimeToReachDestination = (blizzards, start, target, time = 0) => {
     }
 
     const hash = `${current.time}.${current.position.toString()}`;
-    if (encountered.has(hash) && !equals(start, current.position)) {
+    if (encountered.has(hash)) {
       continue;
     } else {
       encountered.add(hash);
@@ -148,19 +123,34 @@ const minTimeToReachDestination = (blizzards, start, target, time = 0) => {
 };
 
 /**
+ * Returns the start/goal positions in relation to the trimmed map.
+ * These positions exist on the trimmed map and are one unit away from the 'real' targets.
+ */
+const getLocalTargets = ({ shape: { width, height } }) => ({
+  start: new Vector2(0, 0),
+  goal: new Vector2(width - 1, height - 1),
+});
+
+/**
+ * Returns the start/goal positions in relation to the actual input map.
+ * These positions do not exist on the trimmed map and are one unit way from the local targets.
+ */
+const getWorldTargets = ({ shape: { width, height } }) => ({
+  start: new Vector2(0, -1),
+  goal: new Vector2(width - 1, height),
+});
+
+/**
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
   const initialMap = parseMap(lines);
   const blizzards = blizzardTimeMap(initialMap);
-  const startPosition = new Vector2(0, -1);
-  const targetPosition = new Vector2(
-    initialMap.shape.width - 1,
-    initialMap.shape.height - 1
-  );
-  const result = minTimeToReachDestination(blizzards, startPosition, targetPosition);
+  const { start } = getWorldTargets(initialMap);
+  const { goal } = getLocalTargets(initialMap);
+  const result = minTimeToReachDestination(blizzards, start, goal);
   // add one to end time since the "target" is one away from the real exit (which lies off the map)
-  return result ? result.time + 1 : undefined;
+  return result.time + 1;
 };
 
 /**
@@ -169,18 +159,16 @@ export const levelOne = ({ lines }) => {
 export const levelTwo = ({ input, lines }) => {
   const initialMap = parseMap(lines);
   const blizzards = blizzardTimeMap(initialMap);
-
-  const entrance = new Vector2(0, -1);
-  const goal = new Vector2(initialMap.shape.width - 1, initialMap.shape.height - 1);
-  const one = minTimeToReachDestination(blizzards, entrance, goal).time + 1;
+  const localTargets = getLocalTargets(initialMap);
+  const worldTargets = getWorldTargets(initialMap);
+  const one =
+    minTimeToReachDestination(blizzards, worldTargets.start, localTargets.goal).time + 1;
   const two =
-    minTimeToReachDestination(
-      blizzards,
-      new Vector2(initialMap.shape.width - 1, initialMap.shape.height),
-      new Vector2(0, 0),
-      one
-    ).time + 1;
-  const three = minTimeToReachDestination(blizzards, entrance, goal, two).time + 1;
+    minTimeToReachDestination(blizzards, worldTargets.goal, localTargets.start, one)
+      .time + 1;
+  const three =
+    minTimeToReachDestination(blizzards, worldTargets.start, localTargets.goal, two)
+      .time + 1;
   // add one to end time since the "target" is one away from the real exit (which lies off the map)
   return one + (two - one) + (three - two);
 };
