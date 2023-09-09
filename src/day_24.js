@@ -118,10 +118,12 @@ const shortestPath = (blizzards, start, target, initialTime = 0) => {
   while (queue.length) {
     const current = queue.shift();
 
+    // skip if already visited current state.
     if (encountered(current)) {
       continue;
     }
 
+    // once we hit the target, this is the shortest path, no other states in the queue can beat it.
     if (equals(current.position, target)) {
       return current.time - initialTime;
     }
