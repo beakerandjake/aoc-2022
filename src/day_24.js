@@ -50,20 +50,6 @@ const moveBlizzards = (map) => {
   });
 };
 
-const hasBlizzard = (map, { x, y }) => {
-  if ((x < 0 && x >= map.shape.width) || y < 0 || y >= map.shape.height) {
-    return false;
-  }
-  return elementAt2d(map, y, x) !== 0;
-};
-
-const neighbors = [
-  new Vector2(0, -1),
-  new Vector2(0, 1),
-  new Vector2(1, 0),
-  new Vector2(-1, 0),
-];
-
 /**
  * Create an array which can return the map at the current time
  */
@@ -77,6 +63,38 @@ const blizzardTimeMap = (map) => {
   }
   return toReturn;
 };
+
+/**
+ * Returns the start/goal positions in relation to the trimmed map.
+ * These positions exist on the trimmed map and are one unit away from the 'real' targets.
+ */
+const getLocalTargets = ({ shape: { width, height } }) => ({
+  start: new Vector2(0, 0),
+  goal: new Vector2(width - 1, height - 1),
+});
+
+/**
+ * Returns the start/goal positions in relation to the actual input map.
+ * These positions do not exist on the trimmed map and are one unit way from the local targets.
+ */
+const getWorldTargets = ({ shape: { width, height } }) => ({
+  start: new Vector2(0, -1),
+  goal: new Vector2(width - 1, height),
+});
+
+const hasBlizzard = (map, { x, y }) => {
+  if ((x < 0 && x >= map.shape.width) || y < 0 || y >= map.shape.height) {
+    return false;
+  }
+  return elementAt2d(map, y, x) !== 0;
+};
+
+const neighbors = [
+  new Vector2(0, -1),
+  new Vector2(0, 1),
+  new Vector2(1, 0),
+  new Vector2(-1, 0),
+];
 
 const shortestPath = (blizzards, start, target, initialTime = 0) => {
   const queue = [{ position: start, time: initialTime }];
@@ -123,24 +141,6 @@ const shortestPath = (blizzards, start, target, initialTime = 0) => {
 };
 
 /**
- * Returns the start/goal positions in relation to the trimmed map.
- * These positions exist on the trimmed map and are one unit away from the 'real' targets.
- */
-const getLocalTargets = ({ shape: { width, height } }) => ({
-  start: new Vector2(0, 0),
-  goal: new Vector2(width - 1, height - 1),
-});
-
-/**
- * Returns the start/goal positions in relation to the actual input map.
- * These positions do not exist on the trimmed map and are one unit way from the local targets.
- */
-const getWorldTargets = ({ shape: { width, height } }) => ({
-  start: new Vector2(0, -1),
-  goal: new Vector2(width - 1, height),
-});
-
-/**
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
@@ -156,7 +156,7 @@ export const levelOne = ({ lines }) => {
 /**
  * Returns the solution for level two of this puzzle.
  */
-export const levelTwo = ({ input, lines }) => {
+export const levelTwo = ({ lines }) => {
   const initialMap = parseMap(lines);
   const blizzards = blizzardTimeMap(initialMap);
   const localTargets = getLocalTargets(initialMap);
@@ -164,6 +164,5 @@ export const levelTwo = ({ input, lines }) => {
   const one = shortestPath(blizzards, worldTargets.start, localTargets.goal) + 1;
   const two = shortestPath(blizzards, worldTargets.goal, localTargets.start, one) + 1;
   const three = shortestPath(blizzards, worldTargets.start, localTargets.goal, two) + 1;
-  // add one to end time since the "target" is one away from the real exit (which lies off the map)
   return one + (two - one) + (three - two);
 };
