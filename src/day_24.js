@@ -3,32 +3,30 @@
  * Puzzle Description: https://adventofcode.com/2022/day/24
  */
 
-import { convertTo2dArray, index2d, map2d } from './util/array2d.js';
-import { binaryToString } from './util/bitwise.js';
+import { convertTo2dArray, index2d } from './util/array2d.js';
 import { array2dToString } from './util/debug.js';
 import { invert } from './util/object.js';
+import { Vector2 } from './util/vector2.js';
 
 const bits = {
-  empty: 0,
-  blizzardUp: 1,
-  blizzardDown: 1 << 1,
-  blizzardRight: 1 << 2,
-  blizzardLeft: 1 << 3,
-  boundary: 1 << 4,
+  empty: 0b0000,
+  blizzardUp: 0b0001,
+  blizzardDown: 0b0010,
+  blizzardRight: 0b0100,
+  blizzardLeft: 0b1000,
 };
 
-const charToBit = {
+const charToBitfield = {
   '.': bits.empty,
   '^': bits.blizzardUp,
   v: bits.blizzardDown,
   '>': bits.blizzardRight,
   '<': bits.blizzardLeft,
-  '#': bits.boundary,
 };
 
-const render = (array) => {
+const render = (() => {
   const bitToChar = {
-    ...invert(charToBit),
+    ...invert(charToBitfield),
     0xf: 4,
     0xe: 3,
     0xd: 3,
@@ -41,35 +39,31 @@ const render = (array) => {
     0x5: 2,
     0x3: 2,
   };
-  const toString = array2dToString(array, (char) => bitToChar[char] || '?');
-  console.log(toString);
-};
+  return (map, expedition) => {
+    console.log(
+      array2dToString(map, (char, y, x) =>
+        y === expedition.y && x === expedition.x ? 'E' : bitToChar[char]
+      )
+    );
+  };
+})();
 
-const parseMap = (lines) => {
-  convertTo2dArray(lines, (char) => charToBit[char]);
-}
-
-const moveBlizzards = (map) => {
-  const copy = [...map.items];
-  const yMax = map.shape.height - 1;
-  const xMax = map.shape.height - 1;
-  for (let y = 1; y < yMax; y++) {
-    for (let x = 1; x < xMax; x++) {
-      const index = index2d(map.shape.height, y, x);
-      copy[index] = '@';
-    }
-  }
-  return { ...map, items: copy };
-};
+const parseMap = (lines) =>
+  convertTo2dArray(
+    // remove the walls from the input array.
+    lines.slice(1, -1).map((line) => line.slice(1, -1)),
+    (char) => charToBitfield[char]
+  );
 
 /**
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
   const map = parseMap(lines);
-  render(map);
-  const moved = moveBlizzards(map);
-  render(moved);
+  const expeditionPosition = new Vector2(3, 2);
+  render(map, expeditionPosition);
+  map.items[5] = 0xf;
+  render(map, expeditionPosition);
   return 1234;
 };
 
