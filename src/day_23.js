@@ -51,8 +51,14 @@ const fastHash = ({ x, y }) => x + (y << 16);
 
 const includes = (pointLookup, point) => pointLookup.has(fastHash(point));
 
-const hasNeighbors = (elf, directions, elfLookup) =>
-  directions.some((position) => includes(elfLookup, add(elf, position)));
+const hasNeighbors = (elf, directions, elfLookup) => {
+  for (let i = directions.length; i--; ) {
+    if (includes(elfLookup, add(elf, directions[i]))) {
+      return true;
+    }
+  }
+  return false;
+};
 
 const roundFirstHalf = (elf, elfLookup, rules) => {
   const matchingRule = rules.find(
