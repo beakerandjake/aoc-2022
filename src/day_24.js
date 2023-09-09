@@ -74,6 +74,8 @@ const moveBlizzards = (map) => {
   });
 };
 
+const hasBlizzard = (map, { x, y }) => elementAt2d(map, y, x) !== 0;
+
 const neighbors = [
   new Vector2(0, -1),
   new Vector2(0, 1),
@@ -84,30 +86,38 @@ const neighbors = [
 const minTimeToReachDestination = (map, start, target) => {
   const { width, height } = map.shape;
   const queue = [{ map, position: start, time: 0 }];
-  const encountered = new Set();
+  let best;
   while (queue.length) {
     const current = queue.shift();
 
-    if (encountered.has(current.position.toString())) {
+    if (equals(current.position, target)) {
+      if (!best || current.time < best.time) {
+        best = current;
+      }
       continue;
     }
 
-    encountered.add(current.position.toString());
-    console.log();
-    console.log(mapToString(map, current.position));
-
-    if (equals(current.position, target)) {
-      return current.time;
+    if (best && current.time > best.time) {
+      continue;
     }
 
+    const newMap = moveBlizzards(current.map);
+
+    // if there won't be a blizzard at the current position, it's a valid option to stay put.
+    if (!hasBlizzard(newMap, current.position)) {
+      queue.push({ ...current, map: newMap, time: current.time + 1 });
+    }
+
+    // each tile that won't be occupied by a blizzard next turn is a valid option.
     const openNeighbors = neighbors
       .map((delta) => add(current.position, delta))
       .filter(({ x, y }) => x >= 0 && x < width && y >= 0 && y < height)
-      .map((position) => ({ map, position, time: current.time + 1 }));
+      .filter((position) => !hasBlizzard(newMap, position))
+      .map((position) => ({ map: newMap, position, time: current.time + 1 }));
 
     queue.push(...openNeighbors);
   }
-  return -1;
+  return best;
 };
 
 /**
@@ -118,7 +128,7 @@ export const levelOne = ({ lines }) => {
   const startPosition = new Vector2(0, -1);
   const targetPosition = new Vector2(map.shape.width - 1, map.shape.height - 1);
   const result = minTimeToReachDestination(map, startPosition, targetPosition);
-  return result;
+  return result ? result.time + 1 : 0;
 };
 
 /**
