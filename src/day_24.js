@@ -4,7 +4,7 @@
  */
 import { convertTo2dArray, elementAt2d, map2d } from './util/array2d.js';
 import { array2dToString } from './util/debug.js';
-import { Vector2 } from './util/vector2.js';
+import { Vector2, add, equals } from './util/vector2.js';
 import { mod } from './util/math.js';
 
 const mapToString = (() => {
@@ -74,16 +74,51 @@ const moveBlizzards = (map) => {
   });
 };
 
+const neighbors = [
+  new Vector2(0, -1),
+  new Vector2(0, 1),
+  new Vector2(1, 0),
+  new Vector2(-1, 0),
+];
+
+const minTimeToReachDestination = (map, start, target) => {
+  const { width, height } = map.shape;
+  const queue = [{ map, position: start, time: 0 }];
+  const encountered = new Set();
+  while (queue.length) {
+    const current = queue.shift();
+
+    if (encountered.has(current.position.toString())) {
+      continue;
+    }
+
+    encountered.add(current.position.toString());
+    console.log();
+    console.log(mapToString(map, current.position));
+
+    if (equals(current.position, target)) {
+      return current.time;
+    }
+
+    const openNeighbors = neighbors
+      .map((delta) => add(current.position, delta))
+      .filter(({ x, y }) => x >= 0 && x < width && y >= 0 && y < height)
+      .map((position) => ({ map, position, time: current.time + 1 }));
+
+    queue.push(...openNeighbors);
+  }
+  return -1;
+};
+
 /**
  * Returns the solution for level one of this puzzle.
  */
 export const levelOne = ({ lines }) => {
-  console.log();
   const map = parseMap(lines);
-  console.log(mapToString(map, new Vector2(-1, -1)));
-  const moved = moveBlizzards(map);
-  console.log(mapToString(map, new Vector2(-1, -1)));
-  return 1234;
+  const startPosition = new Vector2(0, -1);
+  const targetPosition = new Vector2(map.shape.width - 1, map.shape.height - 1);
+  const result = minTimeToReachDestination(map, startPosition, targetPosition);
+  return result;
 };
 
 /**
