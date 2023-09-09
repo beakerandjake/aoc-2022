@@ -5,6 +5,7 @@
 import { toNumber } from './util/string.js';
 import { bitmask } from './util/bitwise.js';
 import { range } from './util/array.js';
+import { Queue } from './util/queue.js';
 
 const defaultStartNode = 'AA';
 
@@ -130,12 +131,25 @@ const maxPressure = (
   initialOpened = 0,
   shortCircuitFn = null
 ) => {
-  const topDown = (node, time, pressure, opened) => {
+  const queue = new Queue({
+    node: graph.nodes[startNodeKey],
+    time: totalTime,
+    pressure: 0,
+    opened: initialOpened,
+  });
+  let max = { value: 0, opened: initialOpened };
+  while (queue.length) {
+    const { node, time, pressure, opened } = queue.shift();
+
+    if (pressure > max.value) {
+      max = { value: pressure, opened };
+    }
+
     // quit this branch early if possible.
     if (shortCircuitFn && shortCircuitFn(graph, node, time, pressure, opened)) {
       return { value: pressure, opened };
     }
-    let max = { value: pressure, opened };
+
     // recursively search each opened node and find the one which gives the max value.
     for (let i = node.edges.length; i--; ) {
       const edge = node.edges[i];
@@ -147,16 +161,17 @@ const maxPressure = (
         if (newTime > 0) {
           const newPressure = targetNode.flowRate * newTime + pressure;
           const newOpened = opened | targetNode.bitmask;
-          const result = topDown(targetNode, newTime, newPressure, newOpened);
-          if (result.value > max.value) {
-            max = result;
-          }
+          queue.push({
+            node: targetNode,
+            time: newTime,
+            pressure: newPressure,
+            opened: newOpened,
+          });
         }
       }
     }
-    return max;
-  };
-  return topDown(graph.nodes[startNodeKey], totalTime, 0, initialOpened);
+  }
+  return max;
 };
 
 /**
