@@ -135,3 +135,6 @@ dist
 
 # advent of code api rate limit file
 .ratelimits.json
+
+# don't commit advent of code input files.
+inputs/
